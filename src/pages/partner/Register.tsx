@@ -130,18 +130,18 @@ const PartnerRegister = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <main className="pt-24 pb-16">
-        <div className="container-wide max-w-3xl">
-          <div className="mb-8">
-            <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
+      <main className="pt-20 sm:pt-24 pb-12 sm:pb-16">
+        <div className="container-wide max-w-3xl px-4 sm:px-6">
+          <div className="mb-6 sm:mb-8">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-2">
               Become a Partner
             </h1>
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground text-sm sm:text-base">
               Sell cars and parts through our drop-shipping platform
             </p>
           </div>
 
-          <div className="grid lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
             {/* Main Form */}
             <div className="lg:col-span-2">
               <Card>
@@ -176,8 +176,8 @@ const PartnerRegister = () => {
 
                       <div className="space-y-2">
                         <Label htmlFor="storeSlug">Store URL Slug *</Label>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm text-muted-foreground whitespace-nowrap">
+                        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                          <span className="text-xs sm:text-sm text-muted-foreground whitespace-nowrap">
                             store.yoursite.com/
                           </span>
                           <Input
@@ -196,6 +196,7 @@ const PartnerRegister = () => {
                               });
                             }}
                             title="Lowercase letters, numbers, and hyphens only"
+                            className="flex-1 min-w-0"
                           />
                         </div>
                         <p className="text-xs text-muted-foreground">

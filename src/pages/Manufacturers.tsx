@@ -329,46 +329,46 @@ export default function Manufacturers() {
     <div className="min-h-screen bg-background">
       <Navbar />
       
-      <main className="pt-24 pb-16">
-        <div className="container-wide">
+      <main className="pt-20 sm:pt-24 pb-12 sm:pb-16">
+        <div className="container-wide px-4 sm:px-6">
           {/* Page Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
+          <div className="mb-6 sm:mb-8">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-2">
               Partner Shops & Manufacturers
             </h1>
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground text-sm sm:text-base">
               Discover and shop from our trusted partners and manufacturers
             </p>
           </div>
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
             <Card>
-              <CardContent className="p-4 text-center">
-                <Store className="w-8 h-8 mx-auto mb-2 text-accent" />
-                <div className="text-2xl font-bold text-foreground">{stats.activeShops}</div>
-                <div className="text-sm text-muted-foreground">Active Shops</div>
+              <CardContent className="p-3 sm:p-4 text-center">
+                <Store className="w-6 h-6 sm:w-8 sm:h-8 mx-auto mb-2 text-accent" />
+                <div className="text-xl sm:text-2xl font-bold text-foreground">{stats.activeShops}</div>
+                <div className="text-xs sm:text-sm text-muted-foreground">Active Shops</div>
               </CardContent>
             </Card>
             <Card>
-              <CardContent className="p-4 text-center">
-                <Package className="w-8 h-8 mx-auto mb-2 text-green-600" />
-                <div className="text-2xl font-bold text-foreground">{stats.totalProducts}</div>
-                <div className="text-sm text-muted-foreground">Total Products</div>
+              <CardContent className="p-3 sm:p-4 text-center">
+                <Package className="w-6 h-6 sm:w-8 sm:h-8 mx-auto mb-2 text-green-600" />
+                <div className="text-xl sm:text-2xl font-bold text-foreground">{stats.totalProducts}</div>
+                <div className="text-xs sm:text-sm text-muted-foreground">Total Products</div>
               </CardContent>
             </Card>
             <Card>
-              <CardContent className="p-4 text-center">
-                <Users className="w-8 h-8 mx-auto mb-2 text-blue-600" />
-                <div className="text-2xl font-bold text-foreground">{stats.totalShops}</div>
-                <div className="text-sm text-muted-foreground">Total Partners</div>
+              <CardContent className="p-3 sm:p-4 text-center">
+                <Users className="w-6 h-6 sm:w-8 sm:h-8 mx-auto mb-2 text-blue-600" />
+                <div className="text-xl sm:text-2xl font-bold text-foreground">{stats.totalShops}</div>
+                <div className="text-xs sm:text-sm text-muted-foreground">Total Partners</div>
               </CardContent>
             </Card>
             <Card>
-              <CardContent className="p-4 text-center">
-                <TrendingUp className="w-8 h-8 mx-auto mb-2 text-purple-600" />
-                <div className="text-2xl font-bold text-foreground">{stats.totalOrders}</div>
-                <div className="text-sm text-muted-foreground">Total Orders</div>
+              <CardContent className="p-3 sm:p-4 text-center">
+                <TrendingUp className="w-6 h-6 sm:w-8 sm:h-8 mx-auto mb-2 text-purple-600" />
+                <div className="text-xl sm:text-2xl font-bold text-foreground">{stats.totalOrders}</div>
+                <div className="text-xs sm:text-sm text-muted-foreground">Total Orders</div>
               </CardContent>
             </Card>
           </div>

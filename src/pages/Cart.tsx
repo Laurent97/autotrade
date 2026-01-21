@@ -18,15 +18,15 @@ const Cart = () => {
   if (items.length === 0) {
     return (
       <PublicLayout>
-        <main className="pt-8 pb-16 min-h-screen flex items-center">
-          <div className="container-wide text-center">
-            <div className="w-24 h-24 rounded-full bg-secondary flex items-center justify-center mx-auto mb-6">
-              <ShoppingCart className="w-12 h-12 text-muted-foreground" />
+        <main className="pt-6 sm:pt-8 pb-12 sm:pb-16 min-h-screen flex items-center">
+          <div className="container-wide text-center px-4 sm:px-6">
+            <div className="w-16 h-16 sm:w-24 sm:h-24 rounded-full bg-secondary flex items-center justify-center mx-auto mb-4 sm:mb-6">
+              <ShoppingCart className="w-8 h-8 sm:w-12 sm:h-12 text-muted-foreground" />
             </div>
-            <h1 className="text-3xl font-bold text-foreground mb-4">Your cart is empty</h1>
-            <p className="text-muted-foreground mb-8">Add some products to get started!</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-4">Your cart is empty</h1>
+            <p className="text-muted-foreground mb-6 sm:mb-8 text-sm sm:text-base">Add some products to get started!</p>
             <Link to="/products">
-              <Button size="lg">Browse Products</Button>
+              <Button size="lg" className="w-full sm:w-auto">Browse Products</Button>
             </Link>
           </div>
         </main>
@@ -36,20 +36,20 @@ const Cart = () => {
 
   return (
     <PublicLayout>
-      <main className="pt-8 pb-16">
-        <div className="container-wide">
-          <div className="mb-8">
-            <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">Shopping Cart</h1>
-            <p className="text-muted-foreground">{items.length} item(s) in your cart</p>
+      <main className="pt-6 sm:pt-8 pb-12 sm:pb-16">
+        <div className="container-wide px-4 sm:px-6">
+          <div className="mb-6 sm:mb-8">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-foreground mb-2">Shopping Cart</h1>
+            <p className="text-muted-foreground text-sm sm:text-base">{items.length} item(s) in your cart</p>
           </div>
 
-          <div className="grid lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
             {/* Cart Items */}
             <div className="lg:col-span-2 space-y-4">
               {items.map((item) => (
                 <div
                   key={item.product.id}
-                  className="bg-card rounded-2xl border border-border p-6 flex gap-6"
+                  className="bg-card rounded-xl sm:rounded-2xl border border-border p-4 sm:p-6 flex flex-col sm:flex-row gap-4 sm:gap-6"
                 >
                   {/* Product Image */}
                   <Link

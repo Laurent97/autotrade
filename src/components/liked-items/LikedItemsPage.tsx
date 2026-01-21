@@ -146,43 +146,46 @@ export function LikedItemsPage({ className }: LikedItemsPageProps) {
   return (
     <div className={className}>
       {/* Header */}
-      <div className="mb-8">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+      <div className="mb-6 sm:mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 sm:mb-6">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
               Liked Items
             </h1>
-            <p className="text-gray-600 dark:text-gray-400">
+            <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">
               {totalCount} item{totalCount !== 1 ? 's' : ''} saved
             </p>
           </div>
 
           {/* Actions */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
             {selectedItems.size > 0 && (
               <Button
                 variant="destructive"
                 size="sm"
                 onClick={handleRemoveSelected}
                 disabled={removeMultipleMutation.isPending}
+                className="text-xs sm:text-sm"
               >
-                <Trash2 className="w-4 h-4 mr-2" />
+                <Trash2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                 Remove ({selectedItems.size})
               </Button>
             )}
-            <Button variant="outline" size="sm" onClick={handleExport}>
-              <Download className="w-4 h-4 mr-2" />
-              Export
+            <Button variant="outline" size="sm" onClick={handleExport} className="text-xs sm:text-sm">
+              <Download className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Export</span>
+              <span className="sm:hidden">📥</span>
             </Button>
-            <Button variant="outline" size="sm" onClick={handleShare}>
-              <Share2 className="w-4 h-4 mr-2" />
-              Share
+            <Button variant="outline" size="sm" onClick={handleShare} className="text-xs sm:text-sm">
+              <Share2 className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Share</span>
+              <span className="sm:hidden">🔗</span>
             </Button>
           </div>
         </div>
 
         {/* Filters and Search */}
-        <div className="flex flex-col lg:flex-row gap-4">
+        <div className="flex flex-col lg:flex-row gap-3 sm:gap-4">
           {/* Search */}
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />

@@ -473,23 +473,23 @@ export default function AdminOrders() {
     <div className="min-h-screen flex flex-col bg-background">
       <Navbar />
       <div className="flex-grow">
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex gap-8">
+        <div className="container mx-auto px-4 py-4 sm:py-6 lg:py-8">
+          <div className="flex flex-col lg:flex-row gap-4 lg:gap-8">
             <AdminSidebar />
             
-            <div className="flex-grow">
+            <div className="flex-grow min-w-0">
               {/* Welcome Header */}
-              <div className="mb-10 animate-fade-in">
-                <div className="bg-gradient-to-r from-primary to-primary/90 rounded-2xl p-8 text-primary-foreground shadow-lg">
-                  <h1 className="text-4xl font-bold mb-2">Order Management</h1>
-                  <p className="text-primary-foreground/90 text-lg">Manage orders and assign to partners</p>
-                  <p className="text-primary-foreground/70 mt-1 text-sm">Track, process, and fulfill customer orders efficiently</p>
+              <div className="mb-6 sm:mb-8 lg:mb-10 animate-fade-in">
+                <div className="bg-gradient-to-r from-primary to-primary/90 rounded-xl sm:rounded-2xl p-4 sm:p-6 lg:p-8 text-primary-foreground shadow-lg">
+                  <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2">Order Management</h1>
+                  <p className="text-primary-foreground/90 text-base sm:text-lg">Manage orders and assign to partners</p>
+                  <p className="text-primary-foreground/70 mt-1 text-xs sm:text-sm">Track, process, and fulfill customer orders efficiently</p>
                 </div>
               </div>
 
               {/* Filters */}
-              <div className="bg-card rounded-2xl shadow-md border border-border p-6 mb-6 animate-fade-in hover:shadow-lg transition-shadow">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-card rounded-xl sm:rounded-2xl shadow-md border border-border p-4 sm:p-6 mb-4 sm:mb-6 animate-fade-in hover:shadow-lg transition-shadow">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                   <div>
                     <label className="block text-sm font-medium text-foreground mb-2">
                       🔍 Search Orders
