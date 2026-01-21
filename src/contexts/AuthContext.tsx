@@ -115,12 +115,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         data: {
           full_name: fullName,
         },
+        emailRedirectTo: `${window.location.origin}/auth`,
       },
     });
 
     if (error) throw error;
 
-    // Create user profile
+    // Create user profile immediately
     if (data.user) {
       const { error: profileError } = await supabase.from('users').insert({
         id: data.user.id,
@@ -131,6 +132,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (profileError) {
         console.error('Error creating user profile:', profileError);
+        throw profileError;
+      }
+
+      // Sign in user immediately after successful registration
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (signInError) {
+        console.error('Error signing in after registration:', signInError);
+        throw signInError;
       }
     }
   };

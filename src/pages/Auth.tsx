@@ -70,8 +70,8 @@ const Auth = () => {
     try {
       await signUp(registerData.email, registerData.password, registerData.fullName);
       toast({
-        title: 'Account created!',
-        description: 'Please check your email to verify your account.',
+        title: 'Account created successfully!',
+        description: 'Welcome to AutoTradeHub! You are now signed in.',
       });
       navigate('/');
     } catch (error: any) {
@@ -142,7 +142,7 @@ const Auth = () => {
               <Card>
                 <CardHeader>
                   <CardTitle>Create Account</CardTitle>
-                  <CardDescription>Sign up to get started with AutoVault</CardDescription>
+                  <CardDescription>Sign up to get started with AutoTradeHub - instant access, no email confirmation required!</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <form onSubmit={handleRegister} className="space-y-4">
