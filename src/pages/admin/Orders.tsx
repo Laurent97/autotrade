@@ -4,6 +4,10 @@ import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase/client';
 import { Order, PartnerProfile, OrderStatus, PaymentStatus } from '../../lib/types/database';
 import { NotificationService } from '../../lib/supabase/notification-service';
+import { adminService } from '../../lib/supabase/admin-service';
+import { OrderStatusBadge } from '../../components/OrderStatusBadge';
+import { CancelOrderButton } from '../../components/CancelOrderButton';
+import { useOrderRealtime } from '../../hooks/useOrderRealtime';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import AdminSidebar from '../../components/Admin/AdminSidebar';
@@ -49,7 +53,7 @@ export default function AdminOrders() {
   const [orders, setOrders] = useState<OrderWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState<OrderStatus | 'all'>('all');
+  const [filterStatus, setFilterStatus] = useState<OrderStatus | 'all' | 'active'>('all');
   const [selectedOrder, setSelectedOrder] = useState<OrderWithDetails | null>(null);
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [showLogisticsModal, setShowLogisticsModal] = useState(false);
@@ -80,6 +84,7 @@ export default function AdminOrders() {
   });
   const [partnerProducts, setPartnerProducts] = useState<PartnerProduct[]>([]);
   const [loadingPartnerProducts, setLoadingPartnerProducts] = useState(false);
+  const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(null);
 
   useEffect(() => {
     if (userProfile?.user_type !== 'admin') {
@@ -91,7 +96,44 @@ export default function AdminOrders() {
     loadPartners();
   }, [userProfile, navigate]);
 
+  // Realtime subscription for order updates
+  useOrderRealtime({
+    enabled: userProfile?.user_type === 'admin',
+    onOrderUpdate: (payload) => {
+      // Update specific order in state
+      setOrders(prev => prev.map(order => 
+        order.id === payload.new.id 
+          ? { ...order, ...payload.new }
+          : order
+      ));
+
+      // Update order details if modal is open
+      if (orderDetails?.id === payload.new.id) {
+        setOrderDetails(prev => prev ? { ...prev, ...payload.new } : null);
+      }
+    },
+    onOrderInsert: (payload) => {
+      // Add new order to beginning of list
+      setOrders(prev => [payload.new, ...prev]);
+    },
+    onOrderDelete: (payload) => {
+      // Remove order from state
+      setOrders(prev => prev.filter(order => order.id !== payload.old.id));
+      
+      // Close modal if deleted order was being viewed
+      if (orderDetails?.id === payload.old.id) {
+        setShowOrderModal(false);
+        setSelectedOrder(null);
+        setOrderDetails(null);
+      }
+    }
+  });
+
   const loadOrders = async () => {
+    console.log('🔄 Loading orders...');
+    console.log('📊 Current filter status:', filterStatus);
+    console.log('🔍 Current search term:', searchTerm);
+    
     setLoading(true);
     
     try {
@@ -102,11 +144,16 @@ export default function AdminOrders() {
 
       if (error) throw error;
       
+      console.log('📊 Orders loaded from database:', data?.length || 0, 'orders');
+      console.log('📋 Order statuses:', data?.map(o => ({ id: o.id, status: o.status, number: o.order_number })) || []);
+      
       setOrders(data || []);
+      console.log('✅ Orders state updated with', data?.length || 0, 'orders');
     } catch (error) {
       console.error('Error loading orders:', error);
     } finally {
       setLoading(false);
+      console.log('🔄 Loading completed');
     }
   };
 
@@ -173,16 +220,12 @@ export default function AdminOrders() {
 
   const updateOrderStatus = async (orderId: string, status: string) => {
     try {
-      const { error } = await supabase
-        .from('orders')
-        .update({ 
-          status,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', orderId);
-
-      if (error) throw error;
-
+      const result = await adminService.updateOrderStatus(orderId, status);
+      
+      if (result.error) {
+        throw result.error;
+      }
+      
       loadOrders();
       if (orderDetails?.id === orderId) {
         loadOrderDetails(orderId);
@@ -275,31 +318,52 @@ export default function AdminOrders() {
         return;
       }
 
-      // First, get or create customer
+      // First, get or create customer using improved function
       let customerId: string;
-      const { data: existingCustomer } = await supabase
+      const { data: existingCustomer, error: fetchError } = await supabase
         .from('users')
         .select('id')
         .eq('email', newOrder.customer_email)
-        .single();
+        .maybeSingle();
+
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        console.error('Error fetching user:', fetchError);
+      }
 
       if (existingCustomer) {
         customerId = existingCustomer.id;
+        console.log('✅ Found existing customer ID:', customerId);
       } else {
-        // Create a new user record for the customer
-        const { data: newUser, error: userError } = await supabase
-          .from('users')
-          .insert({
-            email: newOrder.customer_email,
-            full_name: newOrder.customer_name,
-            user_type: 'customer',
-            created_at: new Date().toISOString()
-          })
-          .select()
-          .single();
+        // Create new user using the working function
+        const { data: newUser, error: userError } = await supabase.rpc('get_or_create_user_simple', {
+          user_email: newOrder.customer_email,
+          user_full_name: newOrder.customer_name
+        });
 
-        if (userError) throw userError;
-        customerId = newUser.id;
+        if (userError) {
+          console.error('User creation error:', userError);
+          // Fallback: try direct insert
+          const { data: fallbackUser, error: fallbackError } = await supabase
+            .from('users')
+            .insert({
+              email: newOrder.customer_email,
+              full_name: newOrder.customer_name,
+              created_at: new Date().toISOString()
+            })
+            .select('id')
+            .single();
+          
+          if (fallbackError) {
+            console.error('Fallback user creation failed:', fallbackError);
+            throw new Error('Failed to create user: ' + fallbackError.message);
+          }
+          
+          customerId = fallbackUser.id;
+        } else {
+          customerId = newUser;
+        }
+        
+        console.log('✅ Created new customer with ID:', customerId);
       }
 
       // Generate order number
@@ -334,7 +398,6 @@ export default function AdminOrders() {
           partner_product_id: newOrder.product_id,
           quantity: newOrder.quantity,
           unit_price: newOrder.unit_price,
-          subtotal: newOrder.quantity * newOrder.unit_price,
           created_at: new Date().toISOString()
         });
 
@@ -398,6 +461,156 @@ export default function AdminOrders() {
     } catch (error) {
       console.error('Error assigning order:', error);
       alert('Failed to assign order to partner');
+    }
+  };
+
+  const handleCancelOrder = async (orderId: string) => {
+    const orderToCancel = orders.find(order => order.id === orderId);
+    if (!orderToCancel) return;
+
+    const reason = prompt('Please enter cancellation reason:');
+    if (!reason) return;
+
+    const confirmCancel = window.confirm(
+      `❌ Cancel Order #${orderToCancel.order_number || orderId}?\n\nReason: ${reason}\nAmount: $${orderToCancel.total_amount}\n\nThis will refund the partner if payment was made.`
+    );
+    
+    if (!confirmCancel) return;
+
+    // Optimistic update - update UI immediately
+    setOrders(prev => prev.map(order => 
+      order.id === orderId 
+        ? { 
+            ...order, 
+            status: 'cancelled',
+            cancellation_reason: reason,
+            cancelled_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }
+        : order
+    ));
+
+    // Show loading state on the button
+    setCancellingOrderId(orderId);
+    
+    try {
+      const result = await adminService.cancelOrder(orderId, reason, true);
+      
+      if (!result.success) {
+        // Revert optimistic update on error
+        setOrders(prev => prev.map(order => 
+          order.id === orderId 
+            ? orderToCancel  // Restore original order
+            : order
+        ));
+        
+        alert(`❌ Error: ${result.error}`);
+      } else {
+        alert(`✅ Order #${orderToCancel.order_number || orderId} cancelled successfully!\nReason: ${reason}`);
+        
+        // Refresh to get complete updated data
+        loadOrders();
+        if (orderDetails?.id === orderId) {
+          loadOrderDetails(orderId);
+        }
+      }
+    } catch (error) {
+      // Revert optimistic update
+      setOrders(prev => prev.map(order => 
+        order.id === orderId 
+          ? orderToCancel
+          : order
+      ));
+      
+      console.error('Error cancelling order:', error);
+      alert('Failed to cancel order');
+    } finally {
+      setCancellingOrderId(null);
+    }
+  };
+
+  const handleDeleteOrder = async (order: OrderWithDetails) => {
+    const confirmDelete = window.confirm(
+      `🗑️ DELETE Order #${order.order_number || order.id}?\n\nThis will permanently delete:\n- Order details\n- All order items\n- Logistics tracking\n\nThis action CANNOT be undone!`
+    );
+    
+    if (!confirmDelete) return;
+    
+    try {
+      console.log('🗑️ Frontend: Starting delete for order:', order.id);
+      const result = await adminService.deleteOrder(order.id);
+      
+      console.log('📊 Delete result:', result);
+      
+      if (result.success) {
+        alert(`✅ Order #${order.order_number || order.id} deleted permanently`);
+        console.log('🔄 Frontend: Reloading orders...');
+        
+        // Force a small delay to ensure database consistency
+        setTimeout(() => {
+          loadOrders();
+          if (showOrderModal) {
+            setShowOrderModal(false);
+            setSelectedOrder(null);
+            setOrderDetails(null);
+          }
+        }, 500);
+      } else {
+        console.error('❌ Frontend: Delete failed:', result.error);
+        alert(`❌ Error: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('💥 Frontend: Error in handleDeleteOrder:', error);
+      alert('Failed to delete order');
+    }
+  };
+
+  const handleMarkAsShipped = async (order: OrderWithDetails) => {
+    const trackingNumber = prompt('Enter tracking number:');
+    if (!trackingNumber) return;
+
+    const carrier = prompt('Enter carrier name:') || 'Standard Shipping';
+    
+    try {
+      const result = await adminService.markOrderAsShipped(order.id, trackingNumber, carrier);
+      
+      if (result.success) {
+        alert(`✅ Order #${order.order_number || order.id} marked as shipped!\nTracking: ${trackingNumber}\nCarrier: ${carrier}`);
+        loadOrders();
+        if (orderDetails?.id === order.id) {
+          loadOrderDetails(order.id);
+        }
+      } else {
+        alert(`❌ Error: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Error marking order as shipped:', error);
+      alert('Failed to mark order as shipped');
+    }
+  };
+
+  const handleCompleteOrder = async (order: OrderWithDetails) => {
+    const confirmComplete = window.confirm(
+      `✅ Complete Order #${order.order_number || order.id}?\n\nThis will mark the order as delivered and finalize the transaction.`
+    );
+    
+    if (!confirmComplete) return;
+    
+    try {
+      const result = await adminService.completeOrder(order.id);
+      
+      if (result.success) {
+        alert(`✅ Order #${order.order_number || order.id} marked as completed!`);
+        loadOrders();
+        if (orderDetails?.id === order.id) {
+          loadOrderDetails(order.id);
+        }
+      } else {
+        alert(`❌ Error: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Error completing order:', error);
+      alert('Failed to complete order');
     }
   };
 
@@ -478,7 +691,9 @@ export default function AdminOrders() {
     const matchesSearch = 
       order.order_number.toLowerCase().includes(searchTerm.toLowerCase());
     
-    const matchesStatus = filterStatus === 'all' || order.status === filterStatus;
+    const matchesStatus = filterStatus === 'all' || 
+      filterStatus === 'active' ? !['cancelled', 'completed'].includes(order.status) : 
+      order.status === filterStatus;
     
     return matchesSearch && matchesStatus;
   });
@@ -489,6 +704,7 @@ export default function AdminOrders() {
       case 'delivered': return 'bg-green-100 text-green-800';
       case 'processing':
       case 'shipped': return 'bg-blue-100 text-blue-800';
+      case 'waiting_confirmation': return 'bg-orange-100 text-orange-800';
       case 'pending':
       case 'confirmed': return 'bg-yellow-100 text-yellow-800';
       case 'cancelled': return 'bg-red-100 text-red-800';
@@ -536,15 +752,18 @@ export default function AdminOrders() {
                     </label>
                     <select
                       value={filterStatus}
-                      onChange={(e) => setFilterStatus(e.target.value as OrderStatus | 'all')}
+                      onChange={(e) => setFilterStatus(e.target.value as OrderStatus | 'all' | 'active')}
                       className="w-full px-4 py-2 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary bg-background text-foreground transition-all"
                     >
                       <option value="all">All Statuses</option>
+                      <option value="active">Active Only</option>
                       <option value="pending">Pending</option>
+                      <option value="waiting_confirmation">Waiting Confirmation</option>
                       <option value="confirmed">Confirmed</option>
                       <option value="processing">Processing</option>
                       <option value="shipped">Shipped</option>
                       <option value="delivered">Delivered</option>
+                      <option value="completed">Completed</option>
                       <option value="cancelled">Cancelled</option>
                     </select>
                   </div>
@@ -671,15 +890,7 @@ export default function AdminOrders() {
                               </div>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
-                              <span className={`px-3 py-1 text-xs font-semibold rounded-full ${getStatusColor(order.status)}`}>
-                                {order.status === 'delivered' && '✅ '}
-                                {order.status === 'shipped' && '🚚 '}
-                                {order.status === 'processing' && '⚙️ '}
-                                {order.status === 'pending' && '⏳ '}
-                                {order.status === 'confirmed' && '📋 '}
-                                {order.status === 'cancelled' && '❌ '}
-                                {order.status}
-                              </span>
+                              <OrderStatusBadge status={order.status} />
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <span className={`px-3 py-1 text-xs font-semibold rounded-full ${
@@ -713,11 +924,48 @@ export default function AdminOrders() {
                                     🏪 Assign to Partner
                                   </button>
                                 )}
+                                {order.status === 'waiting_confirmation' && (
+                                  <button
+                                    onClick={() => updateOrderStatus(order.id, 'processing')}
+                                    className="text-blue-600 hover:text-blue-800 text-left font-medium flex items-center gap-1 transition-colors"
+                                  >
+                                    ✅ Confirm Order
+                                  </button>
+                                )}
+                                {order.status === 'processing' && (
+                                  <button
+                                    onClick={() => handleMarkAsShipped(order)}
+                                    className="text-purple-600 hover:text-purple-800 text-left font-medium flex items-center gap-1 transition-colors"
+                                  >
+                                    🚚 Mark as Shipped
+                                  </button>
+                                )}
+                                {order.status === 'shipped' && (
+                                  <button
+                                    onClick={() => handleCompleteOrder(order)}
+                                    className="text-green-600 hover:text-green-800 text-left font-medium flex items-center gap-1 transition-colors"
+                                  >
+                                    ✅ Complete Order
+                                  </button>
+                                )}
                                 <button
                                   onClick={() => openLogisticsModal(order)}
                                   className="text-blue-600 hover:text-blue-800 text-left font-medium flex items-center gap-1 transition-colors"
                                 >
-                                  🚚 Update Shipping
+                                  📦 Update Shipping
+                                </button>
+                                <CancelOrderButton
+                                  orderId={order.id}
+                                  currentStatus={order.status}
+                                  userRole="admin"
+                                  onCancel={handleCancelOrder}
+                                  size="sm"
+                                />
+                                <button
+                                  onClick={() => handleDeleteOrder(order)}
+                                  className="text-red-700 hover:text-red-900 text-left font-medium flex items-center gap-1 transition-colors"
+                                >
+                                  🗑️ Delete Order
                                 </button>
                               </div>
                             </td>
@@ -810,7 +1058,7 @@ export default function AdminOrders() {
                         Update Status
                       </label>
                       <div className="flex flex-wrap gap-2">
-                        {['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'].map((status) => (
+                        {['pending', 'waiting_confirmation', 'confirmed', 'processing', 'shipped', 'delivered', 'completed', 'cancelled'].map((status) => (
                           <button
                             key={status}
                             onClick={() => updateOrderStatus(orderDetails.id, status)}

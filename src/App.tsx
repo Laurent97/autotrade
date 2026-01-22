@@ -26,13 +26,9 @@ import PartnerPending from "./pages/partner/Pending";
 import PartnerDashboard from "./pages/partner/Dashboard";
 import DashboardOverview from "./pages/partner/DashboardOverview";
 import DashboardProducts from "./pages/partner/DashboardProducts";
-import DashboardInventory from "./pages/partner/DashboardInventory";
 import DashboardOrders from "./pages/partner/DashboardOrders";
-import OrderTracking from "./pages/partner/OrderTracking";
 import DashboardWallet from "./pages/partner/DashboardWallet";
-import DashboardEarnings from "./pages/partner/DashboardEarnings";
-import DashboardAnalytics from "./pages/partner/DashboardAnalytics";
-import DashboardSettings from "./pages/partner/DashboardSettings";
+import WalletDeposit from "./pages/partner/WalletDeposit";
 import AdminDashboard from "./pages/admin/Dashboard";
 import AdminProducts from "./pages/admin/Products-Enhanced";
 import AdminPartners from "./pages/admin/Partners";
@@ -89,15 +85,9 @@ const App = () => (
               <Route path="/partner/dashboard" element={<PartnerOnlyRoute requireApproved={true}><PartnerDashboard /></PartnerOnlyRoute>}>
                 <Route index element={<DashboardOverview />} />
                 <Route path="products" element={<DashboardProducts />} />
-                <Route path="inventory" element={<DashboardInventory />} />
                 <Route path="orders" element={<DashboardOrders />} />
-                <Route path="orders/:orderId/track" element={<OrderTracking />} />
                 <Route path="wallet" element={<DashboardWallet />} />
-                <Route path="wallet/deposit" element={<CryptoDeposit />} />
-                <Route path="wallet/withdraw" element={<WithdrawalForm />} />
-                <Route path="earnings" element={<DashboardEarnings />} />
-                <Route path="analytics" element={<DashboardAnalytics />} />
-                <Route path="settings" element={<DashboardSettings />} />
+                <Route path="wallet/deposit" element={<WalletDeposit />} />
               </Route>
               <Route path="/admin" element={<AdminOnlyRoute><AdminDashboard /></AdminOnlyRoute>} />
               <Route path="/admin/users" element={<AdminOnlyRoute><AdminUsers /></AdminOnlyRoute>} />

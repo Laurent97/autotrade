@@ -86,7 +86,7 @@ export default function WalletBalance() {
             <div className={`text-3xl font-bold ${
               isDarkMode ? 'text-green-400' : 'text-green-600'
             }`}>
-              ${balance?.available_balance?.toFixed(2) || '0.00'}
+              ${balance?.balance?.toFixed(2) || '0.00'}
             </div>
             <div className={`text-sm mt-1 ${
               isDarkMode ? 'text-gray-400' : 'text-gray-600'

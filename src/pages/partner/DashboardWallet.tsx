@@ -21,10 +21,10 @@ import {
 interface WalletBalance {
   id: string;
   user_id: string;
-  available_balance: number;
-  pending_balance: number;
-  total_earnings: number;
-  last_updated: string;
+  balance: number;
+  currency: string;
+  created_at: string;
+  updated_at: string;
 }
 
 interface Transaction {
@@ -78,11 +78,13 @@ export default function DashboardWallet() {
       setWallet(walletData);
 
       // Load recent transactions
-      const { data: transactionsData } = await walletService.getTransactions(user.id, 10);
+      const { data: transactionsData } = await walletService.getTransactions(user.id, 20);
       setTransactions(transactionsData);
 
       // Load wallet stats
       const { data: statsData } = await walletService.getStats(user.id);
+      console.log('Wallet Dashboard - Wallet Stats:', statsData);
+      console.log('Wallet Dashboard - Available Balance:', statsData?.availableBalance);
       setStats({
         totalEarnings: statsData.totalEarnings,
         totalWithdrawn: statsData.totalWithdrawals,
@@ -211,22 +213,22 @@ export default function DashboardWallet() {
           </div>
           
           <div className="text-4xl font-bold mb-6">
-            {formatCurrency(wallet?.available_balance || 0)}
+            {formatCurrency(stats.availableBalance || 0)}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-white/10 dark:bg-white/5 rounded-lg p-4">
               <p className="text-blue-100 dark:text-blue-200/80 text-sm">Pending Balance</p>
-              <p className="text-xl font-semibold">{formatCurrency(wallet?.pending_balance || 0)}</p>
+              <p className="text-xl font-semibold">{formatCurrency(stats.pendingBalance || 0)}</p>
             </div>
             <div className="bg-white/10 dark:bg-white/5 rounded-lg p-4">
               <p className="text-blue-100 dark:text-blue-200/80 text-sm">Total Earnings</p>
-              <p className="text-xl font-semibold">{formatCurrency(wallet?.total_earnings || 0)}</p>
+              <p className="text-xl font-semibold">{formatCurrency(stats.totalEarnings || 0)}</p>
             </div>
             <div className="bg-white/10 dark:bg-white/5 rounded-lg p-4">
               <p className="text-blue-100 dark:text-blue-200/80 text-sm">Last Updated</p>
               <p className="text-xl font-semibold">
-                {wallet?.last_updated ? formatDate(wallet.last_updated) : 'Never'}
+                {wallet?.updated_at ? formatDate(wallet.updated_at) : 'Never'}
               </p>
             </div>
           </div>

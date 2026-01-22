@@ -4,7 +4,7 @@ export type UserType = 'customer' | 'partner' | 'admin';
 export type PartnerStatus = 'pending' | 'approved' | 'rejected' | 'suspended';
 export type ProductCategory = 'car' | 'part' | 'accessory';
 export type Condition = 'new' | 'used' | 'reconditioned';
-export type OrderStatus = 'pending' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+export type OrderStatus = 'pending' | 'waiting_confirmation' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'completed' | 'cancelled';
 export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded';
 export type EarningsStatus = 'pending' | 'released' | 'hold';
 
@@ -109,7 +109,7 @@ export interface OrderItem {
   partner_product_id?: string;
   quantity: number;
   unit_price: number;
-  subtotal: number;
+  // subtotal is a generated column (quantity * unit_price)
   created_at: string;
   product?: Product;
 }

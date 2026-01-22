@@ -52,13 +52,14 @@ export const orderService = {
       return { data: null, error: orderError };
     }
 
-    // Create order items
+    // Create order items (explicitly exclude subtotal as it's generated)
     const orderItems = orderData.items.map((item) => ({
       order_id: order.id,
       product_id: item.product_id,
       partner_product_id: item.partner_product_id || null,
       quantity: item.quantity,
       unit_price: item.unit_price,
+      created_at: new Date().toISOString()
     }));
 
     const { error: itemsError } = await supabase

@@ -88,7 +88,7 @@ export const paymentService = {
     // First check if user has enough balance
     const { data: wallet } = await this.getWalletBalance(withdrawal.userId);
 
-    if (!wallet || Number(wallet.available_balance || 0) < withdrawal.usdValue) {
+    if (!wallet || Number(wallet.balance || 0) < withdrawal.usdValue) {
       throw new Error('Insufficient balance');
     }
 
@@ -107,14 +107,13 @@ export const paymentService = {
       .select()
       .single();
 
-    // Deduct from pending balance
+    // Deduct from wallet balance
     if (data && !error) {
       await supabase
         .from('wallet_balances')
         .update({
-          available_balance: Number(wallet.available_balance) - withdrawal.usdValue,
-          pending_balance: Number(wallet.pending_balance || 0) + withdrawal.usdValue,
-          total_withdrawn: Number(wallet.total_withdrawn || 0) + withdrawal.usdValue,
+          balance: Number(wallet.balance) - withdrawal.usdValue,
+          updated_at: new Date().toISOString()
         })
         .eq('user_id', withdrawal.userId);
     }

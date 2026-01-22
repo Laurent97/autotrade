@@ -15,11 +15,10 @@ interface BalanceUpdate {
 
 interface WalletBalance {
   user_id: string;
-  available_balance: number;
-  pending_balance: number;
-  total_deposited: number;
-  total_withdrawn: number;
-  last_updated: string;
+  balance: number;
+  currency: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export default function AdminUsers() {
@@ -147,7 +146,7 @@ export default function AdminUsers() {
               commission_rate: 0.10,
               total_earnings: 0.00,
               pending_balance: 0.00,
-              available_balance: 0.00,
+              total_balance: 0.00,
               total_orders: 0,
               rating: 0.00,
               is_active: true,
@@ -189,7 +188,7 @@ export default function AdminUsers() {
     }
 
     try {
-      const currentBalance = userBalances[balanceUpdate.userId]?.available_balance || 0;
+      const currentBalance = userBalances[balanceUpdate.userId]?.balance || 0;
       const newAmount = balanceUpdate.type === 'add' 
         ? currentBalance + balanceUpdate.amount
         : currentBalance - balanceUpdate.amount;
@@ -203,8 +202,8 @@ export default function AdminUsers() {
         .from('wallet_balances')
         .upsert({
           user_id: balanceUpdate.userId,
-          available_balance: newAmount,
-          last_updated: new Date().toISOString()
+          balance: newAmount,
+          updated_at: new Date().toISOString()
         }, {
           onConflict: 'user_id'
         });
@@ -383,7 +382,7 @@ export default function AdminUsers() {
             </div>
             <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total Balance</div>
             <div className="text-3xl font-bold text-amber-700 dark:text-amber-300">
-              ${Object.values(userBalances).reduce((sum, u) => sum + (u?.available_balance || 0), 0).toLocaleString()}
+              ${Object.values(userBalances).reduce((sum, u) => sum + (u?.balance || 0), 0).toLocaleString()}
             </div>
           </div>
           
@@ -487,10 +486,10 @@ export default function AdminUsers() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-lg font-bold text-gray-900 dark:text-white">
-                            ${(balance?.available_balance || 0).toFixed(2)}
+                            ${(balance?.balance || 0).toFixed(2)}
                           </div>
                           <div className="text-sm text-gray-600 dark:text-gray-400">
-                            Pending: ${(balance?.pending_balance || 0).toFixed(2)}
+                            Balance: ${(balance?.balance || 0).toFixed(2)}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-400">
@@ -644,7 +643,7 @@ export default function AdminUsers() {
                 <div className="bg-gray-50 dark:bg-gray-900/50 p-4 rounded-lg">
                   <div className="text-sm text-gray-600 dark:text-gray-400">Current Balance</div>
                   <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                    ${(userBalances[selectedUser.id]?.available_balance || 0).toFixed(2)}
+                    ${(userBalances[selectedUser.id]?.balance || 0).toFixed(2)}
                   </div>
                 </div>
 

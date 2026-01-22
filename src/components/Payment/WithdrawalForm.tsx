@@ -41,8 +41,8 @@ export default function WithdrawalForm() {
     try {
       const { data } = await paymentService.getWalletBalance(user.id);
       if (data) {
-        setBalance(Number(data.available_balance || 0));
-        setUsdAmount(Math.min(100, Number(data.available_balance || 0)));
+        setBalance(Number(data.balance || 0));
+        setUsdAmount(Math.min(100, Number(data.balance || 0)));
       }
     } catch (error) {
       console.error('Error loading balance:', error);

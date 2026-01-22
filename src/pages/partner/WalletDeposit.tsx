@@ -41,7 +41,7 @@ export default function WalletDeposit() {
       try {
         const { data } = await walletService.getBalance(user.id);
         if (data) {
-          setBalance(data.available_balance || 0);
+          setBalance(data.balance || 0);
         }
       } catch (error) {
         console.error('Error loading balance:', error);
