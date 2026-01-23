@@ -263,16 +263,40 @@ const ProductCard = ({ product }: { product: Product }) => {
 
 const Products = () => {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [showFilters, setShowFilters] = useState(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
+  const [showFilters, setShowFilters] = useState(false);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [categories, setCategories] = useState<{ id: string; label: string }[]>([
+    { id: "all", label: "All Products" }
+  ]);
   
   const categoryFilter = searchParams.get("category") || "all";
   const sortBy = searchParams.get("sort") || "popular";
   const searchQuery = searchParams.get("q") || "";
+
+  // Fetch categories from database
+  useEffect(() => {
+    loadCategories();
+  }, []);
+
+  const loadCategories = async () => {
+    try {
+      const filterOptions = await productService.getFilterOptions();
+      if (filterOptions.categories) {
+        const dbCategories = filterOptions.categories.map((cat: string) => ({
+          id: cat.toLowerCase().replace(/\s+/g, '-'),
+          label: cat.charAt(0).toUpperCase() + cat.slice(1)
+        }));
+        setCategories([{ id: "all", label: "All Products" }, ...dbCategories]);
+      }
+    } catch (error) {
+      console.error('Error loading categories:', error);
+      // Keep hardcoded categories as fallback
+    }
+  };
 
   // Fetch products from Supabase
   useEffect(() => {
