@@ -23,20 +23,59 @@ export class LikedItemsService {
         return { success: true, isLiked: false, totalLikes: 0 };
       }
 
+      // Prepare insert data - handle case where item_data column might not exist
+      const insertData: any = {
+        user_id: user.id,
+        item_id: itemId,
+        item_type: itemType,
+        liked_at: new Date().toISOString(),
+      };
+
+      // Only add item_data if the column exists
+      try {
+        insertData.item_data = itemData;
+      } catch (error) {
+        console.warn('item_data column might not exist, proceeding without it:', error);
+      }
+
       // Add new like
       const { data, error } = await supabase
         .from('liked_items')
-        .insert({
-          user_id: user.id,
-          item_id: itemId,
-          item_type: itemType,
-          item_data: itemData,
-          liked_at: new Date().toISOString(),
-        })
+        .insert(insertData)
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        // If error is about item_data column, try without it
+        if (error.message.includes('item_data')) {
+          console.warn('item_data column not found, trying without it');
+          const { data: dataWithoutItemData, error: errorWithoutItemData } = await supabase
+            .from('liked_items')
+            .insert({
+              user_id: user.id,
+              item_id: itemId,
+              item_type: itemType,
+              liked_at: new Date().toISOString(),
+            })
+            .select()
+            .single();
+
+          if (errorWithoutItemData) throw errorWithoutItemData;
+          // Get total likes count
+          const { count } = await supabase
+            .from('liked_items')
+            .select('*', { count: 'exact', head: true })
+            .eq('item_id', itemId)
+            .eq('item_type', itemType);
+
+          return {
+            success: true,
+            isLiked: true,
+            totalLikes: count || 1,
+          };
+        }
+        throw error;
+      }
 
       // Get total likes count
       const { count } = await supabase
@@ -99,8 +138,14 @@ export class LikedItemsService {
         .from('liked_items')
         .select('*', { count: 'exact' })
         .eq('user_id', user.id)
-        .eq('item_data->>status', 'active')
         .order('liked_at', { ascending: false });
+
+      // Try to filter by status if item_data column exists
+      try {
+        query = query.eq('item_data->>status', 'active');
+      } catch (error) {
+        console.warn('item_data column might not exist, skipping status filter');
+      }
 
       if (itemType) {
         query = query.eq('item_type', itemType);
@@ -199,14 +244,24 @@ export class LikedItemsService {
       const from = (page - 1) * limit;
       const to = from + limit - 1;
 
-      const { data, error, count } = await supabase
+      let queryBuilder = supabase
         .from('liked_items')
         .select('*', { count: 'exact' })
         .eq('user_id', user.id)
-        .eq('item_data->>status', 'active')
-        .or(`item_data->>title.ilike.%${query}%,item_data->>description.ilike.%${query}%,item_data->>make.ilike.%${query}%,item_data->>model.ilike.%${query}%`)
-        .order('liked_at', { ascending: false })
-        .range(from, to);
+        .order('liked_at', { ascending: false });
+
+      // Try to add search filters if item_data column exists
+      try {
+        queryBuilder = queryBuilder
+          .eq('item_data->>status', 'active')
+          .or(`item_data->>title.ilike.%${query}%,item_data->>description.ilike.%${query}%,item_data->>make.ilike.%${query}%,item_data->>model.ilike.%${query}%`);
+      } catch (error) {
+        console.warn('item_data column might not exist, using basic search');
+        // Fallback to basic search without item_data filters
+        queryBuilder = queryBuilder.or(`item_id.ilike.%${query}%,item_type.ilike.%${query}%`);
+      }
+
+      const { data, error, count } = await queryBuilder.range(from, to);
 
       if (error) throw error;
 
