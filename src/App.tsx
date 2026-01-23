@@ -93,6 +93,7 @@ const App = () => (
               <Route path="/store/:storeSlug" element={<Store />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/partner/register" element={<PartnerRegister />} />
+              <Route path="/partner/apply" element={<Navigate to="/partner/register" replace />} />
               <Route path="/partner/info" element={<PartnerInfo />} />
               <Route path="/partner/pending" element={<PartnerPending />} />
               <Route path="/partner/dashboard" element={<PartnerOnlyRoute requireApproved={true}><PartnerDashboard /></PartnerOnlyRoute>}>
