@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { loadStripe, StripeElementsOptions } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { stripeService, stripePromise } from '../../lib/stripe/stripe-service';
@@ -19,6 +19,14 @@ function StripePaymentForm({ amount, orderId, onSuccess, onError }: StripePaymen
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Check for dark mode
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  
+  useEffect(() => {
+    const htmlElement = document.documentElement;
+    setIsDarkMode(htmlElement.classList.contains('dark'));
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,9 +92,9 @@ function StripePaymentForm({ amount, orderId, onSuccess, onError }: StripePaymen
     style: {
       base: {
         fontSize: '16px',
-        color: '#424770',
+        color: isDarkMode ? '#ffffff' : '#424770',
         '::placeholder': {
-          color: '#aab7c4',
+          color: isDarkMode ? '#9ca3af' : '#aab7c4',
         },
       },
       invalid: {
@@ -108,23 +116,23 @@ function StripePaymentForm({ amount, orderId, onSuccess, onError }: StripePaymen
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="bg-blue-50 p-4 rounded-lg">
-        <h3 className="font-semibold text-blue-800 mb-2">Pay with Card</h3>
-        <p className="text-blue-700 text-sm mb-4">
+      <div className={`p-4 rounded-lg ${isDarkMode ? 'bg-blue-900/40 border border-blue-800' : 'bg-blue-50 border border-blue-200'}`}>
+        <h3 className={`font-semibold mb-2 ${isDarkMode ? 'text-blue-300' : 'text-blue-800'}`}>Pay with Card</h3>
+        <p className={`text-sm mb-4 ${isDarkMode ? 'text-blue-300' : 'text-blue-700'}`}>
           Enter your card details below. Your payment is secured by Stripe.
         </p>
       </div>
 
-      <div className="bg-gray-50 p-6 rounded-lg border">
-        <label className="block text-sm font-medium text-gray-700 mb-2">
+      <div className={`p-6 rounded-lg border ${isDarkMode ? 'bg-gray-800 border-gray-700' : 'bg-gray-50 border-gray-200'}`}>
+        <label className={`block text-sm font-medium mb-2 ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}>
           Card Information
         </label>
         <CardElement options={cardElementOptions} />
       </div>
 
       {error && (
-        <div className="bg-red-50 p-4 rounded-lg border border-red-200">
-          <p className="text-red-800 text-sm">{error}</p>
+        <div className={`p-4 rounded-lg border ${isDarkMode ? 'bg-red-900/40 border-red-800' : 'bg-red-50 border-red-200'}`}>
+          <p className={`text-sm ${isDarkMode ? 'text-red-300' : 'text-red-800'}`}>{error}</p>
         </div>
       )}
 

@@ -258,14 +258,6 @@ const Cart = () => {
                   Free shipping on orders over $500
                 </p>
 
-                <div className="mt-4 pt-4 border-t border-border">
-                  <h3 className="text-sm font-semibold mb-2">Accepted Payment Methods</h3>
-                  <div className="flex gap-2">
-                    <div className="text-xs bg-gray-100 px-2 py-1 rounded">Visa</div>
-                    <div className="text-xs bg-gray-100 px-2 py-1 rounded">Mastercard</div>
-                    <div className="text-xs bg-gray-100 px-2 py-1 rounded">PayPal</div>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
