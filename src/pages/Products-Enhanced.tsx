@@ -10,6 +10,7 @@ import type { Product } from "@/lib/types";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { SimpleLikeButton } from "@/components/liked-items/LikeButton";
+import EnhancedCategoryNavigation from "@/components/EnhancedCategoryNavigation";
 
 // Keep demo products as fallback if Supabase is not configured
 const fallbackProducts = [
@@ -199,7 +200,11 @@ const ProductCard = ({ product }: { product: Product }) => {
           {/* Category Badge */}
           <div className="mb-2">
             <Badge variant="secondary" className="text-xs">
-              {product.category_path?.category_name || product.category}
+              {product.category_path && 
+               typeof product.category_path === 'object' && 
+               product.category_path.category_name 
+                ? product.category_path.category_name 
+                : product.category}
             </Badge>
           </div>
 
@@ -614,6 +619,11 @@ export default function ProductsEnhanced() {
                 <List className="w-4 h-4" />
               </Button>
             </div>
+          </div>
+
+          {/* Enhanced Category Navigation */}
+          <div className="mb-8">
+            <EnhancedCategoryNavigation compact={false} />
           </div>
 
           {/* Enhanced Category Pills */}

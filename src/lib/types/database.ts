@@ -60,13 +60,14 @@ export interface Product {
   price?: number; // Some products use this field
   original_price?: number; // Some products use this field
   stock_quantity?: number;
+  quantity_available?: number;
   images?: string[];
   is_active?: boolean;
   created_by?: string;
   created_at: string;
   updated_at: string;
   featured?: boolean;
-  category_path?: string;
+  category_path?: string | Record<string, any>;
   rating?: number;
 }
 

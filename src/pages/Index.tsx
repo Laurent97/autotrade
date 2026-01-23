@@ -1,6 +1,7 @@
 import Navbar from "@/components/Navbar";
 import HeroSection from "@/components/HeroSection";
 import CategoriesSection from "@/components/CategoriesSection";
+import EnhancedCategoryNavigation from "@/components/EnhancedCategoryNavigation";
 import FeaturedProducts from "@/components/FeaturedProducts";
 import TrustBadges from "@/components/TrustBadges";
 import PartnerCTA from "@/components/PartnerCTA";
@@ -13,6 +14,22 @@ const Index = () => {
       <main>
         <HeroSection />
         <TrustBadges />
+        
+        {/* Enhanced Category Navigation */}
+        <section className="section-padding bg-background">
+          <div className="container-wide">
+            <div className="mb-8">
+              <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-3">
+                Shop by Category
+              </h2>
+              <p className="text-muted-foreground">
+                Find exactly what you need with our detailed vehicle categories
+              </p>
+            </div>
+            <EnhancedCategoryNavigation />
+          </div>
+        </section>
+        
         <CategoriesSection />
         <FeaturedProducts />
         <PartnerCTA />
