@@ -284,17 +284,26 @@ const Products = () => {
 
   const loadCategories = async () => {
     try {
+      console.log('=== LOADING CATEGORIES FROM DATABASE ===');
       const filterOptions = await productService.getFilterOptions();
+      console.log('Filter options result:', filterOptions);
+      console.log('Categories from database:', filterOptions.categories);
+      
       if (filterOptions.categories) {
         const dbCategories = filterOptions.categories.map((cat: string) => ({
           id: cat.toLowerCase().replace(/\s+/g, '-'),
           label: cat.charAt(0).toUpperCase() + cat.slice(1)
         }));
+        console.log('Formatted categories:', dbCategories);
         setCategories([{ id: "all", label: "All Products" }, ...dbCategories]);
+        console.log('Final categories state:', [{ id: "all", label: "All Products" }, ...dbCategories]);
+      } else {
+        console.log('No categories found in database');
       }
     } catch (error) {
       console.error('Error loading categories:', error);
       // Keep hardcoded categories as fallback
+      console.log('Using fallback categories');
     }
   };
 
@@ -479,6 +488,15 @@ const Products = () => {
 
           {/* Categories Tabs */}
           <div className="flex flex-wrap gap-2 mb-8">
+            {/* Debug: Log categories being rendered */}
+            {(() => {
+              console.log('=== RENDERING CATEGORIES TABS ===');
+              console.log('Categories array:', categories);
+              console.log('Categories length:', categories.length);
+              console.log('Current category filter:', categoryFilter);
+              return null;
+            })()}
+            
             {categories.map((category) => (
               <button
                 key={category.id}
