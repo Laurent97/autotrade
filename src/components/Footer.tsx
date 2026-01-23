@@ -72,7 +72,7 @@ const Footer = () => {
               <div className="w-10 h-10 rounded-lg bg-accent flex items-center justify-center">
                 <span className="text-accent-foreground font-black text-xl">A</span>
               </div>
-              <span className="font-bold text-xl">AutoVault</span>
+              <span className="font-bold text-xl">AutoTradeHub</span>
             </Link>
             <p className="text-sm text-primary-foreground/70 mb-6">
               Your trusted global marketplace for vehicles, parts, and accessories.
@@ -80,13 +80,13 @@ const Footer = () => {
             
             {/* Contact Info */}
             <div className="space-y-3 text-sm">
-              <a href="mailto:support@autovault.com" className="flex items-center gap-2 text-primary-foreground/70 hover:text-accent transition-colors">
+              <a href="mailto:support@autotradehub.com" className="flex items-center gap-2 text-primary-foreground/70 hover:text-accent transition-colors">
                 <Mail className="w-4 h-4" />
-                support@autovault.com
+                support@autotradehub.com
               </a>
-              <a href="tel:+1234567890" className="flex items-center gap-2 text-primary-foreground/70 hover:text-accent transition-colors">
+              <a href="tel:+447719924445" className="flex items-center gap-2 text-primary-foreground/70 hover:text-accent transition-colors">
                 <Phone className="w-4 h-4" />
-                +1 (234) 567-890
+                +44 7719 924445
               </a>
             </div>
           </div>
