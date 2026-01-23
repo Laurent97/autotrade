@@ -1,9 +1,24 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ArrowRight, Search, Car, Wrench, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useState } from "react";
 import heroImage from "@/assets/hero-car.jpg";
 
 const HeroSection = () => {
+  const [searchQuery, setSearchQuery] = useState("");
+  const navigate = useNavigate();
+
+  const handleSearch = () => {
+    if (searchQuery.trim()) {
+      navigate(`/products?q=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
   return (
     <section className="relative min-h-[90vh] flex items-center overflow-hidden bg-primary">
       {/* Background Image */}
@@ -45,10 +60,13 @@ const HeroSection = () => {
               <input
                 type="text"
                 placeholder="Search cars, parts, accessories..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyPress={handleKeyPress}
                 className="w-full h-14 pl-12 pr-4 rounded-xl bg-card text-foreground placeholder:text-muted-foreground border-0 focus:ring-2 focus:ring-accent outline-none shadow-lg"
               />
             </div>
-            <Button variant="hero" size="xl" className="gap-2">
+            <Button variant="hero" size="xl" className="gap-2" onClick={handleSearch}>
               Search Now
               <ArrowRight className="w-5 h-5" />
             </Button>

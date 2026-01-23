@@ -359,8 +359,61 @@ export default function ProductsEnhanced() {
           // Filter by subcategory
           if (subcategoryFilter && product.category_path?.category_name !== subcategoryFilter) return false;
           
-          // Filter by search query
-          if (searchQuery && !product.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+          // Enhanced search with automotive keywords
+          if (searchQuery) {
+            const searchLower = searchQuery.toLowerCase();
+            const searchWords = searchLower.split(' ').filter(word => word.length > 0);
+            
+            // Enhanced search terms for automotive categories
+            const automotiveKeywords = {
+              cars: ['car', 'cars', 'vehicle', 'vehicles', 'automotive', 'auto', 'motor', 'motor vehicle'],
+              parts: ['part', 'parts', 'component', 'components', 'spare', 'spares', 'replacement', 'oem', 'aftermarket'],
+              accessories: ['accessory', 'accessories', 'gear', 'gears', 'equipment', 'tools', 'electronics', 'interior', 'exterior']
+            };
+
+            // Check if any search word matches
+            const hasSearchMatch = searchWords.some(word => 
+              product.title.toLowerCase().includes(word) ||
+              product.make?.toLowerCase().includes(word) ||
+              product.model?.toLowerCase().includes(word) ||
+              product.description?.toLowerCase().includes(word)
+            );
+
+            // Check for automotive category matches
+            const hasAutomotiveMatch = searchWords.some(word => {
+              // Cars/Vehicles category
+              if (automotiveKeywords.cars.includes(word)) {
+                return product.category === 'car' || 
+                       product.title.toLowerCase().includes('car') || 
+                       product.title.toLowerCase().includes('vehicle') || 
+                       product.title.toLowerCase().includes('automotive') ||
+                       product.title.toLowerCase().includes('motor');
+              }
+              
+              // Parts category
+              if (automotiveKeywords.parts.includes(word)) {
+                return product.category === 'part' || 
+                       product.title.toLowerCase().includes('part') || 
+                       product.title.toLowerCase().includes('component') ||
+                       product.title.toLowerCase().includes('spare') ||
+                       product.title.toLowerCase().includes('oem');
+              }
+              
+              // Accessories category
+              if (automotiveKeywords.accessories.includes(word)) {
+                return product.category === 'accessory' || 
+                       product.title.toLowerCase().includes('accessory') || 
+                       product.title.toLowerCase().includes('gear') ||
+                       product.title.toLowerCase().includes('equipment') ||
+                       product.title.toLowerCase().includes('interior') ||
+                       product.title.toLowerCase().includes('exterior');
+              }
+              
+              return false;
+            });
+
+            return hasSearchMatch || hasAutomotiveMatch;
+          }
           
           return true;
         });
@@ -479,7 +532,7 @@ export default function ProductsEnhanced() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <input
                 type="text"
-                placeholder="Search products..."
+                placeholder="Search cars, parts, accessories..."
                 value={searchQuery}
                 onChange={(e) => {
                   if (e.target.value) {
