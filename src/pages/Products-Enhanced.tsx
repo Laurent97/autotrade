@@ -770,53 +770,6 @@ export default function ProductsEnhanced() {
             <EnhancedCategoryNavigation compact={false} />
           </div>
 
-          {/* Enhanced Category Pills */}
-          <div className="flex flex-wrap gap-2 mb-8">
-            {mainCategories.map((category) => (
-              <button
-                key={category.id}
-                onClick={() => handleCategoryChange(category.id)}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                  categoryFilter === category.id
-                    ? "bg-accent text-accent-foreground"
-                    : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
-                }`}
-              >
-                {category.label}
-              </button>
-            ))}
-          </div>
-
-          {/* Subcategory Pills (show when main category is selected) */}
-          {categoryFilter !== "all" && subcategories.length > 0 && (
-            <div className="flex flex-wrap gap-2 mb-6">
-              <span className="text-sm text-muted-foreground self-center">Subcategories:</span>
-              <button
-                onClick={() => handleSubcategoryChange("")}
-                className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
-                  !subcategoryFilter
-                    ? "bg-accent text-accent-foreground"
-                    : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
-                }`}
-              >
-                All
-              </button>
-              {subcategories.map((subcategory) => (
-                <button
-                  key={subcategory.id}
-                  onClick={() => handleSubcategoryChange(subcategory.name)}
-                  className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
-                    subcategoryFilter === subcategory.name
-                      ? "bg-accent text-accent-foreground"
-                      : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
-                  }`}
-                >
-                  {subcategory.name}
-                </button>
-              ))}
-            </div>
-          )}
-
           {/* Products Grid */}
           {loading ? (
             <div className="flex items-center justify-center py-12">
