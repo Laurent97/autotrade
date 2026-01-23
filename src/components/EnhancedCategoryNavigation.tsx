@@ -160,7 +160,8 @@ export default function EnhancedCategoryNavigation({
       searchParams.delete("category");
       searchParams.delete("subcategory");
     } else {
-      searchParams.set("category", category.product_type);
+      // Use category.id instead of product_type for URL parameter
+      searchParams.set("category", category.id);
       if (category.subcategory) {
         searchParams.set("subcategory", category.subcategory);
       } else {
@@ -174,7 +175,7 @@ export default function EnhancedCategoryNavigation({
     if (category.id === "all") {
       return currentCategory === "all";
     }
-    const matchesMainCategory = currentCategory === category.product_type;
+    const matchesMainCategory = currentCategory === category.id;
     const matchesSubcategory = !category.subcategory || currentSubcategory === category.subcategory;
     return matchesMainCategory && matchesSubcategory;
   };
