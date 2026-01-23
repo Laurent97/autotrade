@@ -1,6 +1,5 @@
 import Navbar from "@/components/Navbar";
 import HeroSection from "@/components/HeroSection";
-import CategoriesSection from "@/components/CategoriesSection";
 import EnhancedCategoryNavigation from "@/components/EnhancedCategoryNavigation";
 import FeaturedProducts from "@/components/FeaturedProducts";
 import TrustBadges from "@/components/TrustBadges";
@@ -30,7 +29,6 @@ const Index = () => {
           </div>
         </section>
         
-        <CategoriesSection />
         <FeaturedProducts />
         <PartnerCTA />
       </main>
