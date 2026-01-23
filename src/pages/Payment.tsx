@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
+import { orderService } from '../lib/supabase/order-service';
+import PaymentOptions from '../components/Payment/PaymentOptions';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
-import PaymentOptions from '../components/Payment/PaymentOptions';
+import { ArrowLeft, Package } from 'lucide-react';
 
 export default function Payment() {
   const location = useLocation();
@@ -31,19 +33,76 @@ export default function Payment() {
     setOrderId(stateOrderId);
   }, [items, location.state, navigate]);
 
-  const handlePaymentSuccess = (paymentData: any) => {
-    alert(`Payment successful! Transaction ID: ${paymentData.paymentIntentId || paymentData.orderId}`);
-    
-    // Clear cart
-    clearCart();
-    
-    // Redirect to success page
-    navigate('/order-success', {
-      state: {
-        orderId: orderId,
-        paymentData: paymentData
+  const handlePaymentSuccess = async (paymentData: any) => {
+    if (!user) {
+      alert('Please login to complete your order');
+      return;
+    }
+
+    try {
+      // Prepare order data similar to Checkout.tsx
+      const orderItems = items.map((item) => ({
+        product_id: item.product.id,
+        partner_product_id: item.partner_product?.id,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+      }));
+
+      const orderData = {
+        customer_id: user.id,
+        items: orderItems,
+        shipping_address: {
+          full_name: user.user_metadata?.full_name || user.email || 'User',
+          address_line1: 'User Address',
+          city: 'User City',
+          state: 'User State',
+          postal_code: '12345',
+          country: 'User Country',
+          phone: 'User Phone',
+        },
+        payment_method: paymentData.method || 'card',
+        payment_intent_id: paymentData.paymentIntentId,
+      };
+
+      console.log('=== PAYMENT ORDER CREATION DEBUG ===');
+      console.log('Creating order with data:', orderData);
+
+      const { data: order, error } = await orderService.createOrder(orderData);
+
+      console.log('Payment order creation result:', { data: order, error });
+
+      if (error) {
+        console.error('Payment order creation failed:', error);
+        throw error;
       }
-    });
+
+      if (!order) {
+        console.error('Payment order creation returned null data');
+        throw new Error('Order creation failed: No order data returned');
+      }
+
+      console.log('Payment order created successfully:', {
+        id: order.id,
+        order_number: order.order_number,
+        customer_id: order.customer_id,
+        total_amount: order.total_amount
+      });
+
+      // Clear cart
+      clearCart();
+      
+      // Redirect to success page with actual order data
+      navigate('/order-success', {
+        state: {
+          orderId: order.order_number,
+          orderData: order,
+          paymentData: paymentData,
+        },
+      });
+    } catch (error: any) {
+      console.error('Payment order creation error:', error);
+      alert(`Order creation failed: ${error.message || 'Please try again later.'}`);
+    }
   };
 
   const handlePaymentError = (error: string) => {
