@@ -495,5 +495,92 @@ export const partnerService = {
         error: error instanceof Error ? error.message : 'Failed to fetch recent orders' 
       };
     }
+  },
+
+  /**
+   * Get partner settings
+   */
+  async getPartnerSettings(userId: string) {
+    try {
+      console.log('🔍 Fetching partner settings for user:', userId);
+      
+      const { data, error } = await supabase
+        .from('partner_profiles')
+        .select(`
+          store_name,
+          description,
+          contact_email,
+          contact_phone,
+          country,
+          city,
+          tax_id
+        `)
+        .eq('user_id', userId)
+        .single();
+
+      if (error) {
+        console.error('❌ Error fetching partner settings:', error);
+        
+        // Handle case where profile doesn't exist
+        if (error.code === 'PGRST116') {
+          return { 
+            data: null, 
+            error: 'Partner profile not found. Please complete registration.' 
+          };
+        }
+        
+        throw error;
+      }
+
+      console.log('✅ Partner settings loaded:', data?.store_name);
+      return { data, error: null };
+    } catch (error) {
+      console.error('❌ Error in getPartnerSettings:', error);
+      return { 
+        data: null, 
+        error: error instanceof Error ? error.message : 'Failed to fetch partner settings' 
+      };
+    }
+  },
+
+  /**
+   * Update partner settings
+   */
+  async updatePartnerSettings(userId: string, settings: {
+    store_name?: string;
+    description?: string;
+    contact_email?: string;
+    contact_phone?: string;
+    country?: string;
+    city?: string;
+    tax_id?: string;
+  }) {
+    try {
+      console.log('📝 Updating partner settings for user:', userId);
+      
+      const { data, error } = await supabase
+        .from('partner_profiles')
+        .update({
+          ...settings,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', userId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('❌ Error updating partner settings:', error);
+        throw error;
+      }
+
+      console.log('✅ Partner settings updated successfully');
+      return { data, error: null };
+    } catch (error) {
+      console.error('❌ Error in updatePartnerSettings:', error);
+      return { 
+        data: null, 
+        error: error instanceof Error ? error.message : 'Failed to update partner settings' 
+      };
+    }
   }
 };
