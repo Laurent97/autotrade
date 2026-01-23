@@ -41,20 +41,23 @@ export default function OrderDetails() {
     try {
       let data, error;
       
-      // First try to get by ID
-      console.log('Trying to fetch order by ID...');
-      const result = await orderService.getOrderById(orderId);
-      data = result.data;
-      error = result.error;
+      // Check if orderId is a UUID or order number
+      const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(orderId);
       
-      console.log('ID lookup result:', { data, error });
-      
-      // If not found by ID, try by order number
-      if (error && (error.code === 'PGRST116' || error.message?.includes('No rows found'))) {
-        console.log('Order not found by ID, trying by order number...');
-        const numberResult = await orderService.getOrderByNumber(orderId);
-        data = numberResult.data;
-        error = numberResult.error;
+      if (isUUID) {
+        // Try to get by UUID
+        console.log('Detected UUID, fetching order by ID...');
+        const result = await orderService.getOrderById(orderId);
+        data = result.data;
+        error = result.error;
+        
+        console.log('UUID lookup result:', { data, error });
+      } else {
+        // Try to get by order number
+        console.log('Detected order number, fetching by order number...');
+        const result = await orderService.getOrderByNumber(orderId);
+        data = result.data;
+        error = result.error;
         
         console.log('Order number lookup result:', { data, error });
       }
