@@ -28,8 +28,13 @@ export default function OrderDetails() {
   }, [orderId]);
 
   const loadOrder = async () => {
-    if (!orderId) return;
-    
+    if (!orderId) {
+      setError('Order ID is required');
+      setLoading(false);
+      return;
+    }
+
+    console.log('Loading order with ID:', orderId);
     setLoading(true);
     setError(null);
     
@@ -37,34 +42,55 @@ export default function OrderDetails() {
       let data, error;
       
       // First try to get by ID
+      console.log('Trying to fetch order by ID...');
       const result = await orderService.getOrderById(orderId);
       data = result.data;
       error = result.error;
       
+      console.log('ID lookup result:', { data, error });
+      
       // If not found by ID, try by order number
-      if (error && error.code === 'PGRST116') {
+      if (error && (error.code === 'PGRST116' || error.message?.includes('No rows found'))) {
+        console.log('Order not found by ID, trying by order number...');
         const numberResult = await orderService.getOrderByNumber(orderId);
         data = numberResult.data;
         error = numberResult.error;
+        
+        console.log('Order number lookup result:', { data, error });
       }
       
       if (error) {
-        throw error;
+        console.error('Order lookup failed:', error);
+        throw new Error(`Order not found: ${error.message || 'Unknown error'}`);
       }
       
       if (!data) {
         throw new Error('Order not found');
       }
       
+      console.log('Order loaded successfully:', data);
+      
       // Check if user is authorized to view this order
-      if (user && data.customer_id !== user.id) {
+      if (!user) {
+        console.log('User not logged in, redirecting to auth');
+        // Redirect to auth with return URL
+        navigate('/auth', { state: { from: `/orders/${orderId}` } });
+        return;
+      }
+      
+      if (data.customer_id !== user.id) {
+        console.log('Authorization check failed:', { 
+          orderCustomerId: data.customer_id, 
+          currentUserId: user.id 
+        });
         throw new Error('You are not authorized to view this order');
       }
       
       setOrder(data);
     } catch (err) {
       console.error('Error loading order:', err);
-      setError(err instanceof Error ? err.message : 'Failed to load order');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to load order';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -92,13 +118,24 @@ export default function OrderDetails() {
               <h2 className="text-xl font-semibold text-red-800 dark:text-red-300 mb-2">
                 Error Loading Order
               </h2>
-              <p className="text-red-600 dark:text-red-400 mb-4">{error}</p>
-              <button
-                onClick={() => navigate('/')}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-              >
-                Back to Home
-              </button>
+              <p className="text-red-600 dark:text-red-400 mb-4 text-sm">{error}</p>
+              <p className="text-red-500 dark:text-red-400 text-xs mb-4">
+                Order ID: {orderId}
+              </p>
+              <div className="flex gap-3 justify-center">
+                <button
+                  onClick={() => loadOrder()}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                >
+                  Try Again
+                </button>
+                <button
+                  onClick={() => navigate('/')}
+                  className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700"
+                >
+                  Back to Home
+                </button>
+              </div>
             </div>
           </div>
         </main>
