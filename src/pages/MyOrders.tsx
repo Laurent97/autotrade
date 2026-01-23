@@ -43,20 +43,16 @@ export default function MyOrders() {
   const loadOrders = async () => {
     if (!user?.id) return;
     
-    console.log('Loading orders for customer:', user.id);
     setLoading(true);
     setError(null);
     
     try {
       const { data, error } = await orderService.getCustomerOrders(user.id);
       
-      console.log('Customer orders result:', { data, error });
-      
       if (error) {
         throw error;
       }
       
-      console.log(`Found ${data?.length || 0} orders for customer ${user.id}`);
       setOrders(data || []);
     } catch (err) {
       console.error('Error loading orders:', err);
@@ -172,18 +168,6 @@ export default function MyOrders() {
             <p className="text-gray-600 dark:text-gray-400">
               View and track all your orders
             </p>
-            
-            {/* Debug Info */}
-            {process.env.NODE_ENV === 'development' && (
-              <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                <p className="text-sm text-blue-700 dark:text-blue-300">
-                  Debug: Logged in as {user?.email} (ID: {user?.id})
-                </p>
-                <p className="text-sm text-blue-600 dark:text-blue-400">
-                  Found {orders.length} orders for this customer
-                </p>
-              </div>
-            )}
           </div>
 
           {/* Stats Cards */}
