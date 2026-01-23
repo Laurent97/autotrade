@@ -13,47 +13,47 @@ export default function Help() {
       category: 'Getting Started',
       icon: Lightbulb,
       items: [
-        'How to create an account',
-        'Setting up your profile',
-        'Verifying your identity',
-        'First order guide'
+        { title: 'How to create an account', path: '/help/getting-started/create-account' },
+        { title: 'Setting up your profile', path: '/help/getting-started/setup-profile' },
+        { title: 'Verifying your identity', path: '/help/getting-started/verify-identity' },
+        { title: 'First order guide', path: '/help/getting-started/first-order-guide' }
       ]
     },
     {
       category: 'Buying',
       icon: Zap,
       items: [
-        'How to search for products',
-        'Understanding product listings',
-        'Making an offer',
-        'Completing a purchase'
+        { title: 'How to search for products', path: '/help/buying/search-products' },
+        { title: 'Understanding product listings', path: '/help/buying/understanding-listings' },
+        { title: 'Making an offer', path: '/help/buying/making-offer' },
+        { title: 'Completing a purchase', path: '/help/buying/completing-purchase' }
       ]
     },
     {
       category: 'Selling',
       icon: AlertCircle,
       items: [
-        'Become a seller',
-        'Listing your products',
-        'Managing inventory',
-        'Processing orders'
+        { title: 'Become a seller', path: '/help/selling/become-seller' },
+        { title: 'Listing your products', path: '/help/selling/listing-products' },
+        { title: 'Managing inventory', path: '/help/selling/managing-inventory' },
+        { title: 'Processing orders', path: '/help/selling/processing-orders' }
       ]
     },
     {
       category: 'Account',
       icon: Lock,
       items: [
-        'Changing password',
-        'Two-factor authentication',
-        'Account recovery',
-        'Privacy settings'
+        { title: 'Changing password', path: '/help/account/changing-password' },
+        { title: 'Two-factor authentication', path: '/help/account/two-factor-auth' },
+        { title: 'Account recovery', path: '/help/account/account-recovery' },
+        { title: 'Privacy settings', path: '/help/account/privacy-settings' }
       ]
     }
   ];
 
   const filteredArticles = articles.map(cat => ({
     ...cat,
-    items: cat.items.filter(item => item.toLowerCase().includes(searchTerm.toLowerCase()))
+    items: cat.items.filter(item => item.title.toLowerCase().includes(searchTerm.toLowerCase()))
   })).filter(cat => cat.items.length > 0);
 
   return (
@@ -99,9 +99,14 @@ export default function Help() {
                   </div>
                   <ul className="space-y-2">
                     {category.items.map((item, i) => (
-                      <li key={i} className="flex items-center gap-2 text-muted-foreground hover:text-primary cursor-pointer transition-colors">
-                        <div className="w-2 h-2 rounded-full bg-primary" />
-                        {item}
+                      <li key={i}>
+                        <Link 
+                          to={item.path}
+                          className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors"
+                        >
+                          <div className="w-2 h-2 rounded-full bg-primary" />
+                          {item.title}
+                        </Link>
                       </li>
                     ))}
                   </ul>

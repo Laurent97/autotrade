@@ -47,6 +47,11 @@ import Shipping from "./pages/Shipping";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Help from "./pages/Help";
+import CreateAccount from "./pages/help/getting-started/CreateAccount";
+import SetupProfile from "./pages/help/getting-started/SetupProfile";
+import VerifyIdentity from "./pages/help/getting-started/VerifyIdentity";
+import FirstOrderGuide from "./pages/help/getting-started/FirstOrderGuide";
+import SearchProducts from "./pages/help/buying/SearchProducts";
 import Returns from "./pages/Returns";
 import TrackOrder from "./pages/TrackOrder";
 import FAQ from "./pages/FAQ";
@@ -112,6 +117,11 @@ const App = () => (
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/help" element={<Help />} />
+              <Route path="/help/getting-started/create-account" element={<CreateAccount />} />
+              <Route path="/help/getting-started/setup-profile" element={<SetupProfile />} />
+              <Route path="/help/getting-started/verify-identity" element={<VerifyIdentity />} />
+              <Route path="/help/getting-started/first-order-guide" element={<FirstOrderGuide />} />
+              <Route path="/help/buying/search-products" element={<SearchProducts />} />
               <Route path="/returns" element={<Returns />} />
               <Route path="/track-order" element={<TrackOrder />} />
               <Route path="/faq" element={<FAQ />} />
