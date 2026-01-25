@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { orderService } from '../lib/supabase/order-service';
+import { supabase } from '../lib/supabase/client';
 import { OrderStatusBadge } from '../components/OrderStatusBadge';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
@@ -50,6 +51,19 @@ export default function OrderDetails() {
       const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(orderId);
       console.log('Is UUID:', isUUID);
       
+      // First, let's check if there are any orders at all
+      console.log('Checking if any orders exist in database...');
+      const { data: allOrders, error: allOrdersError } = await supabase
+        .from('orders')
+        .select('id, order_number, customer_id, created_at')
+        .limit(5);
+      
+      console.log('All orders check:', { allOrders, allOrdersError });
+      
+      if (allOrders && allOrders.length > 0) {
+        console.log('Found orders:', allOrders.map(o => ({ id: o.id, order_number: o.order_number })));
+      }
+      
       if (isUUID) {
         // Try to get by UUID
         console.log('Detected UUID, fetching order by ID...');
@@ -79,6 +93,15 @@ export default function OrderDetails() {
             hint: error.hint
           });
         }
+        
+        // If order number lookup fails, try to find orders with similar order numbers
+        if (error && allOrders) {
+          console.log('Trying to find similar order numbers...');
+          const similarOrders = allOrders.filter(o => 
+            o.order_number && o.order_number.includes(orderId.split('-')[1])
+          );
+          console.log('Similar orders found:', similarOrders);
+        }
       }
       
       // Enhanced error handling
@@ -100,8 +123,19 @@ export default function OrderDetails() {
         } else if (error.code === '42501') {
           errorMessage = 'Permission denied: You do not have access to view this order';
         } else if (error.message) {
-          errorMessage = `Database error: ${error.message}`;
+          errorMessage = `Order lookup failed: ${error.message}`;
         }
+        
+        // Check if orders table exists
+        console.log('Checking if orders table exists...');
+        const { data: tableInfo, error: tableError } = await supabase
+          .from('information_schema.tables')
+          .select('table_name')
+          .eq('table_schema', 'public')
+          .eq('table_name', 'orders')
+          .single();
+        
+        console.log('Orders table check:', { tableInfo, tableError });
         
         throw new Error(errorMessage);
       }
