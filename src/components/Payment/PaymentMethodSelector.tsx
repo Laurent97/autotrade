@@ -170,37 +170,12 @@ export const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
 
   return (
     <div className="payment-method-selector space-y-6">
-      {/* Debug Information */}
-      <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800/50 rounded-lg p-4 mb-4">
-        <h4 className="font-semibold text-yellow-800 dark:text-yellow-200 mb-2">🔍 Debug Information</h4>
-        <div className="text-sm space-y-1">
-          <div className="text-gray-700 dark:text-gray-300"><strong className="text-gray-900 dark:text-gray-100">User Logged In:</strong> {user ? 'Yes' : 'No'}</div>
-          <div className="text-gray-700 dark:text-gray-300"><strong className="text-gray-900 dark:text-gray-100">User Email:</strong> {user?.email || 'N/A'}</div>
-          <div className="text-gray-700 dark:text-gray-300"><strong className="text-gray-900 dark:text-gray-100">User Type:</strong> {userTypeInfo.type}</div>
-          <div className="text-gray-700 dark:text-gray-300"><strong className="text-gray-900 dark:text-gray-100">Available Methods:</strong> {availableMethods.join(', ')}</div>
-          <div className="text-gray-700 dark:text-gray-300"><strong className="text-gray-900 dark:text-gray-100">Payment Configs:</strong> {Object.keys(paymentConfigs).join(', ')}</div>
-        </div>
-      </div>
-
       {/* User Type Display */}
       <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2">
-              <User className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-              <div>
-                <h3 className="font-semibold text-gray-900 dark:text-white">Account Type</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">{userTypeInfo.description}</p>
-              </div>
-            </div>
-          </div>
+        <div className="flex items-center justify-center">
           <div className="flex items-center gap-2">
-            <span className={`text-2xl ${userTypeInfo.color}`}>
-              {userTypeInfo.icon}
-            </span>
-            <Badge variant="outline" className={userTypeInfo.color}>
-              {userTypeInfo.label}
-            </Badge>
+            <User className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+            <h3 className="font-semibold text-gray-900 dark:text-white">{userTypeInfo.label}</h3>
           </div>
         </div>
       </div>

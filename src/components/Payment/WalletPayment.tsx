@@ -354,20 +354,6 @@ const WalletPayment: React.FC<WalletPaymentProps> = ({
         </Button>
       </div>
 
-      {/* Benefits */}
-      <div className="bg-green-50 border border-green-200 dark:bg-green-900 dark:border-green-800 rounded-lg p-4">
-        <h4 className="font-semibold text-green-800 dark:text-green-200 mb-2 flex items-center gap-2">
-          <CheckCircle className="w-4 h-4" />
-          Wallet Benefits
-        </h4>
-        <ul className="text-sm text-green-700 dark:text-green-300 space-y-1">
-          <li>✅ Instant processing - No waiting required</li>
-          <li>✅ No admin confirmation needed</li>
-          <li>✅ Secure and encrypted transactions</li>
-          <li>✅ Automatic order confirmation</li>
-        </ul>
-      </div>
-
       {/* User Info */}
       <div className="bg-gray-50 border border-gray-200 dark:bg-gray-800 dark:border-gray-700 rounded-lg p-4">
         <div className="flex items-center gap-3">
