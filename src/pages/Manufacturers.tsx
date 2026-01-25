@@ -326,17 +326,10 @@ export default function Manufacturers() {
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [countryFilter, setCountryFilter] = useState("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
-  const [stats, setStats] = useState({
-    totalShops: 0,
-    activeShops: 0,
-    totalProducts: 0,
-    totalOrders: 0,
-  });
 
   useEffect(() => {
     loadShops();
-    loadStats();
-  }, [sortBy, categoryFilter, countryFilter]);
+  }, []);
 
   const loadShops = async () => {
     setLoading(true);
@@ -392,33 +385,7 @@ export default function Manufacturers() {
     }
   };
 
-  const loadStats = async () => {
-    try {
-      const { data: shopsData } = await supabase
-        .from('partner_profiles')
-        .select('is_active, partner_status');
-
-      const { data: productsData } = await supabase
-        .from('partner_products')
-        .select('id');
-
-      const totalShops = shopsData?.length || 0;
-      const activeShops = shopsData?.filter(s => s.partner_status === 'approved').length || 0; // Only filter by approval status
-      const totalProducts = productsData?.length || 0;
-
-      console.log('Stats:', { totalShops, activeShops, totalProducts });
-
-      setStats({
-        totalShops,
-        activeShops,
-        totalProducts,
-        totalOrders: 0, // Would need to calculate from orders table
-      });
-    } catch (error) {
-      console.error('Error loading stats:', error);
-    }
-  };
-
+  
   const filteredShops = shops.filter(shop => {
     const searchLower = searchTerm.toLowerCase();
     const searchWords = searchLower.split(' ').filter(word => word.length > 0);
@@ -524,42 +491,10 @@ export default function Manufacturers() {
             </p>
           </div>
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6 sm:mb-8">
-            <Card>
-              <CardContent className="p-3 sm:p-4 text-center">
-                <Store className="w-6 h-6 sm:w-8 sm:h-8 mx-auto mb-2 text-accent" />
-                <div className="text-xl sm:text-2xl font-bold text-foreground">{stats.activeShops}</div>
-                <div className="text-xs sm:text-sm text-muted-foreground">Active Shops</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-3 sm:p-4 text-center">
-                <Package className="w-6 h-6 sm:w-8 sm:h-8 mx-auto mb-2 text-green-600" />
-                <div className="text-xl sm:text-2xl font-bold text-foreground">{stats.totalProducts}</div>
-                <div className="text-xs sm:text-sm text-muted-foreground">Total Products</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-3 sm:p-4 text-center">
-                <Users className="w-6 h-6 sm:w-8 sm:h-8 mx-auto mb-2 text-blue-600" />
-                <div className="text-xl sm:text-2xl font-bold text-foreground">{stats.totalShops}</div>
-                <div className="text-xs sm:text-sm text-muted-foreground">Total Partners</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-3 sm:p-4 text-center">
-                <TrendingUp className="w-6 h-6 sm:w-8 sm:h-8 mx-auto mb-2 text-purple-600" />
-                <div className="text-xl sm:text-2xl font-bold text-foreground">{stats.totalOrders}</div>
-                <div className="text-xs sm:text-sm text-muted-foreground">Total Orders</div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Search and Filters */}
-          <div className="flex flex-col lg:flex-row gap-3 sm:gap-4 items-start lg:items-center justify-between mb-6 sm:mb-8">
-            {/* Search */}
-            <div className="relative flex-1 max-w-full w-full lg:max-w-md">
+          
+          {/* Search Only */}
+          <div className="mb-6 sm:mb-8">
+            <div className="relative max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-muted-foreground" />
               <Input
                 type="text"
@@ -568,65 +503,6 @@ export default function Manufacturers() {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full h-10 sm:h-11 pl-9 sm:pl-10 pr-4 rounded-lg bg-card border border-border text-foreground placeholder:text-muted-foreground focus:ring-2 focus:ring-accent focus:border-transparent outline-none transition-shadow text-sm sm:text-base"
               />
-            </div>
-
-            {/* Filters */}
-            <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3">
-              <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                <SelectTrigger className="w-full sm:w-48">
-                  <SelectValue placeholder="Category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categoryFilters.map((filter) => (
-                    <SelectItem key={filter.id} value={filter.id}>
-                      {filter.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <Select value={countryFilter} onValueChange={setCountryFilter}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Country" />
-                </SelectTrigger>
-                <SelectContent>
-                  {countryFilters.map((filter) => (
-                    <SelectItem key={filter.id} value={filter.id}>
-                      {filter.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Sort by" />
-                </SelectTrigger>
-                <SelectContent>
-                  {sortOptions.map((option) => (
-                    <SelectItem key={option.id} value={option.id}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <div className="flex items-center gap-2">
-                <Button
-                  variant={viewMode === "grid" ? "secondary" : "ghost"}
-                  size="icon"
-                  onClick={() => setViewMode("grid")}
-                >
-                  <Grid className="w-4 h-4" />
-                </Button>
-                <Button
-                  variant={viewMode === "list" ? "secondary" : "ghost"}
-                  size="icon"
-                  onClick={() => setViewMode("list")}
-                >
-                  <List className="w-4 h-4" />
-                </Button>
-              </div>
             </div>
           </div>
 
