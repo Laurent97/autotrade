@@ -52,6 +52,7 @@ export default function OrderDetails() {
       console.log('Is UUID:', isUUID);
       
       // First, let's check if there are any orders at all
+      console.log('=== CHECKING DATABASE FOR ORDERS ===');
       console.log('Checking if any orders exist in database...');
       const { data: allOrders, error: allOrdersError } = await supabase
         .from('orders')
@@ -61,7 +62,17 @@ export default function OrderDetails() {
       console.log('All orders check:', { allOrders, allOrdersError });
       
       if (allOrders && allOrders.length > 0) {
-        console.log('Found orders:', allOrders.map(o => ({ id: o.id, order_number: o.order_number })));
+        console.log('Found orders:', allOrders.map(o => ({ id: o.id, order_number: o.order_number, customer_id: o.customer_id })));
+        
+        // Check if any orders belong to this user
+        const userOrders = allOrders.filter(o => o.customer_id === user?.id);
+        console.log('Orders for current user:', userOrders);
+      } else {
+        console.log('NO ORDERS FOUND IN DATABASE');
+        console.log('This means:');
+        console.log('1. No orders have been created yet');
+        console.log('2. Orders table might be empty');
+        console.log('3. Database connection issue');
       }
       
       if (isUUID) {
@@ -246,10 +257,28 @@ export default function OrderDetails() {
       
       setOrder(data);
     } catch (err) {
-      console.error('=== ORDER LOOKUP FAILED ===');
+      console.log('=== ORDER LOOKUP FAILED ===');
       console.error('Error loading order:', err);
       console.error('Error type:', err.constructor.name);
       console.error('Error message:', err.message);
+      
+      // Additional debugging for order creation
+      console.log('=== ORDER CREATION DEBUG ===');
+      console.log('This order number format suggests it was created with:');
+      console.log('- Timestamp:', orderId.split('-')[1]);
+      console.log('- Expected full format: ORD-timestamp-randomstring');
+      console.log('- Current format: ORD-timestamp (missing random suffix)');
+      console.log('');
+      console.log('POSSIBLE ISSUES:');
+      console.log('1. Order was never created in database');
+      console.log('2. Order was created but with different format');
+      console.log('3. Order exists but belongs to different user');
+      console.log('4. Database connection or RLS policy issues');
+      console.log('');
+      console.log('RECOMMENDATION:');
+      console.log('1. Check if payment was actually completed');
+      console.log('2. Verify order creation in payment process');
+      console.log('3. Check database RLS policies for orders table');
       
       const errorMessage = err instanceof Error ? err.message : 'Failed to load order';
       setError(errorMessage);
