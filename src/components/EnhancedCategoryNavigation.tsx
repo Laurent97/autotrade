@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useSearchParams, Link } from "react-router-dom";
+import { useSearchParams, Link, useNavigate } from "react-router-dom";
 import { 
   Car, 
   Gauge, 
@@ -152,23 +152,25 @@ export default function EnhancedCategoryNavigation({
   compact = false 
 }: EnhancedCategoryNavigationProps) {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const currentCategory = searchParams.get("category") || "all";
   const currentSubcategory = searchParams.get("subcategory") || "";
 
   const handleCategoryClick = (category: typeof enhancedCategories[0]) => {
+    // Navigate to products page with category filter
+    const params = new URLSearchParams();
+    
     if (category.id === "all") {
-      searchParams.delete("category");
-      searchParams.delete("subcategory");
+      // Navigate to products page without filters
+      navigate("/products");
     } else {
-      // Use category.id instead of product_type for URL parameter
-      searchParams.set("category", category.id);
+      // Navigate to products page with category filter
+      params.set("category", category.id);
       if (category.subcategory) {
-        searchParams.set("subcategory", category.subcategory);
-      } else {
-        searchParams.delete("subcategory");
+        params.set("subcategory", category.subcategory);
       }
+      navigate(`/products?${params.toString()}`);
     }
-    setSearchParams(searchParams);
   };
 
   const isActive = (category: typeof enhancedCategories[0]) => {
@@ -213,9 +215,7 @@ export default function EnhancedCategoryNavigation({
         {showAllButton && (
           <button
             onClick={() => {
-              searchParams.delete("category");
-              searchParams.delete("subcategory");
-              setSearchParams(searchParams);
+              navigate("/products");
             }}
             className={cn(
               "flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all hover:shadow-lg",
@@ -279,9 +279,7 @@ export default function EnhancedCategoryNavigation({
           )}
           <button
             onClick={() => {
-              searchParams.delete("category");
-              searchParams.delete("subcategory");
-              setSearchParams(searchParams);
+              navigate("/products");
             }}
             className="text-sm text-muted-foreground hover:text-foreground underline"
           >
