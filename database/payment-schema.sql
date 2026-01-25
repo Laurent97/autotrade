@@ -14,11 +14,11 @@ CREATE TABLE IF NOT EXISTS stripe_payment_attempts (
     ip_address INET,
     user_agent TEXT,
     created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW(),
-    
-    -- Index for security monitoring
-    INDEX idx_stripe_attempts_security (customer_id, created_at, status)
+    updated_at TIMESTAMP DEFAULT NOW()
 );
+
+-- Create indexes separately for PostgreSQL
+CREATE INDEX IF NOT EXISTS idx_stripe_attempts_security ON stripe_payment_attempts (customer_id, created_at, status);
 
 -- Payment Security Logs Table
 CREATE TABLE IF NOT EXISTS payment_security_logs (
@@ -28,11 +28,11 @@ CREATE TABLE IF NOT EXISTS payment_security_logs (
     event_data JSONB,
     ip_address INET,
     user_agent TEXT,
-    created_at TIMESTAMP DEFAULT NOW(),
-    
-    INDEX idx_security_logs_user (user_id, created_at),
-    INDEX idx_security_logs_type (event_type, created_at)
+    created_at TIMESTAMP DEFAULT NOW()
 );
+
+CREATE INDEX IF NOT EXISTS idx_security_logs_user ON payment_security_logs (user_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_security_logs_type ON payment_security_logs (event_type, created_at);
 
 -- Pending Payments Table (for PayPal and Crypto)
 CREATE TABLE IF NOT EXISTS pending_payments (
@@ -60,12 +60,12 @@ CREATE TABLE IF NOT EXISTS pending_payments (
     rejection_reason TEXT,
     
     created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW(),
-    
-    INDEX idx_pending_payments_status (status, created_at),
-    INDEX idx_pending_admin_notify (status, payment_method),
-    INDEX idx_pending_order (order_id)
+    updated_at TIMESTAMP DEFAULT NOW()
 );
+
+CREATE INDEX IF NOT EXISTS idx_pending_payments_status ON pending_payments (status, created_at);
+CREATE INDEX IF NOT EXISTS idx_pending_admin_notify ON pending_payments (status, payment_method);
+CREATE INDEX IF NOT EXISTS idx_pending_order ON pending_payments (order_id);
 
 -- Admin Payment Notifications Table
 CREATE TABLE IF NOT EXISTS admin_payment_notifications (
@@ -75,11 +75,11 @@ CREATE TABLE IF NOT EXISTS admin_payment_notifications (
     notification_type VARCHAR(50),
     message TEXT,
     viewed BOOLEAN DEFAULT FALSE,
-    created_at TIMESTAMP DEFAULT NOW(),
-    
-    INDEX idx_notifications_admin (admin_id, viewed),
-    INDEX idx_notifications_type (notification_type, created_at)
+    created_at TIMESTAMP DEFAULT NOW()
 );
+
+CREATE INDEX IF NOT EXISTS idx_notifications_admin ON admin_payment_notifications (admin_id, viewed);
+CREATE INDEX IF NOT EXISTS idx_notifications_type ON admin_payment_notifications (notification_type, created_at);
 
 -- Update orders table to include payment fields
 ALTER TABLE orders 
@@ -158,18 +158,18 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Apply triggers to tables with updated_at
-CREATE TRIGGER update_stripe_attempts_updated_at 
+CREATE TRIGGER IF NOT EXISTS update_stripe_attempts_updated_at 
     BEFORE UPDATE ON stripe_payment_attempts 
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_pending_payments_updated_at 
+CREATE TRIGGER IF NOT EXISTS update_pending_payments_updated_at 
     BEFORE UPDATE ON pending_payments 
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_crypto_addresses_updated_at 
+CREATE TRIGGER IF NOT EXISTS update_crypto_addresses_updated_at 
     BEFORE UPDATE ON crypto_addresses 
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_payment_method_config_updated_at 
+CREATE TRIGGER IF NOT EXISTS update_payment_method_config_updated_at 
     BEFORE UPDATE ON payment_method_config 
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
