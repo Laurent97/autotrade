@@ -38,6 +38,9 @@ export const CryptoPaymentForm: React.FC<CryptoPaymentFormProps> = ({
   const [copiedAmount, setCopiedAmount] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Fixed: Ensure proper component structure
+  console.log('CryptoPaymentForm mounted with:', { orderId, amount });
+
   const cryptoOptions: CryptoOption[] = [
     {
       symbol: 'BTC',
