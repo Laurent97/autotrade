@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { toast } from '@/hooks/use-toast';
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
+import { useAuth } from '../contexts/AuthContext';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { toast } from '../hooks/use-toast';
+import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -27,16 +27,31 @@ const Auth = () => {
     setLoading(true);
 
     try {
+      console.log('Auth: Attempting login for email:', loginData.email);
       await signIn(loginData.email, loginData.password);
+      console.log('Auth: Login successful');
       toast({
         title: 'Welcome back!',
         description: 'You have successfully signed in.',
       });
       navigate('/');
     } catch (error: any) {
+      console.error('Auth: Login failed:', error);
+      let errorMessage = 'Please check your credentials and try again.';
+      
+      if (error.message?.includes('Invalid login credentials')) {
+        errorMessage = 'Invalid email or password. Please try again.';
+      } else if (error.message?.includes('Email not confirmed')) {
+        errorMessage = 'Please check your email and confirm your account.';
+      } else if (error.message?.includes('Too many requests')) {
+        errorMessage = 'Too many login attempts. Please try again later.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: 'Sign in failed',
-        description: error.message || 'Please check your credentials and try again.',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {
@@ -65,19 +80,47 @@ const Auth = () => {
       return;
     }
 
+    if (!registerData.fullName.trim()) {
+      toast({
+        title: 'Name required',
+        description: 'Please enter your full name.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
+      console.log('Auth: Attempting registration for email:', registerData.email);
       await signUp(registerData.email, registerData.password, registerData.fullName);
+      console.log('Auth: Registration successful');
       toast({
         title: 'Account created successfully!',
         description: 'Welcome to AutoTradeHub! You are now signed in.',
       });
       navigate('/');
     } catch (error: any) {
+      console.error('Auth: Registration failed:', error);
+      let errorMessage = 'Please try again later.';
+      
+      if (error.message?.includes('User already registered')) {
+        errorMessage = 'An account with this email already exists. Please sign in instead.';
+      } else if (error.message?.includes('Password should be at least')) {
+        errorMessage = 'Password must be at least 6 characters long.';
+      } else if (error.message?.includes('Invalid email')) {
+        errorMessage = 'Please enter a valid email address.';
+      } else if (error.message?.includes('Failed to create user profile')) {
+        errorMessage = 'Registration failed. Please try again with different information.';
+      } else if (error.message?.includes('Account created but failed to sign in')) {
+        errorMessage = 'Account created successfully but sign in failed. Please try signing in manually.';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: 'Registration failed',
-        description: error.message || 'Please try again later.',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {

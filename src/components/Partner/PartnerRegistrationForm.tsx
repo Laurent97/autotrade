@@ -413,7 +413,7 @@ const PartnerRegistrationForm: React.FC = () => {
           .from('partner_profiles')
           .select('id')
           .eq('user_id', user.id)
-          .single();
+          .maybeSingle(); // Use maybeSingle() instead of single() to handle no results
         return result;
       });
 
@@ -521,25 +521,29 @@ const PartnerRegistrationForm: React.FC = () => {
         })
         .eq('id', user.id);
 
-      // Create referral benefit
+      // Create referral benefit (optional - don't fail if table doesn't exist)
       if (invitationValidation?.valid && invitationValidation.referrerId) {
         try {
-          await supabase
-            .from('referral_benefits')
-            .insert({
-              referrer_id: invitationValidation.referrerId,
-              referred_id: partner.id,
-              benefit_type: 'welcome_bonus',
-              benefit_amount: 50,
-              benefit_details: {
-                commission_discount: 5,
-                discount_months: 3,
-                priority_support: true
-              },
-              status: 'pending'
-            });
-        } catch (referralError) {
-          console.error('Referral benefit error:', referralError);
+          await retryOperation(async () => {
+            const result = await supabase
+              .from('referral_benefits')
+              .insert({
+                referrer_id: invitationValidation.referrerId,
+                referred_id: partner.id,
+                benefit_type: 'welcome_bonus',
+                benefit_amount: 50,
+                benefit_details: {
+                  commission_discount: 5,
+                  discount_months: 3,
+                  priority_support: true
+                },
+                status: 'pending'
+              });
+            return result;
+          });
+        } catch (referralError: any) {
+          // Log but don't fail the entire registration if referral_benefits table doesn't exist
+          console.warn('Referral benefit creation failed (table may not exist):', referralError?.message || referralError);
         }
       }
 

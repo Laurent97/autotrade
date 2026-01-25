@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User as SupabaseUser } from '@supabase/supabase-js';
-import { supabase } from '@/lib/supabase/client';
-import { User } from '@/lib/types';
+import { supabase } from '../lib/supabase/client';
+import { User } from '../lib/types';
 
 interface AuthContextType {
   user: SupabaseUser | null;
@@ -115,55 +115,95 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signIn = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (error) throw error;
-    if (data.user) {
-      await fetchUserProfile(data.user.id);
-    }
-  };
-
-  const signUp = async (email: string, password: string, fullName: string) => {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: fullName,
-        },
-        emailRedirectTo: `${window.location.origin}/auth`,
-      },
-    });
-
-    if (error) throw error;
-
-    // Create user profile immediately
-    if (data.user) {
-      const { error: profileError } = await supabase.from('users').insert({
-        id: data.user.id,
-        email,
-        full_name: fullName,
-        user_type: 'customer',
-      });
-
-      if (profileError) {
-        console.error('Error creating user profile:', profileError);
-        throw profileError;
-      }
-
-      // Sign in user immediately after successful registration
-      const { error: signInError } = await supabase.auth.signInWithPassword({
+    try {
+      console.log('AuthContext: Starting sign in process for email:', email);
+      
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (signInError) {
-        console.error('Error signing in after registration:', signInError);
-        throw signInError;
+      if (error) {
+        console.error('AuthContext: Sign in error:', error);
+        throw error;
       }
+
+      console.log('AuthContext: Sign in successful:', data.user);
+      
+      // The auth state change listener will handle fetching the user profile
+      // But we can also trigger it manually for immediate response
+      if (data.user) {
+        await fetchUserProfile(data.user.id);
+      }
+    } catch (error: any) {
+      console.error('AuthContext: Sign in process failed:', error);
+      throw error;
+    }
+  };
+
+  const signUp = async (email: string, password: string, fullName: string) => {
+    try {
+      console.log('AuthContext: Starting sign up process for email:', email);
+      
+      // Step 1: Create user in Supabase Auth
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName,
+          },
+          emailRedirectTo: `${window.location.origin}/auth`,
+        },
+      });
+
+      if (error) {
+        console.error('AuthContext: Sign up error:', error);
+        throw error;
+      }
+
+      console.log('AuthContext: User created in auth:', data.user);
+
+      // Step 2: Create user profile in database
+      if (data.user) {
+        console.log('AuthContext: Creating user profile in database');
+        
+        const { error: profileError } = await supabase.from('users').insert({
+          id: data.user.id,
+          email,
+          full_name: fullName,
+          user_type: 'customer',
+        });
+
+        if (profileError) {
+          console.error('AuthContext: Error creating user profile:', profileError);
+          // Try to clean up the auth user if profile creation fails
+          await supabase.auth.admin.deleteUser(data.user.id);
+          throw new Error(`Failed to create user profile: ${profileError.message}`);
+        }
+
+        console.log('AuthContext: User profile created successfully');
+
+        // Step 3: Sign in user immediately after successful registration
+        console.log('AuthContext: Signing in user immediately after registration');
+        
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (signInError) {
+          console.error('AuthContext: Error signing in after registration:', signInError);
+          throw new Error(`Account created but failed to sign in: ${signInError.message}`);
+        }
+
+        console.log('AuthContext: User signed in successfully after registration');
+        
+        // The auth state change listener will handle fetching the user profile
+      }
+    } catch (error: any) {
+      console.error('AuthContext: Sign up process failed:', error);
+      throw error;
     }
   };
 
