@@ -171,14 +171,14 @@ export const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
   return (
     <div className="payment-method-selector space-y-6">
       {/* Debug Information */}
-      <div className="bg-yellow-50 dark:bg-yellow-900 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-4">
+      <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800/50 rounded-lg p-4 mb-4">
         <h4 className="font-semibold text-yellow-800 dark:text-yellow-200 mb-2">🔍 Debug Information</h4>
         <div className="text-sm space-y-1">
-          <div><strong>User Logged In:</strong> {user ? 'Yes' : 'No'}</div>
-          <div><strong>User Email:</strong> {user?.email || 'N/A'}</div>
-          <div><strong>User Type:</strong> {userTypeInfo.type}</div>
-          <div><strong>Available Methods:</strong> {availableMethods.join(', ')}</div>
-          <div><strong>Payment Configs:</strong> {Object.keys(paymentConfigs).join(', ')}</div>
+          <div className="text-gray-700 dark:text-gray-300"><strong className="text-gray-900 dark:text-gray-100">User Logged In:</strong> {user ? 'Yes' : 'No'}</div>
+          <div className="text-gray-700 dark:text-gray-300"><strong className="text-gray-900 dark:text-gray-100">User Email:</strong> {user?.email || 'N/A'}</div>
+          <div className="text-gray-700 dark:text-gray-300"><strong className="text-gray-900 dark:text-gray-100">User Type:</strong> {userTypeInfo.type}</div>
+          <div className="text-gray-700 dark:text-gray-300"><strong className="text-gray-900 dark:text-gray-100">Available Methods:</strong> {availableMethods.join(', ')}</div>
+          <div className="text-gray-700 dark:text-gray-300"><strong className="text-gray-900 dark:text-gray-100">Payment Configs:</strong> {Object.keys(paymentConfigs).join(', ')}</div>
         </div>
       </div>
 
@@ -312,16 +312,20 @@ export const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
         </div>
       )}
 
-      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-        <h4 className="font-semibold mb-2">Payment Information</h4>
+      <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+        <h4 className="font-semibold mb-2 text-gray-900 dark:text-white">Payment Information</h4>
         <div className="text-sm space-y-1">
           <div className="flex justify-between">
-            <span>Order ID:</span>
-            <span className="font-mono">#{orderId}</span>
+            <span className="text-gray-600 dark:text-gray-400">Order ID:</span>
+            <span className="font-medium text-gray-900 dark:text-white">#{orderId}</span>
           </div>
           <div className="flex justify-between">
-            <span>Total Amount:</span>
-            <span className="font-bold">${amount.toFixed(2)} USD</span>
+            <span className="text-gray-600 dark:text-gray-400">Amount:</span>
+            <span className="font-medium text-gray-900 dark:text-white">${amount.toFixed(2)}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-600 dark:text-gray-400">User Type:</span>
+            <span className="font-medium text-gray-900 dark:text-white">{userTypeInfo.label}</span>
           </div>
         </div>
       </div>
