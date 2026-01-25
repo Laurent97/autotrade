@@ -137,8 +137,21 @@ const NotificationsModal: React.FC<NotificationsModalProps> = ({ isOpen, onClose
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="bg-background rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col m-4">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+      onClick={(e) => {
+        // Only close if clicking on the backdrop, not the modal content
+        if (e.target === e.currentTarget) {
+          onClose();
+          // Go back to previous page
+          window.history.back();
+        }
+      }}
+    >
+      <div 
+        className="bg-background rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col m-4"
+        onClick={(e) => e.stopPropagation()} // Prevent backdrop click from propagating to modal content
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-border">
           <div className="flex items-center gap-3">
