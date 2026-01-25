@@ -409,8 +409,8 @@ const PartnerRegistrationForm: React.FC = () => {
           
           // Status
           status: 'pending_review',
-          is_approved: false,
           is_active: false,
+          partner_status: 'pending',
           
           // Default values
           commission_rate: 15,
