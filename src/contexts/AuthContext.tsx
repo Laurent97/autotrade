@@ -56,12 +56,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchUserProfile = async (userId: string) => {
     try {
+      console.log(' AuthContext: Fetching user profile for userId:', userId);
+      
       // First get user data
       const { data: userData, error: userError } = await supabase
         .from('users')
         .select('*')
         .eq('id', userId)
         .single();
+
+      console.log(' AuthContext: User data result:', { userData, userError });
 
       if (userError && userError.code !== 'PGRST116') {
         console.error('Error fetching user profile:', userError);
@@ -70,10 +74,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
 
+      if (!userData) {
+        console.log(' AuthContext: No user data found for userId:', userId);
+        setUserProfile(null);
+        setLoading(false);
+        return;
+      }
+
+      console.log(' AuthContext: User data loaded:', userData);
+
       // If user is a partner, also fetch partner profile using RPC (fixes 406 error)
       if (userData?.user_type === 'partner' || userData?.user_type === 'admin') {
+        console.log(' AuthContext: Fetching partner profile for user type:', userData.user_type);
+        
         const { data: partnerData, error: partnerError } = await supabase
           .rpc('get_partner_profile_by_user_id', { p_user_id: userId });
+
+        console.log(' AuthContext: Partner data result:', { partnerData, partnerError });
 
         if (partnerError) {
           console.error('Error fetching partner profile:', partnerError);
@@ -83,10 +100,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             ...userData,
             ...partnerData
           };
-          setUserProfile(mergedProfile || null);
+          console.log(' AuthContext: Merged profile:', mergedProfile);
+          setUserProfile(mergedProfile);
         }
       } else {
-        setUserProfile(userData || null);
+        console.log(' AuthContext: Setting user profile (not partner/admin):', userData);
+        setUserProfile(userData);
       }
     } catch (error) {
       console.error('Error fetching user profile:', error);
