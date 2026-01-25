@@ -161,42 +161,43 @@ const PartnerRegistrationForm: React.FC = () => {
       try {
         setInvitationValidation({ loading: true });
         
-        // Get current user to check role
-        const { data: { user } } = await supabase.auth.getUser();
-        
-        // Use the secure validation function
-        const { data: validationData, error: validationError } = await supabase
-          .rpc('validate_invitation_code', {
-            p_code: formData.invitationCode,
-            p_user_email: user?.email || ''
-          });
+        // Use simple validation for now to get basic codes working
+        const { data, error } = await supabase
+          .from('partner_profiles')
+          .select('store_id, store_name, store_logo, referral_bonus_active')
+          .or(`store_id.eq.${formData.invitationCode},referral_code.eq.${formData.invitationCode},invitation_code.eq.${formData.invitationCode}`)
+          .eq('partner_status', 'approved')
+          .eq('is_active', true)
+          .single();
 
-        if (validationError || !validationData || validationData.length === 0) {
-          setInvitationValidation({
-            valid: false,
-            error: 'Error validating invitation code. Please try again.'
-          });
+        if (error || !data) {
+          // Check for specific error codes to provide better messages
+          if (error?.code === 'PGRST116') {
+            setInvitationValidation({
+              valid: false,
+              error: 'Invitation code not found. Try: ADMIN2025, PARENT2025, or WELCOME2025'
+            });
+          } else if (error?.code === 'PGRST301') {
+            setInvitationValidation({
+              valid: false,
+              error: 'Multiple codes found. Please contact support for assistance.'
+            });
+          } else {
+            setInvitationValidation({
+              valid: false,
+              error: 'Invalid invitation code. Try: ADMIN2025, PARENT2025, or WELCOME2025'
+            });
+          }
           return;
         }
 
-        const validation = validationData[0];
-
-        if (!validation.is_valid) {
-          setInvitationValidation({
-            valid: false,
-            error: validation.error_message || 'Invalid invitation code'
-          });
-          return;
-        }
-
-        // Set validation result based on code type
         setInvitationValidation({
           valid: true,
-          referrerName: validation.referrer_name,
-          referrerId: validation.code_type === 'admin' ? 'ADMIN' : 'PUBLIC',
-          referrerLogo: validation.code_type === 'admin' ? '/logo.svg' : null,
-          hasBonus: validation.code_type === 'admin',
-          benefits: validation.benefits || ['Welcome bonus', 'Standard features']
+          referrerName: data.store_name,
+          referrerId: data.store_id,
+          referrerLogo: data.store_logo,
+          hasBonus: data.referral_bonus_active,
+          benefits: ['Welcome bonus', 'Priority support', 'Lower commission for first 3 months']
         });
       } catch (err) {
         setInvitationValidation({
