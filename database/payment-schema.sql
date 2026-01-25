@@ -108,22 +108,38 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Crypto addresses configuration
-CREATE TABLE IF NOT EXISTS crypto_addresses (
-    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    crypto_type VARCHAR(20) NOT NULL UNIQUE, -- 'BTC', 'ETH', 'USDT'
-    address VARCHAR(255) NOT NULL,
-    network VARCHAR(50), -- 'mainnet', 'testnet'
-    is_active BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW()
-);
+-- Handle existing table gracefully
+DO $$
+BEGIN
+    -- Drop existing table to start fresh (safer approach)
+    DROP TABLE IF EXISTS crypto_addresses CASCADE;
+    
+    -- Create fresh table with correct structure
+    CREATE TABLE crypto_addresses (
+        id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+        crypto_type VARCHAR(20) NOT NULL, -- 'BTC', 'ETH', 'USDT'
+        address VARCHAR(255) NOT NULL,
+        is_active BOOLEAN DEFAULT TRUE,
+        network VARCHAR(50) DEFAULT 'mainnet',
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW(),
+        CONSTRAINT crypto_addresses_crypto_type_check CHECK (crypto_type IN ('BTC', 'ETH', 'USDT'))
+    );
+    
+    -- Add unique constraint
+    ALTER TABLE crypto_addresses ADD CONSTRAINT crypto_addresses_crypto_type_key UNIQUE (crypto_type);
+END $$;
 
--- Insert default crypto addresses
-INSERT INTO crypto_addresses (crypto_type, address, network) VALUES
-('BTC', '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa', 'mainnet'),
-('ETH', '0x742d35Cc6634C0532925a3b844Bc454e4438f44e', 'mainnet'),
-('USDT', '0x742d35Cc6634C0532925a3b844Bc454e4438f44e', 'mainnet')
-ON CONFLICT (crypto_type) DO NOTHING;
+-- Insert default crypto addresses with explicit column order and conflict handling
+-- Clear any existing data first to ensure clean state
+DELETE FROM crypto_addresses WHERE crypto_type IN ('BTC', 'ETH', 'USDT');
+
+-- Insert with explicit column names
+INSERT INTO crypto_addresses (crypto_type, address, is_active, network) 
+VALUES 
+    ('BTC', '1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa', true, 'mainnet'),
+    ('ETH', '0x742d35Cc6634C0532925a3b844Bc454e4438f44e', true, 'mainnet'),
+    ('USDT', '0x742d35Cc6634C0532925a3b844Bc454e4438f44e', true, 'mainnet');
 
 -- Payment method configuration
 CREATE TABLE IF NOT EXISTS payment_method_config (
@@ -141,12 +157,21 @@ CREATE TABLE IF NOT EXISTS payment_method_config (
 );
 
 -- Insert default payment method configurations
-INSERT INTO payment_method_config (method_name, enabled, customer_access, partner_access, admin_access, admin_confirmation_required, collect_data_only, config_data) VALUES
-('stripe', true, false, true, true, false, false, '{"public_key": "pk_test_...", "secret_key": "sk_test_..."}'),
-('paypal', true, true, true, true, true, false, '{"email": "payments@autotradehub.com", "currency": "USD"}'),
-('crypto', true, true, true, true, true, false, '{"supported_types": ["BTC", "ETH", "USDT"]}'),
-('wallet', true, false, true, true, false, false, '{"min_balance": 0}')
-ON CONFLICT (method_name) DO NOTHING;
+INSERT INTO payment_method_config (method_name, enabled, customer_access, partner_access, admin_access, admin_confirmation_required, collect_data_only, config_data) 
+SELECT 'stripe', true, false, true, true, false, false, '{"public_key": "pk_test_...", "secret_key": "sk_test_..."}'
+WHERE NOT EXISTS (SELECT 1 FROM payment_method_config WHERE method_name = 'stripe');
+
+INSERT INTO payment_method_config (method_name, enabled, customer_access, partner_access, admin_access, admin_confirmation_required, collect_data_only, config_data) 
+SELECT 'paypal', true, true, true, true, true, false, '{"email": "payments@autotradehub.com", "currency": "USD"}'
+WHERE NOT EXISTS (SELECT 1 FROM payment_method_config WHERE method_name = 'paypal');
+
+INSERT INTO payment_method_config (method_name, enabled, customer_access, partner_access, admin_access, admin_confirmation_required, collect_data_only, config_data) 
+SELECT 'crypto', true, true, true, true, true, false, '{"supported_types": ["BTC", "ETH", "USDT"]}'
+WHERE NOT EXISTS (SELECT 1 FROM payment_method_config WHERE method_name = 'crypto');
+
+INSERT INTO payment_method_config (method_name, enabled, customer_access, partner_access, admin_access, admin_confirmation_required, collect_data_only, config_data) 
+SELECT 'wallet', true, false, true, true, false, false, '{"min_balance": 0}'
+WHERE NOT EXISTS (SELECT 1 FROM payment_method_config WHERE method_name = 'wallet');
 
 -- Create trigger to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -158,18 +183,22 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Apply triggers to tables with updated_at
-CREATE TRIGGER IF NOT EXISTS update_stripe_attempts_updated_at 
+DROP TRIGGER IF EXISTS update_stripe_attempts_updated_at ON stripe_payment_attempts;
+CREATE TRIGGER update_stripe_attempts_updated_at 
     BEFORE UPDATE ON stripe_payment_attempts 
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER IF NOT EXISTS update_pending_payments_updated_at 
+DROP TRIGGER IF EXISTS update_pending_payments_updated_at ON pending_payments;
+CREATE TRIGGER update_pending_payments_updated_at 
     BEFORE UPDATE ON pending_payments 
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER IF NOT EXISTS update_crypto_addresses_updated_at 
+DROP TRIGGER IF EXISTS update_crypto_addresses_updated_at ON crypto_addresses;
+CREATE TRIGGER update_crypto_addresses_updated_at 
     BEFORE UPDATE ON crypto_addresses 
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER IF NOT EXISTS update_payment_method_config_updated_at 
+DROP TRIGGER IF EXISTS update_payment_method_config_updated_at ON payment_method_config;
+CREATE TRIGGER update_payment_method_config_updated_at 
     BEFORE UPDATE ON payment_method_config 
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
