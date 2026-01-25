@@ -385,7 +385,33 @@ export default function Manufacturers() {
     }
   };
 
-  
+  const loadStats = async () => {
+    try {
+      const { data: shopsData } = await supabase
+        .from('partner_profiles')
+        .select('is_active, partner_status');
+
+      const { data: productsData } = await supabase
+        .from('partner_products')
+        .select('id');
+
+      const totalShops = shopsData?.length || 0;
+      const activeShops = shopsData?.filter(s => s.partner_status === 'approved').length || 0; // Only filter by approval status
+      const totalProducts = productsData?.length || 0;
+
+      console.log('Stats:', { totalShops, activeShops, totalProducts });
+
+      setStats({
+        totalShops,
+        activeShops,
+        totalProducts,
+        totalOrders: 0, // Would need to calculate from orders table
+      });
+    } catch (error) {
+      console.error('Error loading stats:', error);
+    }
+  };
+
   const filteredShops = shops.filter(shop => {
     const searchLower = searchTerm.toLowerCase();
     const searchWords = searchLower.split(' ').filter(word => word.length > 0);

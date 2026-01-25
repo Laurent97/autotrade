@@ -279,7 +279,9 @@ export default function EnhancedCategoryNavigation({
           )}
           <button
             onClick={() => {
-              navigate("/products");
+              searchParams.delete("category");
+              searchParams.delete("subcategory");
+              setSearchParams(searchParams);
             }}
             className="text-sm text-muted-foreground hover:text-foreground underline"
           >

@@ -341,19 +341,9 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Add check constraint for business hours
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT FROM information_schema.table_constraints 
-        WHERE table_name = 'partner_profiles' 
-        AND constraint_name = 'valid_business_hours'
-    ) THEN
-        ALTER TABLE partner_profiles 
-        ADD CONSTRAINT valid_business_hours 
-        CHECK (validate_business_hours(business_hours));
-        RAISE NOTICE 'Added valid_business_hours constraint to partner_profiles';
-    END IF;
-END $$;
+ALTER TABLE partner_profiles 
+ADD CONSTRAINT valid_business_hours 
+CHECK (validate_business_hours(business_hours));
 
 -- Update existing partners with default values
 UPDATE partner_profiles SET 

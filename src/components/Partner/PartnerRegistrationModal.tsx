@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import PartnerRegistrationForm from './PartnerRegistrationForm';
 
@@ -11,15 +11,6 @@ const PartnerRegistrationModal: React.FC<PartnerRegistrationModalProps> = ({
   isOpen, 
   onClose 
 }) => {
-  const [formKey, setFormKey] = useState(0);
-
-  // Reset form when modal opens/closes
-  useEffect(() => {
-    if (isOpen) {
-      setFormKey(prev => prev + 1);
-    }
-  }, [isOpen]);
-
   if (!isOpen) return null;
 
   return (
@@ -45,7 +36,7 @@ const PartnerRegistrationModal: React.FC<PartnerRegistrationModalProps> = ({
           
           {/* Form Content */}
           <div className="max-h-[90vh] overflow-y-auto">
-            <PartnerRegistrationForm key={formKey} />
+            <PartnerRegistrationForm />
           </div>
         </div>
       </div>

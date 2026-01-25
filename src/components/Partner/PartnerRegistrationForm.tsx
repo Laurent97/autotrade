@@ -164,16 +164,29 @@ const PartnerRegistrationForm: React.FC = () => {
         const { data, error } = await supabase
           .from('partner_profiles')
           .select('store_id, store_name, store_logo, referral_bonus_active')
-          .or(`store_id.eq.${formData.invitationCode},referral_code.eq.${formData.invitationCode}`)
+          .or(`store_id.eq.${formData.invitationCode},referral_code.eq.${formData.invitationCode},invitation_code.eq.${formData.invitationCode}`)
           .eq('partner_status', 'approved')
           .eq('is_active', true)
           .single();
 
         if (error || !data) {
-          setInvitationValidation({
-            valid: false,
-            error: 'Invalid or inactive invitation code'
-          });
+          // Check for specific error codes to provide better messages
+          if (error?.code === 'PGRST116') {
+            setInvitationValidation({
+              valid: false,
+              error: 'Invitation code not found. Please check the code or contact support.'
+            });
+          } else if (error?.code === 'PGRST301') {
+            setInvitationValidation({
+              valid: false,
+              error: 'Multiple codes found. Please contact support for assistance.'
+            });
+          } else {
+            setInvitationValidation({
+              valid: false,
+              error: 'Invalid or inactive invitation code. Please check the code or contact your referrer.'
+            });
+          }
           return;
         }
 

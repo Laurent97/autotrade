@@ -149,24 +149,24 @@ export default function PartnerDashboard() {
       <div className="flex-grow">
         {/* Dashboard Header */}
         <div className="bg-gradient-to-r from-amber-600 to-amber-700 dark:from-amber-700 dark:to-amber-800 text-white">
-          <div className="container mx-auto px-4 py-8">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-              <div>
-                <h1 className="text-3xl font-bold mb-2">🏪 Partner Dashboard</h1>
-                <p className="text-amber-100/90 text-lg">
+          <div className="container mx-auto px-4 py-4 sm:py-6 lg:py-8">
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+              <div className="flex-1 min-w-0">
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-1 sm:mb-2">🏪 Partner Dashboard</h1>
+                <p className="text-amber-100/90 text-sm sm:text-base lg:text-lg truncate">
                   Welcome back, {partner?.store_name || userProfile?.email || 'Partner'}!
                 </p>
-                <div className="flex items-center gap-3 mt-2">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 mt-2">
                   {partner?.store_id && (
                     <StoreIdBadge storeId={partner.store_id} size="sm" variant="outline" />
                   )}
-                  <p className="text-amber-100/70 text-sm">
+                  <p className="text-amber-100/70 text-xs sm:text-sm hidden xs:block">
                     Manage your store, products, and orders all in one place
                   </p>
                 </div>
               </div>
-              <div className="flex flex-col items-end">
-                <span className={`px-4 py-2 rounded-full text-sm font-semibold ${
+              <div className="flex flex-col items-end gap-2">
+                <span className={`px-3 py-1 sm:px-4 sm:py-2 rounded-full text-xs sm:text-sm font-semibold ${
                   userProfile?.partner_status === 'approved' ? 'bg-gradient-to-r from-green-500 to-emerald-600 text-white' :
                   userProfile?.partner_status === 'pending' ? 'bg-gradient-to-r from-yellow-500 to-amber-600 text-white' :
                   userProfile?.partner_status === 'rejected' ? 'bg-gradient-to-r from-red-500 to-rose-600 text-white' :
@@ -174,7 +174,7 @@ export default function PartnerDashboard() {
                 }`}>
                   {(userProfile?.partner_status || 'PENDING').toUpperCase()}
                 </span>
-                <p className="text-amber-100/80 text-xs mt-2">
+                <p className="text-amber-100/80 text-xs sm:text-xs mt-1">
                   {userProfile?.partner_status === 'approved' ? '✅ Verified Partner' :
                    userProfile?.partner_status === 'pending' ? '⏳ Under Review' :
                    userProfile?.partner_status === 'rejected' ? '❌ Application Rejected' :
@@ -186,88 +186,88 @@ export default function PartnerDashboard() {
         </div>
 
         {/* Stats Cards */}
-        <div className="container mx-auto px-4 py-8 -mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="container mx-auto px-4 py-4 sm:py-6 lg:py-8 -mt-4 sm:-mt-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-4 sm:mb-6 lg:mb-8">
             {/* Total Sales Card */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 animate-fade-in hover:shadow-xl hover:-translate-y-1 transition-all">
-              <div className="flex items-center justify-between mb-4">
-                <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 p-3 rounded-xl">
-                  <span className="text-2xl">💰</span>
+            <div className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl lg:rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6 animate-fade-in hover:shadow-xl hover:-translate-y-1 transition-all">
+              <div className="flex items-center justify-between mb-3 sm:mb-4">
+                <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 p-2 sm:p-3 rounded-lg sm:rounded-xl">
+                  <span className="text-lg sm:text-2xl">💰</span>
                 </div>
-                <div className="text-blue-600 dark:text-blue-400 text-sm font-semibold">Sales</div>
+                <div className="text-blue-600 dark:text-blue-400 text-xs sm:text-sm font-semibold">Sales</div>
               </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total Sales</div>
-              <div className="text-3xl font-bold text-gray-900 dark:text-white">
+              <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-1">Total Sales</div>
+              <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
                 ${stats.totalSales.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </div>
             </div>
 
             {/* Pending Orders Card */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 animate-fade-in hover:shadow-xl hover:-translate-y-1 transition-all">
-              <div className="flex items-center justify-between mb-4">
-                <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900/30 dark:to-yellow-800/30 p-3 rounded-xl">
-                  <span className="text-2xl">⏳</span>
+            <div className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl lg:rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6 animate-fade-in hover:shadow-xl hover:-translate-y-1 transition-all">
+              <div className="flex items-center justify-between mb-3 sm:mb-4">
+                <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900/30 dark:to-yellow-800/30 p-2 sm:p-3 rounded-lg sm:rounded-xl">
+                  <span className="text-lg sm:text-2xl">⏳</span>
                 </div>
-                <div className="text-yellow-600 dark:text-yellow-400 text-sm font-semibold">Orders</div>
+                <div className="text-yellow-600 dark:text-yellow-400 text-xs sm:text-sm font-semibold">Orders</div>
               </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Pending Orders</div>
-              <div className="text-3xl font-bold text-gray-900 dark:text-white">
+              <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-1">Pending Orders</div>
+              <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
                 {stats.pendingOrders}
               </div>
             </div>
 
             {/* Total Earnings Card */}
-            <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/30 rounded-2xl shadow-lg border border-green-200 dark:border-green-700/50 p-6 animate-fade-in hover:shadow-xl hover:-translate-y-1 transition-all">
-              <div className="flex items-center justify-between mb-4">
-                <div className="bg-gradient-to-br from-green-200 to-green-300 dark:from-green-600 dark:to-green-500 p-3 rounded-xl">
-                  <span className="text-2xl">💵</span>
+            <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/30 rounded-lg sm:rounded-xl lg:rounded-2xl shadow-lg border border-green-200 dark:border-green-700/50 p-4 sm:p-6 animate-fade-in hover:shadow-xl hover:-translate-y-1 transition-all">
+              <div className="flex items-center justify-between mb-3 sm:mb-4">
+                <div className="bg-gradient-to-br from-green-200 to-green-300 dark:from-green-600 dark:to-green-500 p-2 sm:p-3 rounded-lg sm:rounded-xl">
+                  <span className="text-lg sm:text-2xl">💵</span>
                 </div>
-                <div className="text-green-600 dark:text-green-400 text-sm font-semibold">Earnings</div>
+                <div className="text-green-600 dark:text-green-400 text-xs sm:text-sm font-semibold">Earnings</div>
               </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total Earnings</div>
-              <div className="text-3xl font-bold text-green-700 dark:text-green-300">
+              <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-1">Total Earnings</div>
+              <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-green-700 dark:text-green-300">
                 ${stats.totalEarnings.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </div>
             </div>
 
             {/* Conversion Rate Card */}
-            <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/30 dark:to-purple-800/30 rounded-2xl shadow-lg border border-purple-200 dark:border-purple-700/50 p-6 animate-fade-in hover:shadow-xl hover:-translate-y-1 transition-all">
-              <div className="flex items-center justify-between mb-4">
-                <div className="bg-gradient-to-br from-purple-200 to-purple-300 dark:from-purple-600 dark:to-purple-500 p-3 rounded-xl">
-                  <span className="text-2xl">📊</span>
+            <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/30 dark:to-purple-800/30 rounded-lg sm:rounded-xl lg:rounded-2xl shadow-lg border border-purple-200 dark:border-purple-700/50 p-4 sm:p-6 animate-fade-in hover:shadow-xl hover:-translate-y-1 transition-all">
+              <div className="flex items-center justify-between mb-3 sm:mb-4">
+                <div className="bg-gradient-to-br from-purple-200 to-purple-300 dark:from-purple-600 dark:to-purple-500 p-2 sm:p-3 rounded-lg sm:rounded-xl">
+                  <span className="text-lg sm:text-2xl">📊</span>
                 </div>
-                <div className="text-purple-600 dark:text-purple-400 text-sm font-semibold">Performance</div>
+                <div className="text-purple-600 dark:text-purple-400 text-xs sm:text-sm font-semibold">Performance</div>
               </div>
-              <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">Conversion Rate</div>
-              <div className="text-3xl font-bold text-purple-700 dark:text-purple-300">
+              <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-1">Conversion Rate</div>
+              <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-purple-700 dark:text-purple-300">
                 {stats.conversionRate.toFixed(1)}%
               </div>
             </div>
           </div>
 
           {/* Quick Actions Bar */}
-          <div className="mb-8">
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="mb-4 sm:mb-6 lg:mb-8">
+            <div className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl lg:rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               </div>
             </div>
           </div>
           {/* Dashboard Content */}
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
             {/* Sidebar Navigation */}
             <div className="lg:col-span-1">
-              <div className="sticky top-8">
+              <div className="sticky top-4 sm:top-8">
                 <PartnerSidebar />
               </div>
             </div>
 
             {/* Main Content */}
             <div className="lg:col-span-3">
-              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 min-h-[600px]">
+              <div className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl lg:rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6 min-h-[400px] sm:min-h-[600px]">
                 {/* Breadcrumbs appear once, globally */}
                 <Breadcrumbs />
                 
-                <div className="mt-6">
+                <div className="mt-4 sm:mt-6">
                   <Outlet />
                 </div>
               </div>
