@@ -29,7 +29,7 @@ import Stores from "./pages/Stores";
 import Store from "./pages/Store";
 import Auth from "./pages/Auth";
 import Manufacturers from "./pages/Manufacturers";
-import PartnerRegistrationForm from "./components/Partner/PartnerRegistrationForm";
+import AppLayout from "./components/Layout/AppLayout";
 import PartnerPending from "./pages/partner/Pending";
 import PartnerDashboard from "./pages/partner/Dashboard";
 import PartnerInfo from "./pages/partner/Info";
@@ -86,7 +86,8 @@ const App = () => (
                 <Sonner />
                 <BrowserRouter>
                   <WhatsAppFloating />
-                  <Routes>
+                  <AppLayout>
+                    <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/products" element={<Products />} />
           <Route path="/products-legacy" element={<Products />} />
@@ -101,9 +102,7 @@ const App = () => (
               <Route path="/manufacturers" element={<Manufacturers />} />
               <Route path="/store/:storeSlug" element={<Store />} />
               <Route path="/auth" element={<Auth />} />
-              <Route path="/partner/register" element={<PartnerRegistrationForm />} />
-              <Route path="/partner/apply" element={<Navigate to="/partner/register" replace />} />
-              <Route path="/partner/info" element={<PartnerInfo />} />
+                            <Route path="/partner/info" element={<PartnerInfo />} />
               <Route path="/partner/pending" element={<PartnerPending />} />
               <Route path="/partner/dashboard" element={<PartnerOnlyRoute requireApproved={true}><PartnerDashboard /></PartnerOnlyRoute>}>
                 <Route index element={<DashboardOverview />} />
@@ -151,6 +150,7 @@ const App = () => (
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
+                  </AppLayout>
             </BrowserRouter>
             </TooltipProvider>
           </PaymentProvider>

@@ -17,7 +17,7 @@ const Navbar = () => {
     { name: "Parts", href: "/products?category=parts" },
     { name: "Accessories", href: "/products?category=accessories" },
     { name: "Partner Shops", href: "/manufacturers" },
-    { name: "Become a Partner", href: "/partner/register" },
+    { name: "Become a Partner", href: "#partner", action: "openModal" },
   ];
 
   // Update dashboard URL when user profile changes
@@ -53,11 +53,23 @@ const Navbar = () => {
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-1">
             {navLinks.map((link) => (
-              <Link key={link.name} to={link.href}>
-                <Button variant="nav" size="sm" className="text-sm">
+              link.action === "openModal" ? (
+                <Button 
+                  key={link.name} 
+                  variant="nav" 
+                  size="sm" 
+                  className="text-sm"
+                  onClick={() => (window as any).openPartnerModal?.()}
+                >
                   {link.name}
                 </Button>
-              </Link>
+              ) : (
+                <Link key={link.name} to={link.href}>
+                  <Button variant="nav" size="sm" className="text-sm">
+                    {link.name}
+                  </Button>
+                </Link>
+              )
             ))}
           </div>
 
@@ -123,14 +135,27 @@ const Navbar = () => {
           <div className="md:hidden py-4 border-t border-border animate-slide-up">
             <div className="flex flex-col gap-2">
               {navLinks.map((link) => (
-                <Link
-                  key={link.name}
-                  to={link.href}
-                  onClick={() => setIsOpen(false)}
-                  className="px-4 py-3 text-foreground hover:bg-secondary rounded-lg transition-colors"
-                >
-                  {link.name}
-                </Link>
+                link.action === "openModal" ? (
+                  <button
+                    key={link.name}
+                    onClick={() => {
+                      (window as any).openPartnerModal?.();
+                      setIsOpen(false);
+                    }}
+                    className="w-full text-left px-4 py-3 text-foreground hover:bg-secondary rounded-lg transition-colors"
+                  >
+                    {link.name}
+                  </button>
+                ) : (
+                  <Link
+                    key={link.name}
+                    to={link.href}
+                    onClick={() => setIsOpen(false)}
+                    className="px-4 py-3 text-foreground hover:bg-secondary rounded-lg transition-colors"
+                  >
+                    {link.name}
+                  </Link>
+                )
               ))}
               <div className="flex gap-2 px-4 pt-4 border-t border-border mt-2">
                 <Link to="/cart" className="flex-1">

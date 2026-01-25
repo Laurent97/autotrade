@@ -163,13 +163,6 @@ const mainCategories = [
   { id: "accessories", label: "Accessories", product_type: "accessories" },
 ];
 
-const navLinks = [
-  { name: "Cars", href: "/products?category=cars" },
-  { name: "Parts", href: "/products?category=parts" },
-  { name: "Accessories", href: "/products?category=accessories" },
-  { name: "Partner Shops", href: "/manufacturers" },
-  { name: "Become a Partner", href: "/partner/register" },
-];
 
 const sortOptions = [
   { id: "popular", label: "Most Popular" },

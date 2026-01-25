@@ -1,4 +1,4 @@
--- Complete Partner System Migration
+-- Complete Partner System Migration (FIXED VERSION)
 -- This script sets up the entire partner registration and management system
 -- Run this in Supabase SQL Editor to create all necessary tables and functions
 
@@ -227,7 +227,7 @@ BEGIN
         WHERE table_name = 'partner_profiles' 
         AND column_name = 'invitation_code_used'
     ) THEN
-        ALTER TABLE partner_profiles ADD COLUMN invitation_code_used VARCHAR(10);
+        ALTER TABLE partner_profiles ADD COLUMN invitation_code_used VARCHAR(9);
         RAISE NOTICE 'Added invitation_code_used column to partner_profiles';
     END IF;
 
@@ -371,7 +371,7 @@ CREATE POLICY "Partners can upload their own assets" ON storage.objects
 -- 6. FUNCTIONS
 -- =====================================================
 
--- Function to generate unique invitation code
+-- Function to generate unique invitation code (9 chars: AV + 6 chars + 1 checksum)
 CREATE OR REPLACE FUNCTION generate_invitation_code()
 RETURNS TEXT AS $$
 DECLARE
@@ -429,156 +429,24 @@ RETURNS TRIGGER AS $$
 BEGIN
     IF NEW.store_name IS DISTINCT FROM OLD.store_name THEN
         NEW.store_slug := generate_store_slug(NEW.store_name);
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
 
-    -- Create referral_benefits table
-    CREATE TABLE IF NOT EXISTS referral_benefits (
-        id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-        referrer_id UUID NOT NULL REFERENCES partner_profiles(id) ON DELETE CASCADE,
-        referred_id UUID NOT NULL REFERENCES partner_profiles(id) ON DELETE CASCADE,
-        benefit_type VARCHAR(50) NOT NULL CHECK (benefit_type IN ('welcome_bonus', 'commission_discount', 'credit', 'extended_trial')),
-        benefit_amount DECIMAL(10,2) NOT NULL,
-        benefit_details JSONB DEFAULT '{}',
-        status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'active', 'expired', 'revoked')),
-        expires_at TIMESTAMP WITH TIME ZONE,
-        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
-        updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() NOT NULL,
-    day := 'monday';
-    IF hours ? day THEN
-        day_hours := hours -> day;
-        open_time := (day_hours ->> 'open');
-        close_time := (day_hours ->> 'close');
-        
-        IF open_time IS NOT NULL AND open_time != '' THEN
-            IF open_time !~ '^[0-2][0-9]:[0-5][0-9]$' THEN
-                RETURN FALSE;
-            END IF;
-        END IF;
-        
-        IF close_time IS NOT NULL AND close_time != '' THEN
-            IF close_time !~ '^[0-2][0-9]:[0-5][0-9]$' THEN
-                RETURN FALSE;
-            END IF;
-        END IF;
+-- Simplified business hours validation (no complex loops)
+CREATE OR REPLACE FUNCTION validate_business_hours(hours JSONB)
+RETURNS BOOLEAN AS $$
+BEGIN
+    -- Check if required days exist
+    IF NOT (hours ? 'monday' AND hours ? 'tuesday' AND hours ? 'wednesday' AND 
+            hours ? 'thursday' AND hours ? 'friday') THEN
+        RETURN FALSE;
     END IF;
     
-    -- Check tuesday
-    day := 'tuesday';
-    IF hours ? day THEN
-        day_hours := hours -> day;
-        open_time := (day_hours ->> 'open');
-        close_time := (day_hours ->> 'close');
-        
-        IF open_time IS NOT NULL AND open_time != '' THEN
-            IF open_time !~ '^[0-2][0-9]:[0-5][0-9]$' THEN
-                RETURN FALSE;
-            END IF;
-        END IF;
-        
-        IF close_time IS NOT NULL AND close_time != '' THEN
-            IF close_time !~ '^[0-2][0-9]:[0-5][0-9]$' THEN
-                RETURN FALSE;
-            END IF;
-        END IF;
-    END IF;
-    
-    -- Check wednesday
-    day := 'wednesday';
-    IF hours ? day THEN
-        day_hours := hours -> day;
-        open_time := (day_hours ->> 'open');
-        close_time := (day_hours ->> 'close');
-        
-        IF open_time IS NOT NULL AND open_time != '' THEN
-            IF open_time !~ '^[0-2][0-9]:[0-5][0-9]$' THEN
-                RETURN FALSE;
-            END IF;
-        END IF;
-        
-        IF close_time IS NOT NULL AND close_time != '' THEN
-            IF close_time !~ '^[0-2][0-9]:[0-5][0-9]$' THEN
-                RETURN FALSE;
-            END IF;
-        END IF;
-    END IF;
-    
-    -- Check thursday
-    day := 'thursday';
-    IF hours ? day THEN
-        day_hours := hours -> day;
-        open_time := (day_hours ->> 'open');
-        close_time := (day_hours ->> 'close');
-        
-        IF open_time IS NOT NULL AND open_time != '' THEN
-            IF open_time !~ '^[0-2][0-9]:[0-5][0-9]$' THEN
-                RETURN FALSE;
-            END IF;
-        END IF;
-        
-        IF close_time IS NOT NULL AND close_time != '' THEN
-            IF close_time !~ '^[0-2][0-9]:[0-5][0-9]$' THEN
-                RETURN FALSE;
-            END IF;
-        END IF;
-    END IF;
-    
-    -- Check friday
-    day := 'friday';
-    IF hours ? day THEN
-        day_hours := hours -> day;
-        open_time := (day_hours ->> 'open');
-        close_time := (day_hours ->> 'close');
-        
-        IF open_time IS NOT NULL AND open_time != '' THEN
-            IF open_time !~ '^[0-2][0-9]:[0-5][0-9]$' THEN
-                RETURN FALSE;
-            END IF;
-        END IF;
-        
-        IF close_time IS NOT NULL AND close_time != '' THEN
-            IF close_time !~ '^[0-2][0-9]:[0-5][0-9]$' THEN
-                RETURN FALSE;
-            END IF;
-        END IF;
-    END IF;
-    
-    -- Check saturday
-    day := 'saturday';
-    IF hours ? day THEN
-        day_hours := hours -> day;
-        open_time := (day_hours ->> 'open');
-        close_time := (day_hours ->> 'close');
-        
-        IF open_time IS NOT NULL AND open_time != '' THEN
-            IF open_time !~ '^[0-2][0-9]:[0-5][0-9]$' THEN
-                RETURN FALSE;
-            END IF;
-        END IF;
-        
-        IF close_time IS NOT NULL AND close_time != '' THEN
-            IF close_time !~ '^[0-2][0-9]:[0-5][0-9]$' THEN
-                RETURN FALSE;
-            END IF;
-        END IF;
-    END IF;
-    
-    -- Check sunday
-    day := 'sunday';
-    IF hours ? day THEN
-        day_hours := hours -> day;
-        open_time := (day_hours ->> 'open');
-        close_time := (day_hours ->> 'close');
-        
-        IF open_time IS NOT NULL AND open_time != '' THEN
-            IF open_time !~ '^[0-2][0-9]:[0-5][0-9]$' THEN
-                RETURN FALSE;
-            END IF;
-        END IF;
-        
-        IF close_time IS NOT NULL AND close_time != '' THEN
-            IF close_time !~ '^[0-2][0-9]:[0-5][0-9]$' THEN
-                RETURN FALSE;
-            END IF;
-        END IF;
+    -- Basic format check - ensure it's a valid JSON object
+    IF jsonb_typeof(hours) != 'object' THEN
+        RETURN FALSE;
     END IF;
     
     RETURN TRUE;

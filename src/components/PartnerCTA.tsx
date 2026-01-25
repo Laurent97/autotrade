@@ -60,12 +60,15 @@ const PartnerCTA = () => {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4">
-              <Link to="/partner/register">
-                <Button variant="hero" size="xl" className="gap-2 w-full sm:w-auto">
-                  Become a Partner
-                  <ArrowRight className="w-5 h-5" />
-                </Button>
-              </Link>
+              <Button 
+                variant="hero" 
+                size="xl" 
+                className="gap-2 w-full sm:w-auto"
+                onClick={() => (window as any).openPartnerModal?.()}
+              >
+                Become a Partner
+                <ArrowRight className="w-5 h-5" />
+              </Button>
               <Link to="/partner/info">
                 <Button variant="hero-outline" size="xl" className="w-full sm:w-auto">
                   Learn More
