@@ -15,13 +15,33 @@ interface PartnerShop {
   user_id: string;
   store_name: string;
   store_slug: string;
+  store_tagline?: string;
   description?: string;
   logo_url?: string;
   banner_url?: string;
+  brand_color?: string;
+  accent_color?: string;
+  business_type?: string;
+  store_category?: string;
+  year_established?: string;
   contact_email?: string;
   contact_phone?: string;
+  website?: string;
+  social_facebook?: string;
+  social_instagram?: string;
+  social_linkedin?: string;
   country?: string;
   city?: string;
+  timezone?: string;
+  business_hours?: {
+    monday: { open: string; close: string; };
+    tuesday: { open: string; close: string; };
+    wednesday: { open: string; close: string; };
+    thursday: { open: string; close: string; };
+    friday: { open: string; close: string; };
+    saturday: { open: string; close: string; };
+    sunday: { open: string; close: string; };
+  };
   commission_rate: number;
   total_earnings: number;
   total_orders: number;
@@ -76,26 +96,59 @@ const ShopCard = ({ shop }: { shop: PartnerShop }) => {
     return num.toString();
   };
 
+  const getBusinessTypeLabel = (type?: string) => {
+    const types = {
+      'individual': 'Individual Seller',
+      'business': 'Business',
+      'corporation': 'Corporation',
+      'partnership': 'Partnership'
+    };
+    return types[type as keyof typeof types] || type || 'Business';
+  };
+
+  const getCategoryLabel = (category?: string) => {
+    const categories = {
+      'premium_auto': 'Premium Auto Parts',
+      'performance': 'Performance Parts',
+      'accessories': 'Car Accessories',
+      'tools': 'Tools & Equipment',
+      'care': 'Car Care Products',
+      'electronics': 'Car Electronics'
+    };
+    return categories[category as keyof typeof categories] || category || 'General';
+  };
+
   return (
     <Link to={`/store/${shop.store_slug}`} className="group block">
       <Card className="overflow-hidden border border-border hover:border-accent transition-all duration-300 hover:shadow-lg">
-        {/* Banner/Logo */}
-        <div className="relative h-48 sm:h-48 bg-gradient-to-br from-accent/20 to-accent/5">
+        {/* Enhanced Banner/Logo */}
+        <div className="relative h-48 sm:h-48">
           {shop.banner_url ? (
-            <img
-              src={shop.banner_url}
-              alt={shop.store_name}
-              className="w-full h-full object-cover"
-            />
+            <div className="relative w-full h-full">
+              <img
+                src={shop.banner_url}
+                alt={shop.store_name}
+                className="w-full h-full object-cover"
+              />
+              {/* Gradient overlay for better text visibility */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
+            </div>
           ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <Store className="w-12 h-12 sm:w-16 sm:h-16 text-accent/30" />
+            <div 
+              className="w-full h-full flex items-center justify-center"
+              style={{
+                background: shop.brand_color 
+                  ? `linear-gradient(135deg, ${shop.brand_color}dd, ${shop.brand_color}99)`
+                  : 'linear-gradient(135deg, rgb(59 130 246 / 0.3), rgb(147 51 234 / 0.2))'
+              }}
+            >
+              <Store className="w-12 h-12 sm:w-16 sm:h-16 text-white/50" />
             </div>
           )}
           
-          {/* Logo Overlay */}
+          {/* Enhanced Logo Overlay */}
           <div className="absolute top-3 sm:top-4 left-3 sm:left-4">
-            <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg bg-background/90 backdrop-blur-sm border border-border flex items-center justify-center overflow-hidden">
+            <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-xl bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border-2 border-white dark:border-gray-700 shadow-lg flex items-center justify-center overflow-hidden">
               {shop.logo_url ? (
                 <img
                   src={shop.logo_url}
@@ -108,38 +161,73 @@ const ShopCard = ({ shop }: { shop: PartnerShop }) => {
             </div>
           </div>
 
-          {/* Status Badges */}
-          <div className="absolute top-3 sm:top-4 right-3 sm:right-4 flex gap-1 sm:gap-2">
+          {/* Enhanced Status Badges */}
+          <div className="absolute top-3 sm:top-4 right-3 sm:right-4 flex flex-col gap-1 sm:gap-2">
             {shop.is_active && shop.partner_status === 'approved' && (
-              <Badge className="bg-green-500 text-white text-xs px-2 py-1">
+              <Badge className="bg-green-500 text-white text-xs px-2 py-1 shadow-lg">
                 Active
               </Badge>
             )}
             {shop.rating >= 4.5 && (
-              <Badge className="bg-yellow-500 text-white text-xs px-2 py-1">
+              <Badge className="bg-yellow-500 text-white text-xs px-2 py-1 shadow-lg">
                 Top Rated
               </Badge>
             )}
+            {shop.year_established && (
+              <Badge className="bg-blue-500 text-white text-xs px-2 py-1 shadow-lg">
+                Since {shop.year_established}
+              </Badge>
+            )}
           </div>
+
+          {/* Store Category Badge */}
+          {shop.store_category && (
+            <div className="absolute bottom-3 left-3 sm:left-4">
+              <span 
+                className="px-2 py-1 text-xs font-medium rounded-full shadow-lg"
+                style={{
+                  backgroundColor: shop.accent_color ? `${shop.accent_color}dd` : 'rgb(59 130 246)',
+                  color: 'white'
+                }}
+              >
+                {getCategoryLabel(shop.store_category)}
+              </span>
+            </div>
+          )}
         </div>
 
-        {/* Content */}
+        {/* Enhanced Content */}
         <CardContent className="p-3 sm:p-4">
-          {/* Shop Name */}
-          <h3 className="font-semibold text-base sm:text-lg text-foreground mb-2 group-hover:text-accent transition-colors">
-            {shop.store_name}
-          </h3>
+          {/* Shop Name and Tagline */}
+          <div className="mb-3">
+            <h3 className="font-semibold text-base sm:text-lg text-foreground mb-1 group-hover:text-accent transition-colors">
+              {shop.store_name}
+            </h3>
+            {shop.store_tagline && (
+              <p className="text-xs sm:text-sm text-muted-foreground italic line-clamp-1">
+                "{shop.store_tagline}"
+              </p>
+            )}
+          </div>
+
+          {/* Business Type */}
+          {shop.business_type && (
+            <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground mb-2">
+              <Package className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span>{getBusinessTypeLabel(shop.business_type)}</span>
+            </div>
+          )}
 
           {/* Description */}
           {shop.description && (
-            <p className="text-xs sm:text-sm text-muted-foreground mb-2 sm:mb-3 line-clamp-2">
+            <p className="text-xs sm:text-sm text-muted-foreground mb-3 line-clamp-2">
               {shop.description}
             </p>
           )}
 
           {/* Location */}
           {(shop.city || shop.country) && (
-            <div className="flex items-center gap-1 text-xs sm:text-sm text-muted-foreground mb-2 sm:mb-3">
+            <div className="flex items-center gap-1 text-xs sm:text-sm text-muted-foreground mb-3">
               <MapPin className="w-3 h-3 sm:w-4 sm:h-4" />
               <span className="truncate">
                 {shop.city && shop.country ? `${shop.city}, ${shop.country}` : shop.city || shop.country}
@@ -147,9 +235,9 @@ const ShopCard = ({ shop }: { shop: PartnerShop }) => {
             </div>
           )}
 
-          {/* Rating */}
+          {/* Rating and Reviews */}
           {shop.rating > 0 && (
-            <div className="flex items-center gap-1 sm:gap-2 mb-2 sm:mb-3">
+            <div className="flex items-center gap-2 sm:gap-3 mb-3">
               <div className="flex items-center">
                 {[...Array(5)].map((_, i) => (
                   <Star
@@ -169,24 +257,56 @@ const ShopCard = ({ shop }: { shop: PartnerShop }) => {
             </div>
           )}
 
-          {/* Contact Info */}
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4 text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4">
+          {/* Enhanced Contact Info */}
+          <div className="flex flex-wrap gap-2 sm:gap-3 text-xs sm:text-sm text-muted-foreground mb-4">
             {shop.contact_email && (
-              <div className="flex items-center gap-1 truncate">
-                <Mail className="w-3 h-3 sm:w-4 sm:h-4" />
+              <div className="flex items-center gap-1 truncate flex-1 min-w-0">
+                <Mail className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
                 <span className="truncate">{shop.contact_email}</span>
               </div>
             )}
             {shop.contact_phone && (
-              <div className="flex items-center gap-1 truncate">
-                <Phone className="w-3 h-3 sm:w-4 sm:h-4" />
-                <span>{shop.contact_phone}</span>
+              <div className="flex items-center gap-1 truncate flex-1 min-w-0">
+                <Phone className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                <span className="truncate">{shop.contact_phone}</span>
+              </div>
+            )}
+            {shop.website && (
+              <div className="flex items-center gap-1 truncate flex-1 min-w-0">
+                <Globe className="w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0" />
+                <span className="truncate">Website</span>
               </div>
             )}
           </div>
 
-          {/* Action Button */}
-          <Button className="w-full group-hover:bg-accent group-hover:text-accent-foreground transition-colors">
+          {/* Social Media Links */}
+          {(shop.social_facebook || shop.social_instagram || shop.social_linkedin) && (
+            <div className="flex gap-2 mb-4">
+              {shop.social_facebook && (
+                <div className="w-6 h-6 rounded bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                  <span className="text-xs font-bold text-blue-600 dark:text-blue-300">f</span>
+                </div>
+              )}
+              {shop.social_instagram && (
+                <div className="w-6 h-6 rounded bg-pink-100 dark:bg-pink-900/30 flex items-center justify-center">
+                  <span className="text-xs font-bold text-pink-600 dark:text-pink-300">i</span>
+                </div>
+              )}
+              {shop.social_linkedin && (
+                <div className="w-6 h-6 rounded bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                  <span className="text-xs font-bold text-blue-600 dark:text-blue-300">in</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Enhanced Action Button */}
+          <Button 
+            className="w-full group-hover:bg-accent group-hover:text-accent-foreground transition-all"
+            style={{
+              backgroundColor: shop.accent_color ? shop.accent_color : undefined
+            }}
+          >
             <span className="flex items-center justify-center gap-2">
               Visit Shop
               <ChevronRight className="w-4 h-4" />
