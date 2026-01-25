@@ -101,6 +101,35 @@ export default function OrderDetails() {
             o.order_number && o.order_number.includes(orderId.split('-')[1])
           );
           console.log('Similar orders found:', similarOrders);
+          
+          // Also try exact match without the random suffix
+          const exactMatch = allOrders.find(o => 
+            o.order_number === orderId
+          );
+          console.log('Exact match found:', exactMatch);
+          
+          // If we found an exact match, use it
+          if (exactMatch) {
+            console.log('Found exact match, using this order:', exactMatch);
+            data = exactMatch;
+            error = null;
+          }
+        }
+        
+        // If still no match, try to find orders that start with the same timestamp
+        if (error && allOrders && orderId.startsWith('ORD-')) {
+          console.log('Trying to find orders with same timestamp...');
+          const timestamp = orderId.split('-')[1];
+          const timestampMatches = allOrders.filter(o => 
+            o.order_number && o.order_number.startsWith(`ORD-${timestamp}`)
+          );
+          console.log('Timestamp matches found:', timestampMatches);
+          
+          if (timestampMatches.length > 0) {
+            console.log('Using first timestamp match:', timestampMatches[0]);
+            data = timestampMatches[0];
+            error = null;
+          }
         }
       }
       
