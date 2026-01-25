@@ -53,15 +53,88 @@ export default function Payment() {
     }
   }, [items, location.state, navigate]);
 
-  const handlePaymentSuccess = () => {
-    // For now, just redirect to success page
-    // In a real implementation, this would handle the payment completion
-    navigate('/order-success', {
-      state: {
-        orderId: orderId,
-        message: 'Payment submitted successfully. Your order will be processed after verification.'
-      },
-    });
+  const handlePaymentSuccess = async (paymentData?: any) => {
+    try {
+      console.log('=== PAYMENT SUCCESS - CREATING ORDER ===');
+      console.log('Payment data received:', paymentData);
+      console.log('Order ID:', orderId);
+      console.log('User:', user);
+      console.log('Cart items:', items);
+      
+      // Create the actual order in the database
+      if (!user || !orderId) {
+        throw new Error('User or order ID missing');
+      }
+
+      // Prepare shipping address from checkout state
+      const shippingAddress = location.state?.shippingAddress;
+      if (!shippingAddress) {
+        throw new Error('Shipping address missing');
+      }
+
+      // Prepare order items
+      const orderItems = items.map(item => ({
+        product_id: item.product.id,
+        partner_product_id: item.partner_product?.id || null,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+      }));
+
+      // Create order data
+      const orderData = {
+        customer_id: user.id,
+        items: orderItems,
+        shipping_address: shippingAddress,
+        billing_address: shippingAddress,
+        payment_method: paymentData?.method || 'unknown',
+        notes: `Payment completed via ${paymentData?.method || 'unknown'}`,
+      };
+
+      console.log('Creating order with data:', orderData);
+
+      // Create the order
+      const { data: order, error } = await orderService.createOrder(orderData);
+
+      console.log('Order creation result:', { data: order, error });
+
+      if (error) {
+        console.error('Order creation failed:', error);
+        throw error;
+      }
+
+      if (!order) {
+        console.error('Order creation returned null data');
+        throw new Error('Order creation failed: No order data returned');
+      }
+
+      console.log('Order created successfully:', {
+        id: order.id,
+        order_number: order.order_number,
+        customer_id: order.customer_id,
+        total_amount: order.total_amount
+      });
+
+      // Clear cart and redirect to success page
+      clearCart();
+      navigate('/order-success', {
+        state: {
+          orderId: order.order_number,
+          orderData: order,
+          paymentData,
+        },
+      });
+
+    } catch (error) {
+      console.error('Payment success handler failed:', error);
+      alert(`Order creation failed: ${error.message}`);
+      // Still redirect to success page with the generated order ID
+      navigate('/order-success', {
+        state: {
+          orderId: orderId,
+          message: 'Payment submitted successfully. Your order will be processed after verification.',
+        },
+      });
+    }
   };
 
   const handlePaymentError = (error: string) => {
