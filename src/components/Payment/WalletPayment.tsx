@@ -235,9 +235,9 @@ const WalletPayment: React.FC<WalletPaymentProps> = ({
   return (
     <div className="wallet-payment space-y-6">
       {/* Wallet Balance Display */}
-      <Card>
+      <Card className="dark:bg-gray-800 dark:border-gray-700">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
             <Wallet className="w-5 h-5 text-green-600" />
             Wallet Balance
           </CardTitle>
@@ -246,54 +246,54 @@ const WalletPayment: React.FC<WalletPaymentProps> = ({
           {walletBalance ? (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Available Balance:</span>
+                <span className="text-sm text-gray-600 dark:text-gray-400">Available Balance:</span>
                 <div className="text-right">
                   <div className="text-2xl font-bold text-green-600">
                     {formatCurrency(walletBalance.balance)}
                   </div>
-                  <div className="text-xs text-gray-500">
+                  <div className="text-xs text-gray-500 dark:text-gray-400">
                     {walletBalance.currency}
                   </div>
                 </div>
               </div>
               
-              <div className="text-xs text-gray-500">
-                Last updated: {new Date(walletBalance.last_updated).toLocaleString()}
+              <div className="text-xs text-gray-500 dark:text-gray-400">
+                Last updated: {new Date(walletBalance.last_updated || walletBalance.created_at).toLocaleString()}
               </div>
               
               <Button 
                 variant="outline" 
                 size="sm" 
                 onClick={fetchWalletBalance}
-                className="w-full"
+                className="w-full dark:border-gray-600 dark:text-gray-300"
               >
                 Refresh Balance
               </Button>
             </div>
           ) : (
             <div className="text-center py-4">
-              <div className="w-8 h-8 border-2 border-gray-300 rounded-full mx-auto mb-2 animate-pulse"></div>
-              <p className="text-gray-500">Loading wallet balance...</p>
+              <div className="w-8 h-8 border-2 border-gray-300 dark:border-gray-600 rounded-full mx-auto mb-2 animate-pulse"></div>
+              <p className="text-gray-500 dark:text-gray-400">Loading wallet balance...</p>
             </div>
           )}
         </CardContent>
       </Card>
 
       {/* Payment Summary */}
-      <Card>
+      <Card className="dark:bg-gray-800 dark:border-gray-700">
         <CardHeader>
-          <CardTitle>Payment Summary</CardTitle>
+          <CardTitle className="text-gray-900 dark:text-white">Payment Summary</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-gray-600">Order Amount:</span>
-              <span className="font-semibold">{formatCurrency(amount)}</span>
+              <span className="text-gray-600 dark:text-gray-400">Order Amount:</span>
+              <span className="font-semibold text-gray-900 dark:text-white">{formatCurrency(amount)}</span>
             </div>
             
             {walletBalance && (
               <div className="flex items-center justify-between">
-                <span className="text-gray-600">Remaining Balance:</span>
+                <span className="text-gray-600 dark:text-gray-400">Remaining Balance:</span>
                 <span className={`font-semibold ${
                   walletBalance.balance >= amount 
                     ? 'text-green-600' 
@@ -304,10 +304,10 @@ const WalletPayment: React.FC<WalletPaymentProps> = ({
               </div>
             )}
             
-            <div className="border-t pt-4">
+            <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
               <div className="flex items-center justify-between">
-                <span className="font-semibold">Total:</span>
-                <span className="text-lg font-bold">{formatCurrency(amount)}</span>
+                <span className="font-semibold text-gray-900 dark:text-white">Total:</span>
+                <span className="text-lg font-bold text-gray-900 dark:text-white">{formatCurrency(amount)}</span>
               </div>
             </div>
           </div>
@@ -315,9 +315,9 @@ const WalletPayment: React.FC<WalletPaymentProps> = ({
       </Card>
 
       {/* Security Notice */}
-      <Alert>
+      <Alert className="dark:bg-gray-800 dark:border-gray-700">
         <AlertTriangle className="h-4 w-4" />
-        <AlertDescription>
+        <AlertDescription className="text-gray-300">
           <strong>Security Notice:</strong> This payment will be processed immediately using your wallet balance. 
           No additional confirmation is required for wallet payments.
         </AlertDescription>
@@ -326,9 +326,9 @@ const WalletPayment: React.FC<WalletPaymentProps> = ({
       {/* Payment Button */}
       <div className="space-y-4">
         {walletBalance && walletBalance.balance < amount && (
-          <Alert className="border-red-200 bg-red-50">
+          <Alert className="border-red-200 bg-red-50 dark:bg-red-900 dark:border-red-800">
             <AlertTriangle className="h-4 w-4 text-red-600" />
-            <AlertDescription className="text-red-800">
+            <AlertDescription className="text-red-800 dark:text-red-200">
               <strong>Insufficient Balance:</strong> You need {formatCurrency(amount - walletBalance.balance)} more to complete this payment.
             </AlertDescription>
           </Alert>
@@ -355,12 +355,12 @@ const WalletPayment: React.FC<WalletPaymentProps> = ({
       </div>
 
       {/* Benefits */}
-      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-        <h4 className="font-semibold text-green-800 mb-2 flex items-center gap-2">
+      <div className="bg-green-50 border border-green-200 dark:bg-green-900 dark:border-green-800 rounded-lg p-4">
+        <h4 className="font-semibold text-green-800 dark:text-green-200 mb-2 flex items-center gap-2">
           <CheckCircle className="w-4 h-4" />
           Wallet Benefits
         </h4>
-        <ul className="text-sm text-green-700 space-y-1">
+        <ul className="text-sm text-green-700 dark:text-green-300 space-y-1">
           <li>✅ Instant processing - No waiting required</li>
           <li>✅ No admin confirmation needed</li>
           <li>✅ Secure and encrypted transactions</li>
@@ -369,14 +369,14 @@ const WalletPayment: React.FC<WalletPaymentProps> = ({
       </div>
 
       {/* User Info */}
-      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+      <div className="bg-gray-50 border border-gray-200 dark:bg-gray-800 dark:border-gray-700 rounded-lg p-4">
         <div className="flex items-center gap-3">
-          <User className="w-5 h-5 text-gray-600" />
+          <User className="w-5 h-5 text-gray-600 dark:text-gray-400" />
           <div>
-            <div className="font-medium text-gray-900">
+            <div className="font-medium text-gray-900 dark:text-white">
               {user?.email || 'Unknown User'}
             </div>
-            <div className="text-sm text-gray-500">
+            <div className="text-sm text-gray-500 dark:text-gray-400">
               Order ID: #{orderId}
             </div>
           </div>

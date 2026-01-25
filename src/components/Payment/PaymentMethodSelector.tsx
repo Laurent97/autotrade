@@ -171,8 +171,8 @@ export const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
   return (
     <div className="payment-method-selector space-y-6">
       {/* Debug Information */}
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-        <h4 className="font-semibold text-yellow-800 mb-2">🔍 Debug Information</h4>
+      <div className="bg-yellow-50 dark:bg-yellow-900 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4 mb-4">
+        <h4 className="font-semibold text-yellow-800 dark:text-yellow-200 mb-2">🔍 Debug Information</h4>
         <div className="text-sm space-y-1">
           <div><strong>User Logged In:</strong> {user ? 'Yes' : 'No'}</div>
           <div><strong>User Email:</strong> {user?.email || 'N/A'}</div>
@@ -183,14 +183,14 @@ export const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
       </div>
 
       {/* User Type Display */}
-      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+      <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
-              <User className="w-5 h-5 text-gray-600" />
+              <User className="w-5 h-5 text-gray-600 dark:text-gray-400" />
               <div>
-                <h3 className="font-semibold text-gray-900">Account Type</h3>
-                <p className="text-sm text-gray-600">{userTypeInfo.description}</p>
+                <h3 className="font-semibold text-gray-900 dark:text-white">Account Type</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{userTypeInfo.description}</p>
               </div>
             </div>
           </div>
@@ -206,8 +206,8 @@ export const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
       </div>
 
       <div>
-        <h2 className="text-2xl font-bold mb-2">Select Payment Method</h2>
-        <p className="text-gray-600">Choose your preferred payment method to complete your order</p>
+        <h2 className="text-2xl font-bold mb-2 text-gray-900 dark:text-white">Select Payment Method</h2>
+        <p className="text-gray-600 dark:text-gray-400">Choose your preferred payment method to complete your order</p>
       </div>
 
       {!selectedMethod && (
@@ -224,23 +224,23 @@ export const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
                 key={method}
                 className={`cursor-pointer transition-all hover:shadow-md ${
                   !methodInfo.available ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
+                } dark:bg-gray-800 dark:border-gray-700`}
                 onClick={() => methodInfo.available && setSelectedMethod(method)}
               >
                 <CardHeader className="pb-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className={`p-2 rounded-lg ${
-                        method === 'stripe' ? 'bg-blue-100 text-blue-600' :
-                        method === 'paypal' ? 'bg-blue-100 text-blue-600' :
-                        method === 'crypto' ? 'bg-orange-100 text-orange-600' :
-                        'bg-green-100 text-green-600'
+                        method === 'stripe' ? 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400' :
+                        method === 'paypal' ? 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400' :
+                        method === 'crypto' ? 'bg-orange-100 dark:bg-orange-900 text-orange-600 dark:text-orange-400' :
+                        'bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-400'
                       }`}>
                         {methodInfo.icon}
                       </div>
                       <div>
-                        <CardTitle className="text-lg">{methodInfo.name}</CardTitle>
-                        <p className="text-sm text-gray-600">{methodInfo.description}</p>
+                        <CardTitle className="text-lg text-gray-900 dark:text-white">{methodInfo.name}</CardTitle>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">{methodInfo.description}</p>
                       </div>
                     </div>
                   </div>
@@ -255,7 +255,7 @@ export const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
                         </Badge>
                       )}
                       {methodInfo.securityNote && (
-                        <div className="flex items-center gap-1 text-xs text-yellow-600">
+                        <div className="flex items-center gap-1 text-xs text-yellow-600 dark:text-yellow-400">
                           <AlertTriangle className="h-3 w-3" />
                           <span>{methodInfo.securityNote}</span>
                         </div>
@@ -263,7 +263,7 @@ export const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
                     </div>
                     
                     {methodInfo.available ? (
-                      <Button variant="outline" size="sm">
+                      <Button variant="outline" size="sm" className="dark:border-gray-600 dark:text-gray-300">
                         Select
                       </Button>
                     ) : (
@@ -284,28 +284,29 @@ export const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className={`p-2 rounded-lg ${
-                selectedMethod === 'stripe' ? 'bg-blue-100 text-blue-600' :
-                selectedMethod === 'paypal' ? 'bg-blue-100 text-blue-600' :
-                selectedMethod === 'crypto' ? 'bg-orange-100 text-orange-600' :
-                'bg-green-100 text-green-600'
+                selectedMethod === 'stripe' ? 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400' :
+                selectedMethod === 'paypal' ? 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400' :
+                selectedMethod === 'crypto' ? 'bg-orange-100 dark:bg-orange-900 text-orange-600 dark:text-orange-400' :
+                'bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-400'
               }`}>
                 {getPaymentMethodInfo(selectedMethod).icon}
               </div>
               <div>
-                <h3 className="font-semibold">{getPaymentMethodInfo(selectedMethod).name}</h3>
-                <p className="text-sm text-gray-600">{getPaymentMethodInfo(selectedMethod).description}</p>
+                <h3 className="font-semibold text-gray-900 dark:text-white">{getPaymentMethodInfo(selectedMethod).name}</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{getPaymentMethodInfo(selectedMethod).description}</p>
               </div>
             </div>
             
             <Button
               variant="outline"
               onClick={() => setSelectedMethod(null)}
+              className="dark:border-gray-600 dark:text-gray-300"
             >
               Change Method
             </Button>
           </div>
 
-          <div className="border-t pt-4">
+          <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
             {renderPaymentForm()}
           </div>
         </div>
