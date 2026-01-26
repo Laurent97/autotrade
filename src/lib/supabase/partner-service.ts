@@ -554,6 +554,10 @@ export const partnerService = {
     country?: string;
     city?: string;
     tax_id?: string;
+    website?: string;
+    social_facebook?: string;
+    social_instagram?: string;
+    social_linkedin?: string;
   }) {
     try {
       console.log('📝 Updating partner settings for user:', userId);
