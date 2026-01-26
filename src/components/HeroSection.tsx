@@ -28,7 +28,7 @@ const HeroSection = () => {
   ];
 
   return (
-    <section className="relative min-h-[85vh] bg-gradient-to-br from-slate-50 to-white border-b border-gray-200">
+    <section className="relative min-h-[85vh] bg-gradient-to-br from-muted to-card border-b border-border">
       {/* Professional Background Pattern */}
       <div className="absolute inset-0 opacity-5">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_2px_2px,rgba(0,0,0,0.1)_1px,transparent_0)] [background-size:30px_30px]" />
@@ -46,18 +46,18 @@ const HeroSection = () => {
             </div>
 
             {/* Professional Heading */}
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-slate-900 leading-tight mb-6">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground leading-tight mb-6">
               Global Automotive
               <span className="block text-blue-600">Trading Platform</span>
             </h1>
 
             {/* B2B Description */}
-            <p className="text-lg text-slate-600 mb-8 max-w-xl">
+            <p className="text-lg text-muted-foreground mb-8 max-w-xl">
               Connect with verified automotive suppliers worldwide. Source vehicles, parts, and accessories at wholesale prices with secure trade protection.
             </p>
 
             {/* Professional Search Bar */}
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-2 mb-8">
+            <div className="bg-card rounded-xl border border-border shadow-sm p-2 mb-8">
               <div className="flex flex-col lg:flex-row gap-2">
                 <div className="relative flex-1">
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -67,7 +67,7 @@ const HeroSection = () => {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     onKeyPress={handleKeyPress}
-                    className="w-full h-12 pl-12 pr-4 bg-transparent text-slate-900 placeholder:text-gray-400 border-0 focus:ring-0 outline-none"
+                    className="w-full h-12 pl-12 pr-4 bg-transparent text-foreground placeholder:text-gray-400 border-0 focus:ring-0 outline-none"
                   />
                 </div>
                 <Button 
@@ -112,7 +112,7 @@ const HeroSection = () => {
                 <Button 
                   variant="outline" 
                   size="lg" 
-                  className="border-2 border-slate-600 text-slate-600 hover:bg-slate-600 hover:text-white font-semibold gap-2"
+                  className="border-2 border-slate-600 text-muted-foreground hover:bg-slate-600 hover:text-white font-semibold gap-2"
                 >
                   <Building2 className="w-5 h-5" />
                   Become a Supplier
@@ -121,7 +121,7 @@ const HeroSection = () => {
             </div>
 
             {/* Trust Indicators */}
-            <div className="flex items-center gap-6 text-sm text-slate-600">
+            <div className="flex items-center gap-6 text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
                 <Shield className="w-4 h-4 text-green-600" />
                 <span>Trade Assurance</span>
@@ -146,7 +146,7 @@ const HeroSection = () => {
                   const Icon = stat.icon;
                   return (
                     <div key={index} className="text-center">
-                      <div className="w-12 h-12 bg-white/10 rounded-xl flex items-center justify-center mx-auto mb-3">
+                      <div className="w-12 h-12 bg-card/10 rounded-xl flex items-center justify-center mx-auto mb-3">
                         <Icon className="w-6 h-6" />
                       </div>
                       <div className="text-2xl font-bold mb-1">{stat.value}</div>
@@ -162,7 +162,7 @@ const HeroSection = () => {
                   Join thousands of suppliers growing their business on our platform
                 </p>
                 <Link to="/become-partner">
-                  <Button className="w-full bg-white text-blue-600 hover:bg-blue-50 font-semibold">
+                  <Button className="w-full bg-card text-blue-600 hover:bg-blue-50 font-semibold">
                     Start Selling Today
                   </Button>
                 </Link>
@@ -173,10 +173,10 @@ const HeroSection = () => {
       </div>
 
       {/* Bottom Categories Bar */}
-      <div className="bg-slate-50 border-t border-gray-200 py-6">
+      <div className="bg-muted border-t border-border py-6">
         <div className="container-wide">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-slate-900">Top Categories</h3>
+            <h3 className="text-lg font-semibold text-foreground">Top Categories</h3>
             <Link to="/products" className="text-blue-600 hover:text-blue-700 text-sm font-medium">
               View All →
             </Link>
@@ -195,14 +195,14 @@ const HeroSection = () => {
                 <Link
                   key={index}
                   to={`/products?category=${category.name.toLowerCase().replace(' ', '-')}`}
-                  className="bg-white rounded-lg border border-gray-200 p-4 hover:border-blue-300 hover:shadow-md transition-all group"
+                  className="bg-card rounded-lg border border-border p-4 hover:border-blue-300 hover:shadow-md transition-all group"
                 >
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center group-hover:bg-blue-100 transition-colors">
                       <Icon className="w-5 h-5 text-blue-600" />
                     </div>
                     <div>
-                      <div className="font-medium text-slate-900 text-sm">{category.name}</div>
+                      <div className="font-medium text-foreground text-sm">{category.name}</div>
                       <div className="text-xs text-gray-500">{category.count} Products</div>
                     </div>
                   </div>

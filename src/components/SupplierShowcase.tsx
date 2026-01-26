@@ -85,12 +85,12 @@ const testimonials = [
 
 const SupplierCard = ({ supplier }: { supplier: typeof topSuppliers[0] }) => {
   return (
-    <div className="bg-white rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-lg transition-all duration-300 p-6">
+    <div className="bg-card rounded-xl border border-border hover:border-blue-300 hover:shadow-lg transition-all duration-300 p-6">
       {/* Header */}
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-2">
-            <h3 className="font-bold text-slate-900 text-lg">{supplier.name}</h3>
+            <h3 className="font-bold text-foreground text-lg">{supplier.name}</h3>
             {supplier.verified && (
               <div className="flex items-center gap-1 px-2 py-1 bg-green-50 text-green-700 rounded-full text-xs font-semibold">
                 <CheckCircle className="w-3 h-3" />
@@ -98,14 +98,14 @@ const SupplierCard = ({ supplier }: { supplier: typeof topSuppliers[0] }) => {
               </div>
             )}
           </div>
-          <div className="flex items-center gap-2 text-sm text-slate-600 mb-2">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
             <MapPin className="w-4 h-4" />
             <span>{supplier.location}</span>
           </div>
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1">
               <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-              <span className="font-semibold text-slate-900">{supplier.rating}</span>
+              <span className="font-semibold text-foreground">{supplier.rating}</span>
               <span className="text-sm text-slate-500">({supplier.reviews.toLocaleString()})</span>
             </div>
             <span className="text-sm text-blue-600">{supplier.responseTime} response</span>
@@ -135,7 +135,7 @@ const SupplierCard = ({ supplier }: { supplier: typeof topSuppliers[0] }) => {
       {/* Stats */}
       <div className="flex items-center justify-between pt-4 border-t border-gray-100">
         <div className="text-center">
-          <div className="font-bold text-slate-900">{supplier.products.toLocaleString()}</div>
+          <div className="font-bold text-foreground">{supplier.products.toLocaleString()}</div>
           <div className="text-xs text-slate-500">Products</div>
         </div>
         <Link to={`/suppliers/${supplier.id}`}>
@@ -150,7 +150,7 @@ const SupplierCard = ({ supplier }: { supplier: typeof topSuppliers[0] }) => {
 
 const TestimonialCard = ({ testimonial }: { testimonial: typeof testimonials[0] }) => {
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-6 relative">
+    <div className="bg-card rounded-xl border border-border p-6 relative">
       <Quote className="absolute top-4 right-4 w-8 h-8 text-blue-200" />
       
       <div className="mb-4">
@@ -169,8 +169,8 @@ const TestimonialCard = ({ testimonial }: { testimonial: typeof testimonials[0] 
           <Building2 className="w-6 h-6 text-gray-500" />
         </div>
         <div>
-          <div className="font-semibold text-slate-900">{testimonial.name}</div>
-          <div className="text-sm text-slate-600">{testimonial.role}</div>
+          <div className="font-semibold text-foreground">{testimonial.name}</div>
+          <div className="text-sm text-muted-foreground">{testimonial.role}</div>
           <div className="text-xs text-blue-600">{testimonial.company}</div>
         </div>
       </div>
@@ -180,15 +180,15 @@ const TestimonialCard = ({ testimonial }: { testimonial: typeof testimonials[0] 
 
 const SupplierShowcase = () => {
   return (
-    <section className="section-padding bg-gray-50">
+    <section className="section-padding bg-muted">
       <div className="container-wide">
         {/* Top Suppliers Section */}
         <div className="mb-20">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
               Top Verified Suppliers
             </h2>
-            <p className="text-lg text-slate-600 max-w-3xl mx-auto">
+            <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
               Partner with industry-leading suppliers who have been thoroughly vetted for quality, 
               reliability, and excellent service. Join thousands of businesses already sourcing with confidence.
             </p>
@@ -213,10 +213,10 @@ const SupplierShowcase = () => {
         {/* Testimonials Section */}
         <div>
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
               Trusted by Industry Leaders
             </h2>
-            <p className="text-lg text-slate-600 max-w-3xl mx-auto">
+            <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
               Hear from businesses that have transformed their automotive sourcing with AutoTradeHub
             </p>
           </div>
@@ -246,7 +246,7 @@ const SupplierShowcase = () => {
             
             <div className="mt-8">
               <Link to="/auth">
-                <Button size="lg" className="bg-white text-blue-600 hover:bg-blue-50 font-semibold">
+                <Button size="lg" className="bg-card text-blue-600 hover:bg-blue-50 font-semibold">
                   Start Sourcing Today
                 </Button>
               </Link>

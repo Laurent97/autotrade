@@ -58,7 +58,7 @@ const PartnerCTA = () => {
               </span>
             </h2>
             
-            <p className="text-lg text-slate-300 mb-8 max-w-lg leading-relaxed">
+            <p className="text-lg text-muted-foreground mb-8 max-w-lg leading-relaxed">
               Join our global B2B marketplace and connect with thousands of buyers worldwide. 
               Leverage our platform, logistics, and expertise to scale your automotive business.
             </p>
@@ -92,7 +92,7 @@ const PartnerCTA = () => {
                 <Button 
                   variant="outline" 
                   size="lg" 
-                  className="border-slate-600 text-slate-300 hover:bg-slate-800 hover:text-white w-full sm:w-auto"
+                  className="border-slate-600 text-muted-foreground hover:bg-slate-800 hover:text-white w-full sm:w-auto"
                 >
                   Learn More
                 </Button>
@@ -129,7 +129,7 @@ const PartnerCTA = () => {
                 <h3 className="font-bold text-white mb-3 text-lg">
                   {benefit.title}
                 </h3>
-                <p className="text-sm text-slate-300 mb-4 leading-relaxed">
+                <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
                   {benefit.description}
                 </p>
                 <ul className="space-y-2">
@@ -155,7 +155,7 @@ const PartnerCTA = () => {
             <h3 className="text-2xl font-bold text-white mb-4">
               Join Thousands of Successful Partners
             </h3>
-            <p className="text-slate-300 max-w-2xl mx-auto">
+            <p className="text-muted-foreground max-w-2xl mx-auto">
               "AutoTradeHub transformed our business. We reached international markets we never thought possible 
               and increased our revenue by 300% in the first year."
             </p>
