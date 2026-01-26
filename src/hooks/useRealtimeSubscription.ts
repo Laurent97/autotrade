@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase/client';
 
 interface RealtimeSubscriptionOptions {
@@ -24,8 +24,13 @@ export function useRealtimeSubscription<T>(
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+  const isRefreshing = useRef(false);
 
   const refresh = useCallback(async () => {
+    if (isRefreshing.current) return; // Prevent duplicate calls
+    
+    isRefreshing.current = true;
+    
     try {
       setLoading(true);
       setError(null);
@@ -37,6 +42,7 @@ export function useRealtimeSubscription<T>(
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setLoading(false);
+      isRefreshing.current = false;
     }
   }, [fetchFunction]);
 
@@ -64,7 +70,7 @@ export function useRealtimeSubscription<T>(
       )
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') {
-          console.log(`Real-time subscription active for ${options.table}`);
+          // console.log(`Real-time subscription active for ${options.table}`);
         } else if (status === 'CHANNEL_ERROR') {
           console.error(`Real-time subscription error for ${options.table}`);
           setError('Real-time connection error');
@@ -75,7 +81,7 @@ export function useRealtimeSubscription<T>(
     return () => {
       supabase.removeChannel(subscription);
     };
-  }, [options.table, options.schema, options.event, options.filter, refresh]);
+  }, [options.table, options.schema, options.event, options.filter]);
 
   return {
     data,

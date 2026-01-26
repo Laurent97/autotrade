@@ -37,38 +37,33 @@ export const walletService = {
   // Get wallet balance
   async getBalance(userId: string): Promise<{ data: WalletBalance | null; error: any }> {
     try {
-      console.log('Fetching wallet balance for user:', userId);
-      
       const { data, error } = await supabase
         .from('wallet_balances')
-        .select('balance, currency, updated_at')
+        .select('*')
         .eq('user_id', userId)
         .single();
 
       if (error && error.code === 'PGRST116') {
-        console.log('Creating new wallet for user:', userId);
-        
+        // Create new wallet if it doesn't exist
         const { data: newBalance, error: createError } = await supabase
           .from('wallet_balances')
           .insert({
             user_id: userId,
             balance: 0,
-            currency: 'USD',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
+            currency: 'USD'
           })
           .select()
           .single();
 
         if (createError) {
-          console.error('Failed to create wallet:', createError);
-          return { data: newBalance, error: createError.message };
+          console.error('Error creating wallet:', createError);
+          return { data: null, error: createError };
         }
-        
-        return { data: newBalance as WalletBalance, error: null };
+
+        return { data: newBalance, error: null };
       }
 
-      return { data: data as WalletBalance, error };
+      return { data, error };
     } catch (error) {
       console.error('Error fetching wallet balance:', error);
       return { data: null, error };
@@ -78,8 +73,6 @@ export const walletService = {
   // Get wallet transactions
   async getTransactions(userId: string, limit = 50, offset = 0): Promise<{ data: WalletTransaction[]; error: any }> {
     try {
-      console.log('Fetching transactions for user:', userId);
-      
       const { data, error } = await supabase
         .from('wallet_transactions')
         .select('*')
@@ -92,7 +85,6 @@ export const walletService = {
         return { data: [], error: null };
       }
 
-      console.log('Transactions loaded:', data?.length);
       return { data: data || [], error: null };
     } catch (error) {
       console.error('Error fetching wallet transactions:', error);
