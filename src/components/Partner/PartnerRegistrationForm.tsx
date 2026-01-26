@@ -98,7 +98,7 @@ const PartnerRegistrationForm: React.FC = () => {
     if (!user) {
       // Store the current path for redirect after login
       const currentPath = window.location.pathname;
-      navigate(`/login?redirect=${encodeURIComponent(currentPath)}`);
+      navigate(`/login?redirect=${currentPath}`);
       return;
     }
   }, [user, navigate]);
