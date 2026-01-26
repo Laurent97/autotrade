@@ -361,6 +361,41 @@ const PartnerRegistrationForm: React.FC = () => {
   };
 
   // Handle form submission
+  // Generate unique store slug
+  const generateUniqueSlug = async (storeName: string): Promise<string> => {
+    let baseSlug = storeName.toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '');
+    
+    let slug = baseSlug;
+    let counter = 1;
+    
+    // Check if slug exists and generate unique one
+    while (true) {
+      const { data, error } = await supabase
+        .from('partner_profiles')
+        .select('store_slug')
+        .eq('store_slug', slug)
+        .single();
+      
+      if (error && error.code === 'PGRST116') {
+        // No rows found, slug is unique
+        break;
+      }
+      
+      // Slug exists, append counter
+      slug = `${baseSlug}-${counter}`;
+      counter++;
+      
+      // Prevent infinite loop
+      if (counter > 1000) {
+        throw new Error('Unable to generate unique store slug');
+      }
+    }
+    
+    return slug;
+  };
+
   const handleSubmit = async () => {
     if (!validateStep(5)) return;
     
@@ -450,14 +485,15 @@ const PartnerRegistrationForm: React.FC = () => {
 
       // Create partner profile with retry
       const { data: partner, error: partnerError } = await retryOperation(async () => {
+        // Generate unique store slug
+        const uniqueSlug = await generateUniqueSlug(formData.storeName);
+        
         const result = await supabase
           .from('partner_profiles')
           .insert({
             user_id: user.id,
             store_name: formData.storeName,
-            store_slug: formData.storeName.toLowerCase()
-              .replace(/[^a-z0-9]+/g, '-')
-              .replace(/^-|-$/g, ''),
+            store_slug: uniqueSlug,
             store_tagline: formData.storeTagline,
             store_description: formData.storeDescription,
             business_type: formData.businessType,
