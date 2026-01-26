@@ -27,7 +27,19 @@ import {
   ExternalLink,
   Wallet,
   ArrowUpRight,
-  Activity
+  Activity,
+  Shield,
+  MapPin,
+  Globe,
+  Monitor,
+  Smartphone,
+  Fingerprint,
+  AlertCircle,
+  Receipt,
+  FileText,
+  UserCheck,
+  Ban,
+  Info
 } from 'lucide-react';
 
 interface Payment {
@@ -58,6 +70,91 @@ interface Payment {
   order?: {
     id: string;
     order_number: string;
+  };
+  // Secure payment details (PCI compliant)
+  payment_details?: {
+    // Card information (masked for security)
+    card_last4?: string;
+    card_brand?: string;
+    card_exp_month?: number;
+    card_exp_year?: number;
+    card_fingerprint?: string;
+    card_country?: string;
+    card_funding?: string;
+    
+    // 3D Secure information
+    three_d_secure?: {
+      authenticated: boolean;
+      version: string;
+      result: string;
+      method: string;
+    };
+    
+    // Billing information
+    billing_address?: {
+      name: string;
+      email: string;
+      phone: string;
+      line1: string;
+      line2?: string;
+      city: string;
+      state: string;
+      postal_code: string;
+      country: string;
+    };
+    
+    // Security and fraud detection
+    fraud_detection?: {
+      risk_score: number;
+      risk_level: 'low' | 'medium' | 'high';
+      ip_address: string;
+      ip_country: string;
+      device_fingerprint: string;
+      browser_info: {
+        user_agent: string;
+        language: string;
+        timezone: string;
+        screen_resolution: string;
+      };
+      velocity_checks: {
+        attempts_last_hour: number;
+        attempts_last_day: number;
+        unique_cards_used: number;
+      };
+    };
+    
+    // Transaction metadata
+    stripe_metadata?: {
+      payment_method_id: string;
+      customer_id: string;
+      invoice_id?: string;
+      receipt_url?: string;
+      balance_transaction_id?: string;
+      transfer_group?: string;
+      description?: string;
+      statement_descriptor?: string;
+    };
+    
+    // Dispute and chargeback information
+    dispute?: {
+      id: string;
+      reason: string;
+      status: string;
+      amount: number;
+      currency: string;
+      evidence_due_by: string;
+      is_chargeback: boolean;
+    };
+    
+    // Refund information
+    refunds?: Array<{
+      id: string;
+      amount: number;
+      currency: string;
+      reason: string;
+      status: string;
+      created_at: string;
+    }>;
   };
 }
 
@@ -529,79 +626,515 @@ const Payments: React.FC = () => {
                               <Eye className="w-4 h-4" />
                             </Button>
                           </DialogTrigger>
-                          <DialogContent className="max-w-2xl">
+                          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                             <DialogHeader>
-                              <DialogTitle>Payment Details</DialogTitle>
+                              <DialogTitle className="flex items-center gap-2">
+                                <Shield className="w-5 h-5" />
+                                Payment Details - Secure View
+                              </DialogTitle>
                               <DialogDescription>
-                                Full payment information and transaction details
+                                Complete payment information with security and fraud detection data
                               </DialogDescription>
                             </DialogHeader>
                             {selectedPayment && (
-                              <div className="space-y-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div>
-                                    <Label>Payment ID</Label>
-                                    <p className="font-mono text-sm">{selectedPayment.id}</p>
-                                  </div>
-                                  <div>
-                                    <Label>Status</Label>
-                                    <div>{getStatusBadge(selectedPayment.status)}</div>
-                                  </div>
-                                  <div>
-                                    <Label>Amount</Label>
-                                    <p className="font-medium">${selectedPayment.amount} {selectedPayment.currency}</p>
-                                  </div>
-                                  <div>
-                                    <Label>Method</Label>
-                                    <div className="flex items-center gap-2">
-                                      {getPaymentMethodIcon(selectedPayment.payment_method)}
-                                      <span className="capitalize">{selectedPayment.payment_method}</span>
+                              <Tabs defaultValue="overview" className="space-y-4">
+                                <TabsList className="grid w-full grid-cols-5">
+                                  <TabsTrigger value="overview">Overview</TabsTrigger>
+                                  <TabsTrigger value="card">Card Info</TabsTrigger>
+                                  <TabsTrigger value="security">Security</TabsTrigger>
+                                  <TabsTrigger value="billing">Billing</TabsTrigger>
+                                  <TabsTrigger value="disputes">Disputes</TabsTrigger>
+                                </TabsList>
+
+                                {/* Overview Tab */}
+                                <TabsContent value="overview" className="space-y-4">
+                                  <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                      <Label>Payment ID</Label>
+                                      <p className="font-mono text-sm bg-muted p-2 rounded">{selectedPayment.id}</p>
+                                    </div>
+                                    <div>
+                                      <Label>Status</Label>
+                                      <div>{getStatusBadge(selectedPayment.status)}</div>
+                                    </div>
+                                    <div>
+                                      <Label>Amount</Label>
+                                      <p className="font-medium text-lg">${selectedPayment.amount} {selectedPayment.currency}</p>
+                                    </div>
+                                    <div>
+                                      <Label>Method</Label>
+                                      <div className="flex items-center gap-2">
+                                        {getPaymentMethodIcon(selectedPayment.payment_method)}
+                                        <span className="capitalize">{selectedPayment.payment_method}</span>
+                                      </div>
                                     </div>
                                   </div>
-                                </div>
-                                
-                                {selectedPayment.payment_intent_id && (
-                                  <div>
-                                    <Label>Stripe Payment Intent</Label>
-                                    <p className="font-mono text-sm">{selectedPayment.payment_intent_id}</p>
+                                  
+                                  {selectedPayment.payment_intent_id && (
+                                    <div>
+                                      <Label>Stripe Payment Intent</Label>
+                                      <div className="flex items-center gap-2">
+                                        <p className="font-mono text-sm bg-muted p-2 rounded flex-1">{selectedPayment.payment_intent_id}</p>
+                                        <Button variant="outline" size="sm">
+                                          <ExternalLink className="w-4 h-4" />
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  )}
+                                  
+                                  {selectedPayment.stripe_charge_id && (
+                                    <div>
+                                      <Label>Stripe Charge ID</Label>
+                                      <p className="font-mono text-sm bg-muted p-2 rounded">{selectedPayment.stripe_charge_id}</p>
+                                    </div>
+                                  )}
+                                  
+                                  {selectedPayment.paypal_order_id && (
+                                    <div>
+                                      <Label>PayPal Order ID</Label>
+                                      <p className="font-mono text-sm bg-muted p-2 rounded">{selectedPayment.paypal_order_id}</p>
+                                    </div>
+                                  )}
+                                  
+                                  {selectedPayment.crypto_transaction_id && (
+                                    <div>
+                                      <Label>Crypto Transaction</Label>
+                                      <div className="space-y-2">
+                                        <p className="font-mono text-sm bg-muted p-2 rounded">{selectedPayment.crypto_transaction_id}</p>
+                                        {selectedPayment.crypto_address && (
+                                          <p className="text-sm text-muted-foreground">To: {selectedPayment.crypto_address}</p>
+                                        )}
+                                      </div>
+                                    </div>
+                                  )}
+                                  
+                                  {selectedPayment.failure_reason && (
+                                    <Alert>
+                                      <AlertTriangle className="h-4 w-4" />
+                                      <AlertDescription>{selectedPayment.failure_reason}</AlertDescription>
+                                    </Alert>
+                                  )}
+                                  
+                                  <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                      <Label>Created</Label>
+                                      <p className="text-sm">{new Date(selectedPayment.created_at).toLocaleString()}</p>
+                                    </div>
+                                    <div>
+                                      <Label>Updated</Label>
+                                      <p className="text-sm">{new Date(selectedPayment.updated_at).toLocaleString()}</p>
+                                    </div>
                                   </div>
-                                )}
-                                
-                                {selectedPayment.paypal_order_id && (
-                                  <div>
-                                    <Label>PayPal Order ID</Label>
-                                    <p className="font-mono text-sm">{selectedPayment.paypal_order_id}</p>
-                                  </div>
-                                )}
-                                
-                                {selectedPayment.crypto_transaction_id && (
-                                  <div>
-                                    <Label>Crypto Transaction</Label>
-                                    <p className="font-mono text-sm">{selectedPayment.crypto_transaction_id}</p>
-                                    {selectedPayment.crypto_address && (
-                                      <p className="text-sm text-muted-foreground">To: {selectedPayment.crypto_address}</p>
-                                    )}
-                                  </div>
-                                )}
-                                
-                                {selectedPayment.failure_reason && (
-                                  <Alert>
-                                    <AlertTriangle className="h-4 w-4" />
-                                    <AlertDescription>{selectedPayment.failure_reason}</AlertDescription>
-                                  </Alert>
-                                )}
-                                
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div>
-                                    <Label>Created</Label>
-                                    <p className="text-sm">{new Date(selectedPayment.created_at).toLocaleString()}</p>
-                                  </div>
-                                  <div>
-                                    <Label>Updated</Label>
-                                    <p className="text-sm">{new Date(selectedPayment.updated_at).toLocaleString()}</p>
-                                  </div>
-                                </div>
-                              </div>
+                                </TabsContent>
+
+                                {/* Card Information Tab */}
+                                <TabsContent value="card" className="space-y-4">
+                                  {selectedPayment.payment_details ? (
+                                    <div className="space-y-6">
+                                      {/* Card Details */}
+                                      <Card>
+                                        <CardHeader>
+                                          <CardTitle className="flex items-center gap-2">
+                                            <CreditCard className="w-5 h-5" />
+                                            Card Information
+                                          </CardTitle>
+                                        </CardHeader>
+                                        <CardContent className="space-y-4">
+                                          <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                              <Label>Card Number</Label>
+                                              <p className="font-mono text-lg">****-****-****-{selectedPayment.payment_details.card_last4}</p>
+                                            </div>
+                                            <div>
+                                              <Label>Card Brand</Label>
+                                              <div className="flex items-center gap-2">
+                                                <Badge variant="outline">{selectedPayment.payment_details.card_brand}</Badge>
+                                                <span className="text-sm text-muted-foreground">{selectedPayment.payment_details.card_funding}</span>
+                                              </div>
+                                            </div>
+                                            <div>
+                                              <Label>Expiration</Label>
+                                              <p className="font-medium">
+                                                {selectedPayment.payment_details.card_exp_month}/{selectedPayment.payment_details.card_exp_year}
+                                              </p>
+                                            </div>
+                                            <div>
+                                              <Label>Card Country</Label>
+                                              <div className="flex items-center gap-2">
+                                                <Globe className="w-4 h-4" />
+                                                <span>{selectedPayment.payment_details.card_country}</span>
+                                              </div>
+                                            </div>
+                                            <div className="col-span-2">
+                                              <Label>Card Fingerprint</Label>
+                                              <p className="font-mono text-sm bg-muted p-2 rounded">{selectedPayment.payment_details.card_fingerprint}</p>
+                                            </div>
+                                          </div>
+                                        </CardContent>
+                                      </Card>
+
+                                      {/* 3D Secure Information */}
+                                      {selectedPayment.payment_details.three_d_secure && (
+                                        <Card>
+                                          <CardHeader>
+                                            <CardTitle className="flex items-center gap-2">
+                                              <Shield className="w-5 h-5" />
+                                              3D Secure Verification
+                                            </CardTitle>
+                                          </CardHeader>
+                                          <CardContent>
+                                            <div className="grid grid-cols-2 gap-4">
+                                              <div>
+                                                <Label>Authenticated</Label>
+                                                <div className="flex items-center gap-2">
+                                                  {selectedPayment.payment_details.three_d_secure.authenticated ? (
+                                                    <CheckCircle className="w-4 h-4 text-green-500" />
+                                                  ) : (
+                                                    <XCircle className="w-4 h-4 text-red-500" />
+                                                  )}
+                                                  <span>{selectedPayment.payment_details.three_d_secure.authenticated ? 'Yes' : 'No'}</span>
+                                                </div>
+                                              </div>
+                                              <div>
+                                                <Label>Version</Label>
+                                                <p className="font-medium">{selectedPayment.payment_details.three_d_secure.version}</p>
+                                              </div>
+                                              <div>
+                                                <Label>Result</Label>
+                                                <Badge variant={selectedPayment.payment_details.three_d_secure.result === 'authenticate_successful' ? 'default' : 'destructive'}>
+                                                  {selectedPayment.payment_details.three_d_secure.result}
+                                                </Badge>
+                                              </div>
+                                              <div>
+                                                <Label>Method</Label>
+                                                <p className="font-medium">{selectedPayment.payment_details.three_d_secure.method}</p>
+                                              </div>
+                                            </div>
+                                          </CardContent>
+                                        </Card>
+                                      )}
+
+                                      {/* Stripe Metadata */}
+                                      {selectedPayment.payment_details.stripe_metadata && (
+                                        <Card>
+                                          <CardHeader>
+                                            <CardTitle className="flex items-center gap-2">
+                                              <FileText className="w-5 h-5" />
+                                              Stripe Metadata
+                                            </CardTitle>
+                                          </CardHeader>
+                                          <CardContent className="space-y-4">
+                                            <div className="grid grid-cols-2 gap-4">
+                                              <div>
+                                                <Label>Payment Method ID</Label>
+                                                <p className="font-mono text-sm">{selectedPayment.payment_details.stripe_metadata.payment_method_id}</p>
+                                              </div>
+                                              <div>
+                                                <Label>Customer ID</Label>
+                                                <p className="font-mono text-sm">{selectedPayment.payment_details.stripe_metadata.customer_id}</p>
+                                              </div>
+                                              <div>
+                                                <Label>Balance Transaction ID</Label>
+                                                <p className="font-mono text-sm">{selectedPayment.payment_details.stripe_metadata.balance_transaction_id}</p>
+                                              </div>
+                                              <div>
+                                                <Label>Transfer Group</Label>
+                                                <p className="font-mono text-sm">{selectedPayment.payment_details.stripe_metadata.transfer_group}</p>
+                                              </div>
+                                            </div>
+                                            {selectedPayment.payment_details.stripe_metadata.receipt_url && (
+                                              <div>
+                                                <Label>Receipt URL</Label>
+                                                <Button variant="outline" size="sm" className="mt-1">
+                                                  <Receipt className="w-4 h-4 mr-2" />
+                                                  View Receipt
+                                                </Button>
+                                              </div>
+                                            )}
+                                          </CardContent>
+                                        </Card>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <Alert>
+                                      <Info className="h-4 w-4" />
+                                      <AlertDescription>No card details available for this payment method.</AlertDescription>
+                                    </Alert>
+                                  )}
+                                </TabsContent>
+
+                                {/* Security Tab */}
+                                <TabsContent value="security" className="space-y-4">
+                                  {selectedPayment.payment_details?.fraud_detection ? (
+                                    <div className="space-y-6">
+                                      {/* Risk Assessment */}
+                                      <Card>
+                                        <CardHeader>
+                                          <CardTitle className="flex items-center gap-2">
+                                            <AlertTriangle className="w-5 h-5" />
+                                            Risk Assessment
+                                          </CardTitle>
+                                        </CardHeader>
+                                        <CardContent>
+                                          <div className="grid grid-cols-3 gap-4">
+                                            <div>
+                                              <Label>Risk Score</Label>
+                                              <div className="flex items-center gap-2">
+                                                <div className="text-2xl font-bold">{selectedPayment.payment_details.fraud_detection.risk_score}</div>
+                                                <Badge variant={
+                                                  selectedPayment.payment_details.fraud_detection.risk_level === 'low' ? 'default' :
+                                                  selectedPayment.payment_details.fraud_detection.risk_level === 'medium' ? 'secondary' : 'destructive'
+                                                }>
+                                                  {selectedPayment.payment_details.fraud_detection.risk_level.toUpperCase()}
+                                                </Badge>
+                                              </div>
+                                            </div>
+                                            <div>
+                                              <Label>IP Address</Label>
+                                              <div className="flex items-center gap-2">
+                                                <Globe className="w-4 h-4" />
+                                                <p className="font-mono">{selectedPayment.payment_details.fraud_detection.ip_address}</p>
+                                              </div>
+                                            </div>
+                                            <div>
+                                              <Label>IP Country</Label>
+                                              <div className="flex items-center gap-2">
+                                                <MapPin className="w-4 h-4" />
+                                                <span>{selectedPayment.payment_details.fraud_detection.ip_country}</span>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        </CardContent>
+                                      </Card>
+
+                                      {/* Device Information */}
+                                      <Card>
+                                        <CardHeader>
+                                          <CardTitle className="flex items-center gap-2">
+                                            <Monitor className="w-5 h-5" />
+                                            Device Information
+                                          </CardTitle>
+                                        </CardHeader>
+                                        <CardContent>
+                                          <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                              <Label>Device Fingerprint</Label>
+                                              <p className="font-mono text-sm bg-muted p-2 rounded">{selectedPayment.payment_details.fraud_detection.device_fingerprint}</p>
+                                            </div>
+                                            <div>
+                                              <Label>User Agent</Label>
+                                              <p className="text-sm truncate">{selectedPayment.payment_details.fraud_detection.browser_info.user_agent}</p>
+                                            </div>
+                                            <div>
+                                              <Label>Language</Label>
+                                              <p className="font-medium">{selectedPayment.payment_details.fraud_detection.browser_info.language}</p>
+                                            </div>
+                                            <div>
+                                              <Label>Timezone</Label>
+                                              <p className="font-medium">{selectedPayment.payment_details.fraud_detection.browser_info.timezone}</p>
+                                            </div>
+                                            <div>
+                                              <Label>Screen Resolution</Label>
+                                              <p className="font-medium">{selectedPayment.payment_details.fraud_detection.browser_info.screen_resolution}</p>
+                                            </div>
+                                          </div>
+                                        </CardContent>
+                                      </Card>
+
+                                      {/* Velocity Checks */}
+                                      <Card>
+                                        <CardHeader>
+                                          <CardTitle className="flex items-center gap-2">
+                                            <Activity className="w-5 h-5" />
+                                            Velocity Checks
+                                          </CardTitle>
+                                        </CardHeader>
+                                        <CardContent>
+                                          <div className="grid grid-cols-3 gap-4">
+                                            <div>
+                                              <Label>Attempts (Last Hour)</Label>
+                                              <p className="text-2xl font-bold">{selectedPayment.payment_details.fraud_detection.velocity_checks.attempts_last_hour}</p>
+                                            </div>
+                                            <div>
+                                              <Label>Attempts (Last Day)</Label>
+                                              <p className="text-2xl font-bold">{selectedPayment.payment_details.fraud_detection.velocity_checks.attempts_last_day}</p>
+                                            </div>
+                                            <div>
+                                              <Label>Unique Cards Used</Label>
+                                              <p className="text-2xl font-bold">{selectedPayment.payment_details.fraud_detection.velocity_checks.unique_cards_used}</p>
+                                            </div>
+                                          </div>
+                                        </CardContent>
+                                      </Card>
+                                    </div>
+                                  ) : (
+                                    <Alert>
+                                      <Info className="h-4 w-4" />
+                                      <AlertDescription>No security information available for this payment.</AlertDescription>
+                                    </Alert>
+                                  )}
+                                </TabsContent>
+
+                                {/* Billing Tab */}
+                                <TabsContent value="billing" className="space-y-4">
+                                  {selectedPayment.payment_details?.billing_address ? (
+                                    <Card>
+                                      <CardHeader>
+                                        <CardTitle className="flex items-center gap-2">
+                                          <MapPin className="w-5 h-5" />
+                                          Billing Address
+                                        </CardTitle>
+                                      </CardHeader>
+                                      <CardContent>
+                                        <div className="grid grid-cols-2 gap-4">
+                                          <div>
+                                            <Label>Name</Label>
+                                            <p className="font-medium">{selectedPayment.payment_details.billing_address.name}</p>
+                                          </div>
+                                          <div>
+                                            <Label>Email</Label>
+                                            <p className="font-medium">{selectedPayment.payment_details.billing_address.email}</p>
+                                          </div>
+                                          <div>
+                                            <Label>Phone</Label>
+                                            <p className="font-medium">{selectedPayment.payment_details.billing_address.phone}</p>
+                                          </div>
+                                          <div>
+                                            <Label>Address Line 1</Label>
+                                            <p className="font-medium">{selectedPayment.payment_details.billing_address.line1}</p>
+                                          </div>
+                                          {selectedPayment.payment_details.billing_address.line2 && (
+                                            <div>
+                                              <Label>Address Line 2</Label>
+                                              <p className="font-medium">{selectedPayment.payment_details.billing_address.line2}</p>
+                                            </div>
+                                          )}
+                                          <div>
+                                            <Label>City</Label>
+                                            <p className="font-medium">{selectedPayment.payment_details.billing_address.city}</p>
+                                          </div>
+                                          <div>
+                                            <Label>State</Label>
+                                            <p className="font-medium">{selectedPayment.payment_details.billing_address.state}</p>
+                                          </div>
+                                          <div>
+                                            <Label>Postal Code</Label>
+                                            <p className="font-medium">{selectedPayment.payment_details.billing_address.postal_code}</p>
+                                          </div>
+                                          <div>
+                                            <Label>Country</Label>
+                                            <div className="flex items-center gap-2">
+                                              <Globe className="w-4 h-4" />
+                                              <span>{selectedPayment.payment_details.billing_address.country}</span>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </CardContent>
+                                    </Card>
+                                  ) : (
+                                    <Alert>
+                                      <Info className="h-4 w-4" />
+                                      <AlertDescription>No billing information available for this payment.</AlertDescription>
+                                    </Alert>
+                                  )}
+                                </TabsContent>
+
+                                {/* Disputes Tab */}
+                                <TabsContent value="disputes" className="space-y-4">
+                                  {selectedPayment.payment_details?.dispute ? (
+                                    <Card>
+                                      <CardHeader>
+                                        <CardTitle className="flex items-center gap-2">
+                                          <Ban className="w-5 h-5" />
+                                          Dispute Information
+                                        </CardTitle>
+                                      </CardHeader>
+                                      <CardContent className="space-y-4">
+                                        <div className="grid grid-cols-2 gap-4">
+                                          <div>
+                                            <Label>Dispute ID</Label>
+                                            <p className="font-mono text-sm">{selectedPayment.payment_details.dispute.id}</p>
+                                          </div>
+                                          <div>
+                                            <Label>Reason</Label>
+                                            <p className="font-medium">{selectedPayment.payment_details.dispute.reason}</p>
+                                          </div>
+                                          <div>
+                                            <Label>Status</Label>
+                                            <Badge variant="outline">{selectedPayment.payment_details.dispute.status}</Badge>
+                                          </div>
+                                          <div>
+                                            <Label>Amount</Label>
+                                            <p className="font-medium">${selectedPayment.payment_details.dispute.amount} {selectedPayment.payment_details.dispute.currency}</p>
+                                          </div>
+                                          <div>
+                                            <Label>Evidence Due By</Label>
+                                            <p className="font-medium">{new Date(selectedPayment.payment_details.dispute.evidence_due_by).toLocaleDateString()}</p>
+                                          </div>
+                                          <div>
+                                            <Label>Is Chargeback</Label>
+                                            <div className="flex items-center gap-2">
+                                              {selectedPayment.payment_details.dispute.is_chargeback ? (
+                                                <AlertTriangle className="w-4 h-4 text-red-500" />
+                                              ) : (
+                                                <CheckCircle className="w-4 h-4 text-green-500" />
+                                              )}
+                                              <span>{selectedPayment.payment_details.dispute.is_chargeback ? 'Yes' : 'No'}</span>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </CardContent>
+                                    </Card>
+                                  ) : (
+                                    <Alert>
+                                      <CheckCircle className="h-4 w-4" />
+                                      <AlertDescription>No disputes or chargebacks for this payment.</AlertDescription>
+                                    </Alert>
+                                  )}
+
+                                  {/* Refunds */}
+                                  {selectedPayment.payment_details?.refunds && selectedPayment.payment_details.refunds.length > 0 && (
+                                    <Card>
+                                      <CardHeader>
+                                        <CardTitle className="flex items-center gap-2">
+                                          <RefreshCw className="w-5 h-5" />
+                                          Refund History
+                                        </CardTitle>
+                                      </CardHeader>
+                                      <CardContent>
+                                        <div className="space-y-4">
+                                          {selectedPayment.payment_details.refunds.map((refund, index) => (
+                                            <div key={refund.id} className="border rounded-lg p-4">
+                                              <div className="grid grid-cols-4 gap-4">
+                                                <div>
+                                                  <Label>Refund ID</Label>
+                                                  <p className="font-mono text-sm">{refund.id}</p>
+                                                </div>
+                                                <div>
+                                                  <Label>Amount</Label>
+                                                  <p className="font-medium">${refund.amount} {refund.currency}</p>
+                                                </div>
+                                                <div>
+                                                  <Label>Reason</Label>
+                                                  <p className="text-sm">{refund.reason}</p>
+                                                </div>
+                                                <div>
+                                                  <Label>Status</Label>
+                                                  <Badge variant="outline">{refund.status}</Badge>
+                                                </div>
+                                              </div>
+                                              <div className="mt-2">
+                                                <Label>Date</Label>
+                                                <p className="text-sm">{new Date(refund.created_at).toLocaleString()}</p>
+                                              </div>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </CardContent>
+                                    </Card>
+                                  )}
+                                </TabsContent>
+                              </Tabs>
                             )}
                           </DialogContent>
                         </Dialog>
