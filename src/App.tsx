@@ -52,6 +52,7 @@ import AdminPartnersTest from "./pages/admin/Partners-Test";
 import AdminUsers from "./pages/admin/Users";
 import AdminOrders from "./pages/admin/Orders";
 import AdminSettings from "./pages/admin/Settings";
+import AdminPasswordReset from "./pages/admin/PasswordReset";
 import ProductForm from "./components/Admin/ProductForm";
 import SeedData from "./pages/admin/SeedData";
 import LikedItems from "./pages/LikedItems";
@@ -134,6 +135,7 @@ const App = () => (
               <Route path="/admin/partners-test" element={<AdminOnlyRoute><AdminPartnersTest /></AdminOnlyRoute>} />
               <Route path="/admin/orders" element={<AdminOnlyRoute><AdminOrders /></AdminOnlyRoute>} />
               <Route path="/admin/settings" element={<AdminOnlyRoute><AdminSettings /></AdminOnlyRoute>} />
+              <Route path="/admin/password-reset" element={<AdminOnlyRoute><AdminPasswordReset /></AdminOnlyRoute>} />
               <Route path="/admin/seed-data" element={<AdminOnlyRoute><SeedData /></AdminOnlyRoute>} />
               <Route path="/orders/:orderId" element={<OrderDetails />} />
               <Route path="/my-orders" element={<MyOrders />} />
