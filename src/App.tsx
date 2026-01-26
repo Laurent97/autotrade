@@ -51,6 +51,7 @@ import AdminPartnersTest from "./pages/admin/Partners-Test";
 import AdminUsers from "./pages/admin/Users";
 import AdminOrders from "./pages/admin/Orders";
 import AdminSettings from "./pages/admin/Settings";
+import AdminPayments from "./pages/admin/Payments";
 import ProductForm from "./components/Admin/ProductForm";
 import LikedItems from "./pages/LikedItems";
 import NotFound from "./pages/NotFound";
@@ -128,7 +129,7 @@ const App = () => (
               <Route path="/admin/partners" element={<AdminOnlyRoute><AdminPartners /></AdminOnlyRoute>} />
               <Route path="/admin/partners-test" element={<AdminOnlyRoute><AdminPartnersTest /></AdminOnlyRoute>} />
               <Route path="/admin/orders" element={<AdminOnlyRoute><AdminOrders /></AdminOnlyRoute>} />
-              <Route path="/admin/payments" element={<AdminOnlyRoute><PaymentVerification /></AdminOnlyRoute>} />
+              <Route path="/admin/payments" element={<AdminOnlyRoute><AdminPayments /></AdminOnlyRoute>} />
               <Route path="/admin/stripe-attempts" element={<AdminOnlyRoute><StripeAttemptsDashboard /></AdminOnlyRoute>} />
               <Route path="/admin/settings" element={<AdminOnlyRoute><AdminSettings /></AdminOnlyRoute>} />
               <Route path="/shipping" element={<Shipping />} />

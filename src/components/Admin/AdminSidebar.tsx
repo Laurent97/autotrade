@@ -10,6 +10,7 @@ export default function AdminSidebar() {
     { path: '/admin/products', label: 'Products', icon: '📦' },
     { path: '/admin/partners', label: 'Partners', icon: '👥' },
     { path: '/admin/orders', label: 'Orders', icon: '🛒' },
+    { path: '/admin/payments', label: 'Payments', icon: '💳' },
     { path: '/admin/settings', label: 'Settings', icon: '⚙️' },
   ];
 
