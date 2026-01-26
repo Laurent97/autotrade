@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Copy, Check, Store } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import StoreIdService from '@/services/storeIdService';
 
 interface StoreIdBadgeProps {
   storeId: string;
@@ -21,7 +22,8 @@ const StoreIdBadge: React.FC<StoreIdBadgeProps> = ({
 
   const copyToClipboard = async () => {
     try {
-      await navigator.clipboard.writeText(storeId);
+      const formattedStoreId = StoreIdService.formatStoreId(storeId);
+      await navigator.clipboard.writeText(formattedStoreId);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
@@ -49,7 +51,7 @@ const StoreIdBadge: React.FC<StoreIdBadgeProps> = ({
         variantClasses[variant]
       )}>
         <Store className="w-3 h-3" />
-        <span>{storeId}</span>
+        <span>{StoreIdService.formatStoreId(storeId)}</span>
       </div>
       
       {showCopy && (
