@@ -414,7 +414,7 @@ export default function Manufacturers() {
     return result;
   });
 
-  console.log('Final filtered shops count:', filteredShops.length);
+  console.log('Final filtered shops count:', filteredShops?.length || 0);
 
   return (
     <div className="min-h-screen bg-background">
@@ -450,7 +450,7 @@ export default function Manufacturers() {
           {/* Results Count and Refresh */}
           <div className="mb-6 flex items-center justify-between">
             <p className="text-muted-foreground">
-              {loading ? 'Loading...' : `Showing ${filteredShops.length} of ${shops.length} shops`}
+              {loading ? 'Loading...' : `Showing ${filteredShops?.length || 0} of ${shops?.length || 0} shops`}
             </p>
             <div className="flex items-center gap-4">
               {lastUpdate && (
@@ -479,7 +479,7 @@ export default function Manufacturers() {
                 <p className="text-muted-foreground">Loading shops...</p>
               </div>
             </div>
-          ) : filteredShops.length === 0 ? (
+          ) : (filteredShops?.length || 0) === 0 ? (
             <div className="text-center py-12">
               <div className="max-w-md mx-auto">
                 <Store className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4 text-muted-foreground" />
@@ -506,7 +506,7 @@ export default function Manufacturers() {
                 ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" 
                 : "grid-cols-1"
             }`}>
-              {filteredShops.map((shop) => (
+              {(filteredShops || []).map((shop) => (
                 <ShopCard key={shop.id} shop={shop} />
               ))}
             </div>
