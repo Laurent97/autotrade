@@ -163,7 +163,7 @@ const Payments: React.FC = () => {
         .from('stripe_payment_attempts')
         .select(`
           *,
-          user:users!customer_id(id, email, full_name)
+          users!user_id(id, email, full_name)
         `)
         .order('created_at', { ascending: false });
 
@@ -190,7 +190,7 @@ const Payments: React.FC = () => {
         .from('pending_payments')
         .select(`
           *,
-          user:users!customer_id(id, email, full_name)
+          users!user_id(id, email, full_name)
         `)
         .order('created_at', { ascending: false });
 
@@ -220,7 +220,7 @@ const Payments: React.FC = () => {
         .from('payment_security_logs')
         .select(`
           *,
-          user:users!user_id(id, email, full_name)
+          users!user_id(id, email, full_name)
         `)
         .order('created_at', { ascending: false })
         .limit(100);
