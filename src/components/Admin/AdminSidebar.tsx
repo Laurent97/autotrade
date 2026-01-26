@@ -11,6 +11,7 @@ export default function AdminSidebar() {
     { path: '/admin/partners', label: 'Partners', icon: '👥' },
     { path: '/admin/orders', label: 'Orders', icon: '🛒' },
     { path: '/admin/payments', label: 'Payments', icon: '💳' },
+    { path: '/admin/password-reset', label: 'Password Reset', icon: '🔑' },
     { path: '/admin/settings', label: 'Settings', icon: '⚙️' },
   ];
 
