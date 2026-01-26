@@ -189,29 +189,34 @@ const Navbar = () => {
               
               <ThemeSwitcher />
               
-              {user ? (
-                <div className="flex items-center gap-2 pl-3 border-l border-border">
-                  <Link to={dashboardUrl}>
-                    <Button variant="outline" size="sm" className="border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white">
-                      <User className="w-3 h-3 mr-2" />
-                      Dashboard
+              <div className="flex items-center gap-2 pl-3 border-l border-border">
+                {user ? (
+                  <>
+                    <Link to={dashboardUrl}>
+                      <Button variant="outline" size="sm" className="border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white">
+                        <User className="w-3 h-3 mr-2" />
+                        Dashboard
+                      </Button>
+                    </Link>
+                    <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-blue-600" onClick={signOut}>
+                      Sign Out
                     </Button>
-                  </Link>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <Link to="/auth">
-                    <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-blue-600">
-                      Sign In
-                    </Button>
-                  </Link>
-                  <Link to="/become-partner">
-                    <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white">
-                      Become Supplier
-                    </Button>
-                  </Link>
-                </div>
-              )}
+                  </>
+                ) : (
+                  <>
+                    <Link to="/auth">
+                      <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-blue-600">
+                        Sign In
+                      </Button>
+                    </Link>
+                    <Link to="/become-partner">
+                      <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white">
+                        Become Supplier
+                      </Button>
+                    </Link>
+                  </>
+                )}
+              </div>
             </div>
 
             {/* Mobile Menu Button */}
