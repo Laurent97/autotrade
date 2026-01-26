@@ -33,6 +33,7 @@ import Notifications from "./pages/Notifications";
 import AppLayout from "./components/Layout/AppLayout";
 import PartnerPending from "./pages/partner/Pending";
 import PartnerRegisterRedirect from "./pages/PartnerRegisterRedirect";
+import BecomePartner from "./pages/BecomePartner";
 import PartnerDashboard from "./pages/partner/Dashboard";
 import PartnerInfo from "./pages/partner/Info";
 import DashboardOverview from "./pages/partner/DashboardOverview";
@@ -107,8 +108,9 @@ const App = () => (
               <Route path="/manufacturers" element={<Manufacturers />} />
               <Route path="/store/:storeSlug" element={<Store />} />
               <Route path="/auth" element={<Auth />} />
-              <Route path="/partner/register" element={<PartnerRegisterRedirect />} />
-              <Route path="/partner/apply" element={<PartnerRegisterRedirect />} />
+              <Route path="/partner/register" element={<BecomePartner />} />
+              <Route path="/partner/apply" element={<BecomePartner />} />
+              <Route path="/become-partner" element={<BecomePartner />} />
                             <Route path="/partner/info" element={<PartnerInfo />} />
               <Route path="/partner/pending" element={<PartnerPending />} />
               <Route path="/partner/dashboard" element={<PartnerOnlyRoute requireApproved={true}><PartnerDashboard /></PartnerOnlyRoute>}>
