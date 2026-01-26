@@ -108,6 +108,8 @@ const App = () => (
               <Route path="/manufacturers" element={<Manufacturers />} />
               <Route path="/store/:storeSlug" element={<Store />} />
               <Route path="/auth" element={<Auth />} />
+              <Route path="/login" element={<Auth />} />
+              <Route path="/register" element={<Auth />} />
               <Route path="/partner/register" element={<BecomePartner />} />
               <Route path="/partner/apply" element={<BecomePartner />} />
               <Route path="/become-partner" element={<BecomePartner />} />
