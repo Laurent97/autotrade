@@ -331,19 +331,6 @@ export default function Manufacturers() {
     const searchLower = searchTerm.toLowerCase();
     const searchWords = searchLower.split(' ').filter(word => word.length > 0);
     
-    // Debug logging for first few shops
-    if ((shops || []).indexOf(shop) < 3) {
-      console.log('Filtering shop:', {
-        name: shop.store_name,
-        description: shop.description,
-        city: shop.city,
-        country: shop.country,
-        searchTerm,
-        categoryFilter,
-        countryFilter
-      });
-    }
-    
     // If no search term and no category filter, show all shops
     if (searchWords.length === 0 && categoryFilter === 'all' && countryFilter === 'all') {
       return true;
@@ -399,19 +386,12 @@ export default function Manufacturers() {
       return false;
     });
 
-    const result = hasSearchMatch || hasAutomotiveMatch;
-    
-    // Debug logging for first few shops
-    if (shops.indexOf(shop) < 3) {
-      console.log('Shop filter result:', {
-        name: shop.store_name,
-        hasSearchMatch,
-        hasAutomotiveMatch,
-        result
-      });
+    // If no search words, return true (show all shops)
+    if (searchWords.length === 0) {
+      return true;
     }
 
-    return result;
+    return hasSearchMatch || hasAutomotiveMatch;
   });
 
   console.log('Final filtered shops count:', filteredShops?.length || 0);

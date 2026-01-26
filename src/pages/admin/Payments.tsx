@@ -160,11 +160,8 @@ const Payments: React.FC = () => {
     try {
       // Fetch Stripe payment attempts
       let stripeQuery = supabase
-        .from('stripe_payment_attempts')
-        .select(`
-          *,
-          users!user_id(id, email, full_name)
-        `)
+        .from('v_stripe_payment_attempts_with_users')
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (searchTerm) {
@@ -187,11 +184,8 @@ const Payments: React.FC = () => {
 
       // Fetch pending payments (PayPal and Crypto)
       let pendingQuery = supabase
-        .from('pending_payments')
-        .select(`
-          *,
-          users!user_id(id, email, full_name)
-        `)
+        .from('v_pending_payments_with_users')
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (paymentMethod !== 'all') {
@@ -217,11 +211,8 @@ const Payments: React.FC = () => {
 
       // Fetch security logs
       let logsQuery = supabase
-        .from('payment_security_logs')
-        .select(`
-          *,
-          users!user_id(id, email, full_name)
-        `)
+        .from('v_payment_security_logs_with_users')
+        .select('*')
         .order('created_at', { ascending: false })
         .limit(100);
 
