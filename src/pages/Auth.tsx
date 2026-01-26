@@ -57,7 +57,7 @@ const Auth = () => {
   const [passwordStrength, setPasswordStrength] = useState({
     score: 0,
     feedback: [],
-    color: 'bg-gray-200'
+    color: 'bg-muted'
   });
 
   // Handle redirect from URL params
@@ -296,7 +296,7 @@ const Auth = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       <Navbar />
       
       <main className="pt-24 pb-16 min-h-screen flex items-center">
@@ -311,16 +311,16 @@ const Auth = () => {
                     <Car className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <h1 className="text-3xl font-bold text-gray-900">AutoTradeHub</h1>
-                    <p className="text-gray-600">Your Premium Automotive Marketplace</p>
+                    <h1 className="text-3xl font-bold text-foreground">AutoTradeHub</h1>
+                    <p className="text-muted-foreground">Your Premium Automotive Marketplace</p>
                   </div>
                 </div>
                 
                 <div className="space-y-2">
-                  <h2 className="text-4xl font-bold text-gray-900">
+                  <h2 className="text-4xl font-bold text-foreground">
                     Join the Future of Auto Parts Trading
                   </h2>
-                  <p className="text-xl text-gray-600">
+                  <p className="text-xl text-muted-foreground">
                     Connect with thousands of buyers and sellers in the automotive industry
                   </p>
                 </div>
@@ -330,11 +330,11 @@ const Auth = () => {
                 {features.map((feature, index) => (
                   <div key={index} className="flex items-start gap-3">
                     <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                      <feature.icon className="w-5 h-5 text-blue-600" />
+                      <feature.icon className="w-5 h-5 text-primary" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-gray-900">{feature.title}</h3>
-                      <p className="text-sm text-gray-600">{feature.description}</p>
+                      <h3 className="font-semibold text-foreground">{feature.title}</h3>
+                      <p className="text-sm text-muted-foreground">{feature.description}</p>
                     </div>
                   </div>
                 ))}
@@ -369,10 +369,10 @@ const Auth = () => {
                   <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
                     <Car className="w-8 h-8 text-white" />
                   </div>
-                  <CardTitle className="text-2xl font-bold text-gray-900">
+                  <CardTitle className="text-2xl font-bold text-foreground">
                     Welcome to AutoTradeHub
                   </CardTitle>
-                  <CardDescription className="text-gray-600">
+                  <CardDescription className="text-muted-foreground">
                     Your gateway to premium automotive parts
                   </CardDescription>
                 </CardHeader>
@@ -392,11 +392,11 @@ const Auth = () => {
                     <TabsContent value="login" className="space-y-6">
                       <form onSubmit={handleLogin} className="space-y-4">
                         <div className="space-y-2">
-                          <Label htmlFor="login-email" className="text-sm font-medium text-gray-700">
+                          <Label htmlFor="login-email" className="text-sm font-medium text-foreground">
                             Email Address
                           </Label>
                           <div className="relative">
-                            <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                            <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                             <Input
                               id="login-email"
                               type="email"
@@ -405,18 +405,18 @@ const Auth = () => {
                               onChange={(e) =>
                                 setLoginData({ ...loginData, email: e.target.value })
                               }
-                              className="pl-10 h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                              className="pl-10 h-12 border-border focus:border-blue-500 focus:ring-blue-500"
                               required
                             />
                           </div>
                         </div>
 
                         <div className="space-y-2">
-                          <Label htmlFor="login-password" className="text-sm font-medium text-gray-700">
+                          <Label htmlFor="login-password" className="text-sm font-medium text-foreground">
                             Password
                           </Label>
                           <div className="relative">
-                            <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                            <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                             <Input
                               id="login-password"
                               type={showPassword ? "text" : "password"}
@@ -425,7 +425,7 @@ const Auth = () => {
                               onChange={(e) =>
                                 setLoginData({ ...loginData, password: e.target.value })
                               }
-                              className="pl-10 pr-10 h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                              className="pl-10 pr-10 h-12 border-border focus:border-blue-500 focus:ring-blue-500"
                               required
                             />
                             <Button
@@ -436,9 +436,9 @@ const Auth = () => {
                               className="absolute right-2 top-2 h-8 w-8 p-0"
                             >
                               {showPassword ? (
-                                <EyeOff className="h-4 w-4 text-gray-400" />
+                                <EyeOff className="h-4 w-4 text-muted-foreground" />
                               ) : (
-                                <Eye className="h-4 w-4 text-gray-400" />
+                                <Eye className="h-4 w-4 text-muted-foreground" />
                               )}
                             </Button>
                           </div>
@@ -453,11 +453,11 @@ const Auth = () => {
                                 setLoginData({ ...loginData, rememberMe: checked as boolean })
                               }
                             />
-                            <Label htmlFor="remember-me" className="text-sm text-gray-600">
+                            <Label htmlFor="remember-me" className="text-sm text-muted-foreground">
                               Remember me
                             </Label>
                           </div>
-                          <Link to="/forgot-password" className="text-sm text-blue-600 hover:text-blue-800">
+                          <Link to="/forgot-password" className="text-sm text-primary hover:text-blue-800">
                             Forgot password?
                           </Link>
                         </div>
@@ -482,11 +482,11 @@ const Auth = () => {
                       </form>
 
                       <div className="text-center">
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-muted-foreground">
                           Don't have an account?{' '}
                           <button
                             onClick={() => document.querySelector('[value="register"]')?.click()}
-                            className="text-blue-600 hover:text-blue-800 font-medium"
+                            className="text-primary hover:underline font-medium"
                           >
                             Sign up
                           </button>
@@ -498,11 +498,11 @@ const Auth = () => {
                     <TabsContent value="register" className="space-y-6">
                       <form onSubmit={handleRegister} className="space-y-4">
                         <div className="space-y-2">
-                          <Label htmlFor="register-name" className="text-sm font-medium text-gray-700">
+                          <Label htmlFor="register-name" className="text-sm font-medium text-foreground">
                             Full Name
                           </Label>
                           <div className="relative">
-                            <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                            <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                             <Input
                               id="register-name"
                               type="text"
@@ -511,18 +511,18 @@ const Auth = () => {
                               onChange={(e) =>
                                 setRegisterData({ ...registerData, fullName: e.target.value })
                               }
-                              className="pl-10 h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                              className="pl-10 h-12 border-border focus:border-blue-500 focus:ring-blue-500"
                               required
                             />
                           </div>
                         </div>
 
                         <div className="space-y-2">
-                          <Label htmlFor="register-email" className="text-sm font-medium text-gray-700">
+                          <Label htmlFor="register-email" className="text-sm font-medium text-foreground">
                             Email Address
                           </Label>
                           <div className="relative">
-                            <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                            <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                             <Input
                               id="register-email"
                               type="email"
@@ -531,18 +531,18 @@ const Auth = () => {
                               onChange={(e) =>
                                 setRegisterData({ ...registerData, email: e.target.value })
                               }
-                              className="pl-10 h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                              className="pl-10 h-12 border-border focus:border-blue-500 focus:ring-blue-500"
                               required
                             />
                           </div>
                         </div>
 
                         <div className="space-y-2">
-                          <Label htmlFor="register-password" className="text-sm font-medium text-gray-700">
+                          <Label htmlFor="register-password" className="text-sm font-medium text-foreground">
                             Password
                           </Label>
                           <div className="relative">
-                            <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                            <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                             <Input
                               id="register-password"
                               type={showPassword ? "text" : "password"}
@@ -552,7 +552,7 @@ const Auth = () => {
                                 setRegisterData({ ...registerData, password: e.target.value });
                                 checkPasswordStrength(e.target.value);
                               }}
-                              className="pl-10 pr-10 h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                              className="pl-10 pr-10 h-12 border-border focus:border-blue-500 focus:ring-blue-500"
                               required
                             />
                             <Button
@@ -563,9 +563,9 @@ const Auth = () => {
                               className="absolute right-2 top-2 h-8 w-8 p-0"
                             >
                               {showPassword ? (
-                                <EyeOff className="h-4 w-4 text-gray-400" />
+                                <EyeOff className="h-4 w-4 text-muted-foreground" />
                               ) : (
-                                <Eye className="h-4 w-4 text-gray-400" />
+                                <Eye className="h-4 w-4 text-muted-foreground" />
                               )}
                             </Button>
                           </div>
@@ -595,11 +595,11 @@ const Auth = () => {
                         </div>
 
                         <div className="space-y-2">
-                          <Label htmlFor="register-confirm" className="text-sm font-medium text-gray-700">
+                          <Label htmlFor="register-confirm" className="text-sm font-medium text-foreground">
                             Confirm Password
                           </Label>
                           <div className="relative">
-                            <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                            <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                             <Input
                               id="register-confirm"
                               type={showConfirmPassword ? "text" : "password"}
@@ -608,7 +608,7 @@ const Auth = () => {
                               onChange={(e) =>
                                 setRegisterData({ ...registerData, confirmPassword: e.target.value })
                               }
-                              className="pl-10 pr-10 h-12 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                              className="pl-10 pr-10 h-12 border-border focus:border-blue-500 focus:ring-blue-500"
                               required
                             />
                             <Button
@@ -619,9 +619,9 @@ const Auth = () => {
                               className="absolute right-2 top-2 h-8 w-8 p-0"
                             >
                               {showConfirmPassword ? (
-                                <EyeOff className="h-4 w-4 text-gray-400" />
+                                <EyeOff className="h-4 w-4 text-muted-foreground" />
                               ) : (
-                                <Eye className="h-4 w-4 text-gray-400" />
+                                <Eye className="h-4 w-4 text-muted-foreground" />
                               )}
                             </Button>
                           </div>
@@ -636,9 +636,9 @@ const Auth = () => {
                                 setRegisterData({ ...registerData, agreeToTerms: checked as boolean })
                               }
                             />
-                            <Label htmlFor="agree-terms" className="text-sm text-gray-600 leading-tight">
+                            <Label htmlFor="agree-terms" className="text-sm text-muted-foreground leading-tight">
                               I agree to the{' '}
-                              <Link to="/terms" className="text-blue-600 hover:text-blue-800">
+                              <Link to="/terms" className="text-primary hover:text-blue-800">
                                 Terms of Service
                               </Link>
                             </Label>
@@ -652,9 +652,9 @@ const Auth = () => {
                                 setRegisterData({ ...registerData, agreeToPrivacy: checked as boolean })
                               }
                             />
-                            <Label htmlFor="agree-privacy" className="text-sm text-gray-600 leading-tight">
+                            <Label htmlFor="agree-privacy" className="text-sm text-muted-foreground leading-tight">
                               I agree to the{' '}
-                              <Link to="/privacy" className="text-blue-600 hover:text-blue-800">
+                              <Link to="/privacy" className="text-primary hover:text-blue-800">
                                 Privacy Policy
                               </Link>
                             </Label>
@@ -668,7 +668,7 @@ const Auth = () => {
                                 setRegisterData({ ...registerData, agreeToMarketing: checked as boolean })
                               }
                             />
-                            <Label htmlFor="agree-marketing" className="text-sm text-gray-600 leading-tight">
+                            <Label htmlFor="agree-marketing" className="text-sm text-muted-foreground leading-tight">
                               I'd like to receive marketing emails (optional)
                             </Label>
                           </div>
@@ -694,11 +694,11 @@ const Auth = () => {
                       </form>
 
                       <div className="text-center">
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-muted-foreground">
                           Already have an account?{' '}
                           <button
                             onClick={() => document.querySelector('[value="login"]')?.click()}
-                            className="text-blue-600 hover:text-blue-800 font-medium"
+                            className="text-primary hover:text-blue-800 font-medium"
                           >
                             Sign in
                           </button>
@@ -725,7 +725,7 @@ const Auth = () => {
                       </div>
                     </div>
                     
-                    <p className="text-xs text-gray-400">
+                    <p className="text-xs text-muted-foreground">
                       By continuing, you agree to our Terms of Service and Privacy Policy
                     </p>
                   </div>

@@ -104,7 +104,7 @@ export default function MyOrders() {
       case 'shipped': return <Truck className="w-4 h-4 text-purple-600" />;
       case 'completed': return <CheckCircle className="w-4 h-4 text-green-600" />;
       case 'cancelled': return <XCircle className="w-4 h-4 text-red-600" />;
-      default: return <Package className="w-4 h-4 text-gray-600" />;
+      default: return <Package className="w-4 h-4 text-muted-foreground" />;
     }
   };
 
@@ -116,7 +116,7 @@ export default function MyOrders() {
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />
-        <main className="flex-grow bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <main className="flex-grow bg-background flex items-center justify-center">
           <LoadingSpinner />
         </main>
         <Footer />
@@ -128,7 +128,7 @@ export default function MyOrders() {
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />
-        <main className="flex-grow bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <main className="flex-grow bg-background flex items-center justify-center">
           <div className="text-center">
             <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6 max-w-md">
               <h2 className="text-xl font-semibold text-red-800 dark:text-red-300 mb-2">
@@ -158,48 +158,48 @@ export default function MyOrders() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
-      <main className="flex-grow bg-gray-50 dark:bg-gray-900 py-8">
+      <main className="flex-grow bg-background py-8">
         <div className="container mx-auto px-4">
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            <h1 className="text-3xl font-bold text-foreground mb-2">
               My Orders
             </h1>
-            <p className="text-gray-600 dark:text-gray-400">
+            <p className="text-muted-foreground">
               View and track all your orders
             </p>
           </div>
 
           {/* Stats Cards */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 text-center">
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">{orders.length}</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Total Orders</div>
+            <div className="bg-card rounded-lg shadow p-4 text-center">
+              <div className="text-2xl font-bold text-foreground">{orders.length}</div>
+              <div className="text-sm text-muted-foreground">Total Orders</div>
             </div>
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 text-center">
+            <div className="bg-card rounded-lg shadow p-4 text-center">
               <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{getStatusCount('pending')}</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Pending</div>
+              <div className="text-sm text-muted-foreground">Pending</div>
             </div>
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 text-center">
+            <div className="bg-card rounded-lg shadow p-4 text-center">
               <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{getStatusCount('processing')}</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Processing</div>
+              <div className="text-sm text-muted-foreground">Processing</div>
             </div>
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 text-center">
+            <div className="bg-card rounded-lg shadow p-4 text-center">
               <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">{getStatusCount('shipped')}</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Shipped</div>
+              <div className="text-sm text-muted-foreground">Shipped</div>
             </div>
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 text-center">
+            <div className="bg-card rounded-lg shadow p-4 text-center">
               <div className="text-2xl font-bold text-green-600 dark:text-green-400">{getStatusCount('completed')}</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Completed</div>
+              <div className="text-sm text-muted-foreground">Completed</div>
             </div>
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 text-center">
+            <div className="bg-card rounded-lg shadow p-4 text-center">
               <div className="text-2xl font-bold text-red-600 dark:text-red-400">{getStatusCount('cancelled')}</div>
-              <div className="text-sm text-gray-600 dark:text-gray-400">Cancelled</div>
+              <div className="text-sm text-muted-foreground">Cancelled</div>
             </div>
           </div>
 
           {/* Search and Filters */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-6">
+          <div className="bg-card rounded-lg shadow p-6 mb-6">
             <div className="flex flex-col lg:flex-row gap-4">
               {/* Search */}
               <div className="flex-1">
@@ -210,7 +210,7 @@ export default function MyOrders() {
                     placeholder="Search by order number or product name..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-foreground"
                   />
                 </div>
               </div>
@@ -221,7 +221,7 @@ export default function MyOrders() {
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value as any)}
                   aria-label="Sort orders by"
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-foreground"
                 >
                   <option value="date">Sort by Date</option>
                   <option value="amount">Sort by Amount</option>
@@ -274,12 +274,12 @@ export default function MyOrders() {
 
           {/* Orders List */}
           {filteredAndSortedOrders.length === 0 ? (
-            <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-lg shadow">
+            <div className="text-center py-12 bg-card rounded-lg shadow">
               <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+              <h3 className="text-xl font-semibold text-foreground mb-2">
                 {searchTerm || filter !== 'all' ? 'No matching orders found' : 'No orders yet'}
               </h3>
-              <p className="text-gray-600 dark:text-gray-400 mb-6">
+              <p className="text-muted-foreground mb-6">
                 {searchTerm || filter !== 'all' 
                   ? 'Try adjusting your search or filters'
                   : 'Start shopping to see your orders here'
@@ -297,27 +297,27 @@ export default function MyOrders() {
           ) : (
             <div className="space-y-4">
               {filteredAndSortedOrders.map((order) => (
-                <div key={order.id} className="bg-white dark:bg-gray-800 rounded-lg shadow hover:shadow-lg transition-shadow">
+                <div key={order.id} className="bg-card rounded-lg shadow hover:shadow-lg transition-shadow">
                   <div className="p-6">
                     <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-4">
                       <div className="flex-1">
                         <div className="flex items-center gap-3 mb-2">
                           {getStatusIcon(order.status)}
-                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                          <h3 className="text-lg font-semibold text-foreground">
                             {order.order_number}
                           </h3>
                           <OrderStatusBadge status={order.status} size="sm" />
                         </div>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                        <p className="text-sm text-muted-foreground">
                           {new Date(order.created_at).toLocaleDateString()} at {new Date(order.created_at).toLocaleTimeString()}
                         </p>
                       </div>
                       <div className="flex items-center gap-4 mt-4 lg:mt-0">
                         <div className="text-right">
-                          <div className="text-lg font-bold text-gray-900 dark:text-white">
+                          <div className="text-lg font-bold text-foreground">
                             ${order.total_amount?.toFixed(2)}
                           </div>
-                          <div className="text-sm text-gray-600 dark:text-gray-400">
+                          <div className="text-sm text-muted-foreground">
                             {order.order_items?.length || 0} items
                           </div>
                         </div>
@@ -344,7 +344,7 @@ export default function MyOrders() {
                               />
                             )}
                             <div>
-                              <p className="text-sm font-medium text-gray-900 dark:text-white">
+                              <p className="text-sm font-medium text-foreground">
                                 {item.product?.title || 'Product'}
                               </p>
                               <p className="text-xs text-gray-500 dark:text-gray-400">
