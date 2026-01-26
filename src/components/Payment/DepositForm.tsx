@@ -54,10 +54,55 @@ export default function DepositForm() {
     const loadCryptoAddresses = async () => {
       setLoadingCrypto(true);
       try {
-        const { data } = await cryptoService.getActiveCryptoAddresses();
-        setCryptoAddresses(data || []);
+        console.log('Loading crypto addresses from database...');
+        
+        // First test the connection
+        const connectionTest = await cryptoService.testConnection();
+        if (!connectionTest.success) {
+          console.error('Database connection failed:', connectionTest.message);
+          toast({
+            title: "Database Connection Failed",
+            description: connectionTest.message,
+            variant: "destructive"
+          });
+          setLoadingCrypto(false);
+          return;
+        }
+        
+        // Then load the addresses
+        const { data, error } = await cryptoService.getActiveCryptoAddresses();
+        
+        if (error) {
+          console.error('Database error loading crypto addresses:', error);
+          toast({
+            title: "Database Error",
+            description: "Unable to load cryptocurrency wallets. Please try again.",
+            variant: "destructive"
+          });
+        } else {
+          console.log('Crypto addresses loaded from database:', data);
+          setCryptoAddresses(data || []);
+          
+          if (data && data.length > 0) {
+            toast({
+              title: "Crypto Wallets Loaded",
+              description: `${data.length} cryptocurrency wallets available for deposit.`,
+            });
+          } else {
+            toast({
+              title: "No Crypto Wallets",
+              description: "No active cryptocurrency wallets found in database.",
+              variant: "destructive"
+            });
+          }
+        }
       } catch (error) {
         console.error('Error loading crypto addresses:', error);
+        toast({
+          title: "Connection Error",
+          description: "Failed to connect to cryptocurrency service.",
+          variant: "destructive"
+        });
       } finally {
         setLoadingCrypto(false);
       }
