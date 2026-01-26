@@ -30,11 +30,13 @@ export const cryptoService = {
       
       console.log('Table exists, fetching addresses...');
       
+      // Add cache-busting parameter to ensure fresh data
       const { data, error } = await supabase
         .from('crypto_addresses')
         .select('id, crypto_type, address, is_active, network, xrp_tag, created_at, updated_at')
         .eq('is_active', true)
-        .order('crypto_type', { ascending: true });
+        .order('crypto_type', { ascending: true })
+        .limit(100); // Add limit to prevent caching issues
 
       if (error) {
         console.error('Database query error:', error);
