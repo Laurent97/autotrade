@@ -98,14 +98,10 @@ export function usePartnerProfiles() {
     async () => {
       const { data, error } = await supabase
         .from('partner_profiles')
-        .select(`
-          *,
-          users (
-            email,
-            full_name
-          )
-        `)
+        .select('*')
         .not('store_name', 'is', null)
+        .eq('is_active', true)
+        .eq('partner_status', 'approved')
         .order('created_at', { ascending: false });
       
       if (error) throw error;

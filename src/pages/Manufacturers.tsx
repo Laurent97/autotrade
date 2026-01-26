@@ -51,10 +51,6 @@ interface PartnerShop {
   is_active: boolean;
   partner_status: 'pending' | 'approved' | 'rejected' | 'suspended';
   created_at: string;
-  users?: {
-    email: string;
-    full_name: string;
-  };
 }
 
 const sortOptions = [
@@ -348,8 +344,7 @@ export default function Manufacturers() {
       shop.store_name.toLowerCase().includes(word) ||
       shop.description?.toLowerCase().includes(word) ||
       shop.city?.toLowerCase().includes(word) ||
-      shop.country?.toLowerCase().includes(word) ||
-      shop.users?.full_name?.toLowerCase().includes(word)
+      shop.country?.toLowerCase().includes(word)
     );
 
     // Check for automotive category matches
