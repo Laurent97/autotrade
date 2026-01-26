@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { PaymentMethodSelector } from '../../components/Payment/PaymentMethodSelector';
+import DepositForm from '../../components/Payment/DepositForm';
 import { 
   ArrowLeft, 
   Shield, 
@@ -29,13 +29,6 @@ export default function WalletDeposit() {
   const navigate = useNavigate();
   const { user } = useAuth();
   
-  const [amount, setAmount] = useState(0);
-  const [customAmount, setCustomAmount] = useState('');
-  const [isCustom, setIsCustom] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [processing, setProcessing] = useState(false);
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null);
-
   // Real-time wallet balance
   const { data: walletData, loading: walletLoading, refresh: refreshWallet } = useRealtimeSubscription(
     async () => {
@@ -52,8 +45,6 @@ export default function WalletDeposit() {
 
   const balance = walletData?.[0]?.balance || 0;
 
-  const presetAmounts = [10, 25, 50, 100, 250, 500];
-
   useEffect(() => {
     // Redirect if not logged in
     if (!user) {
@@ -62,71 +53,7 @@ export default function WalletDeposit() {
       });
       return;
     }
-    setLoading(false);
   }, [user, navigate]);
-
-  const handleAmountSelect = (selectedAmount: number) => {
-    setAmount(selectedAmount);
-    setIsCustom(false);
-    setCustomAmount('');
-  };
-
-  const handleCustomAmountChange = (value: string) => {
-    setCustomAmount(value);
-    const numValue = parseFloat(value);
-    if (!isNaN(numValue) && numValue > 0) {
-      setAmount(numValue);
-      setIsCustom(true);
-    }
-  };
-
-  const handlePaymentSuccess = async (paymentData: any) => {
-    setProcessing(true);
-    try {
-      // Process the deposit using wallet service
-      const { success, error } = await walletService.processDeposit(
-        user.id,
-        amount,
-        paymentData.paymentMethod || 'payment gateway',
-        paymentData.transactionId
-      );
-
-      if (success) {
-        // Refresh wallet balance
-        await refreshWallet();
-        
-        // Navigate to success page or back to wallet
-        navigate('/partner/dashboard/wallet', { 
-          state: { 
-            success: true, 
-            message: `Deposit successful! $${amount.toFixed(2)} has been added to your wallet.`,
-            amount: amount
-          }
-        });
-      } else {
-        throw error;
-      }
-    } catch (error: any) {
-      console.error('Error processing deposit:', error);
-      navigate('/partner/dashboard/wallet', { 
-        state: { 
-          error: true, 
-          message: `Deposit failed: ${error?.message || 'Unknown error occurred'}`
-        }
-      });
-    } finally {
-      setProcessing(false);
-    }
-  };
-
-  const handlePaymentError = (error: string) => {
-    navigate('/partner/dashboard/wallet', { 
-      state: { 
-        error: true, 
-        message: `Deposit failed: ${error}`
-      }
-    });
-  };
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -135,22 +62,7 @@ export default function WalletDeposit() {
     }).format(value);
   };
 
-  const getPaymentMethodInfo = (method: string) => {
-    switch (method?.toLowerCase()) {
-      case 'stripe':
-        return { icon: <CreditCard className="w-5 h-5" />, name: 'Card', color: 'text-blue-600', bgColor: 'bg-blue-100' };
-      case 'paypal':
-        return { icon: <Mail className="w-5 h-5" />, name: 'PayPal', color: 'text-blue-500', bgColor: 'bg-blue-100' };
-      case 'crypto':
-        return { icon: <Bitcoin className="w-5 h-5" />, name: 'Crypto', color: 'text-orange-500', bgColor: 'bg-orange-100' };
-      case 'wallet':
-        return { icon: <Wallet className="w-5 h-5" />, name: 'Wallet', color: 'text-green-600', bgColor: 'bg-green-100' };
-      default:
-        return { icon: <DollarSign className="w-5 h-5" />, name: 'Payment', color: 'text-gray-600', bgColor: 'bg-gray-100' };
-    }
-  };
-
-  if (loading || walletLoading) {
+  if (walletLoading) {
     return (
       <div className="min-h-screen bg-background">
         <div className="flex items-center justify-center h-64">
@@ -203,70 +115,16 @@ export default function WalletDeposit() {
           </CardHeader>
         </Card>
 
-        {/* Amount Selection */}
-        <Card className="mb-8">
+        {/* Deposit Form */}
+        <Card>
           <CardHeader>
-            <CardTitle className="text-xl font-semibold">Select Amount</CardTitle>
-            <p className="text-muted-foreground">Choose how much you want to deposit</p>
+            <CardTitle className="text-xl font-semibold">Deposit Form</CardTitle>
+            <p className="text-muted-foreground">Choose amount and payment method to add funds to your wallet</p>
           </CardHeader>
           <CardContent>
-            {/* Preset Amounts */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
-              {presetAmounts.map((presetAmount) => (
-                <Button
-                  key={presetAmount}
-                  variant={amount === presetAmount && !isCustom ? "default" : "outline"}
-                  onClick={() => handleAmountSelect(presetAmount)}
-                  className="h-16 flex flex-col items-center justify-center"
-                >
-                  <span className="text-lg font-semibold">{formatCurrency(presetAmount)}</span>
-                  <span className="text-xs text-muted-foreground">Quick add</span>
-                </Button>
-              ))}
-            </div>
-
-            {/* Custom Amount */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">Custom Amount</label>
-              <div className="relative">
-                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
-                  type="number"
-                  placeholder="Enter custom amount"
-                  value={customAmount}
-                  onChange={(e) => handleCustomAmountChange(e.target.value)}
-                  className="pl-10 h-12 text-lg"
-                  min="1"
-                  step="0.01"
-                />
-              </div>
-              {amount > 0 && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <CheckCircle className="w-4 h-4 text-green-600" />
-                  <span>Selected: {formatCurrency(amount)}</span>
-                </div>
-              )}
-            </div>
+            <DepositForm />
           </CardContent>
         </Card>
-
-        {/* Payment Method Selection */}
-        {amount > 0 && (
-          <Card className="mb-8">
-            <CardHeader>
-              <CardTitle className="text-xl font-semibold">Choose Payment Method</CardTitle>
-              <p className="text-muted-foreground">Select how you want to pay</p>
-            </CardHeader>
-            <CardContent>
-              <PaymentMethodSelector
-                orderId={`DEP-${Date.now()}`}
-                amount={amount}
-                onPaymentSuccess={handlePaymentSuccess}
-                onPaymentError={handlePaymentError}
-              />
-            </CardContent>
-          </Card>
-        )}
 
         {/* Security & Benefits */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -276,12 +134,12 @@ export default function WalletDeposit() {
                 <div className="p-2 rounded-lg bg-green-100 dark:bg-green-900/20">
                   <Shield className="w-5 h-5 text-green-600 dark:text-green-400" />
                 </div>
-                <CardTitle className="text-lg">Secure Payment</CardTitle>
+                <CardTitle className="text-lg">Secure Deposit</CardTitle>
               </div>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                All transactions are encrypted and secure. Your financial information is protected.
+                All transactions are encrypted and secure. Your financial information is protected with industry-standard security.
               </p>
             </CardContent>
           </Card>
@@ -297,7 +155,7 @@ export default function WalletDeposit() {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                Deposits are processed instantly and added to your wallet immediately.
+                Deposits are processed instantly and added to your wallet immediately after payment confirmation.
               </p>
             </CardContent>
           </Card>
@@ -313,7 +171,7 @@ export default function WalletDeposit() {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                Choose from various payment methods including cards, PayPal, and cryptocurrency.
+                Choose from various payment methods including cards, PayPal, and cryptocurrency for your convenience.
               </p>
             </CardContent>
           </Card>
@@ -324,7 +182,7 @@ export default function WalletDeposit() {
           <CardHeader>
             <div className="flex items-center gap-3">
               <HelpCircle className="w-5 h-5 text-muted-foreground" />
-              <CardTitle className="text-lg">Need Help?</CardTitle>
+              <CardTitle className="text-lg">Deposit Information</CardTitle>
             </div>
           </CardHeader>
           <CardContent>
@@ -333,7 +191,9 @@ export default function WalletDeposit() {
                 <Clock className="w-4 h-4 text-muted-foreground mt-0.5" />
                 <div>
                   <p className="font-medium text-foreground">Processing Time</p>
-                  <p className="text-sm text-muted-foreground">Most deposits are processed instantly. Some payment methods may take a few minutes.</p>
+                  <p className="text-sm text-muted-foreground">
+                    Most deposits are processed instantly. Some payment methods may take a few minutes for confirmation.
+                  </p>
                 </div>
               </div>
               <div className="flex items-start gap-3">
@@ -347,7 +207,9 @@ export default function WalletDeposit() {
                 <Shield className="w-4 h-4 text-muted-foreground mt-0.5" />
                 <div>
                   <p className="font-medium text-foreground">Refund Policy</p>
-                  <p className="text-sm text-muted-foreground">Deposits are refundable within 24 hours if there are any issues.</p>
+                  <p className="text-sm text-muted-foreground">
+                    Deposits are refundable within 24 hours if there are any issues with the transaction.
+                  </p>
                 </div>
               </div>
             </div>
