@@ -63,9 +63,13 @@ const Auth = () => {
   // Handle redirect from URL params
   useEffect(() => {
     const redirect = searchParams.get('redirect');
-    if (redirect) {
-      // Use the redirect parameter directly since React Router handles URL encoding
+    if (redirect && redirect !== '/login') {
+      // Use the redirect parameter since React Router handles URL encoding
+      // But don't redirect back to login page itself
       setRedirectPath(redirect);
+    } else {
+      // Default to homepage if no valid redirect parameter
+      setRedirectPath('/');
     }
   }, [searchParams]);
 
