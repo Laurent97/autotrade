@@ -80,6 +80,13 @@ export default {
         sans: ['Inter', 'system-ui', 'sans-serif'],
       },
       boxShadow: {
+        'sm': 'var(--shadow-sm)',
+        'md': 'var(--shadow-md)',
+        'lg': 'var(--shadow-lg)',
+        'xl': 'var(--shadow-xl)',
+        'amber': '0 10px 15px -3px hsl(38 92% 50% / 0.1), 0 4px 6px -4px hsl(38 92% 50% / 0.1)',
+        'amber-lg': '0 20px 25px -5px hsl(38 92% 50% / 0.15), 0 8px 10px -6px hsl(38 92% 50% / 0.1)',
+        'amber-xl': '0 25px 50px -12px hsl(38 92% 50% / 0.2)',
         'card': 'var(--shadow-md)',
         'card-hover': 'var(--shadow-card-hover)',
         'elevated': 'var(--shadow-lg)',
@@ -89,6 +96,8 @@ export default {
         'gradient-hero': 'var(--gradient-hero)',
         'gradient-accent': 'var(--gradient-accent)',
         'gradient-card': 'var(--gradient-card)',
+        'gradient-blue': 'var(--gradient-blue)',
+        'gradient-green': 'var(--gradient-green)',
       },
       keyframes: {
         "accordion-down": {
