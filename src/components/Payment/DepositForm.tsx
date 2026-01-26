@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
+import { cryptoService } from '@/lib/supabase/crypto-service';
 import { 
   CreditCard, 
   Mail, 
@@ -17,7 +18,9 @@ import {
   Banknote,
   Shield,
   Zap,
-  Clock
+  Clock,
+  Copy,
+  ExternalLink
 } from 'lucide-react';
 
 interface DepositFormData {
@@ -27,7 +30,8 @@ interface DepositFormData {
   cardExpiry?: string;
   cardCvc?: string;
   email?: string;
-  cryptoAddress?: string;
+  cryptoType?: string;
+  cryptoTransactionId?: string;
   bankAccount?: string;
   bankName?: string;
   routingNumber?: string;
@@ -38,10 +42,29 @@ export default function DepositForm() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [step, setStep] = useState(1);
+  const [cryptoAddresses, setCryptoAddresses] = useState<any[]>([]);
+  const [loadingCrypto, setLoadingCrypto] = useState(false);
   const [formData, setFormData] = useState<DepositFormData>({
     amount: 0,
     paymentMethod: 'stripe'
   });
+
+  // Load crypto addresses from database
+  useEffect(() => {
+    const loadCryptoAddresses = async () => {
+      setLoadingCrypto(true);
+      try {
+        const { data } = await cryptoService.getActiveCryptoAddresses();
+        setCryptoAddresses(data || []);
+      } catch (error) {
+        console.error('Error loading crypto addresses:', error);
+      } finally {
+        setLoadingCrypto(false);
+      }
+    };
+
+    loadCryptoAddresses();
+  }, []);
 
   const paymentMethods = [
     {
@@ -221,25 +244,117 @@ export default function DepositForm() {
             <CardHeader>
               <div className="flex items-center gap-3">
                 <Bitcoin className="w-5 h-5 text-orange-500" />
-                <CardTitle className="text-lg">Cryptocurrency Information</CardTitle>
+                <CardTitle className="text-lg">Cryptocurrency Deposit</CardTitle>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <label className="text-sm font-medium text-foreground">Crypto Address</label>
-                <Input
-                  placeholder="0x742d35Cc6634C0532925a3b844Bc454e4438f44e"
-                  value={formData.cryptoAddress || ''}
-                  onChange={(e) => setFormData({ ...formData, cryptoAddress: e.target.value })}
-                  className="mt-1"
-                />
-              </div>
-              <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
-                <div className="flex items-center gap-2 text-sm text-orange-800 dark:text-orange-200">
-                  <AlertCircle className="w-4 h-4" />
-                  <span>Send crypto to the address above. Deposit will be credited after confirmation.</span>
+                <label className="text-sm font-medium text-foreground">Select Cryptocurrency</label>
+                <div className="mt-2 space-y-2">
+                  {loadingCrypto ? (
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                      <span>Loading available cryptocurrencies...</span>
+                    </div>
+                  ) : cryptoAddresses.length === 0 ? (
+                    <div className="text-sm text-muted-foreground">
+                      No cryptocurrency wallets available at the moment.
+                    </div>
+                  ) : (
+                    cryptoAddresses.map((crypto) => (
+                      <div
+                        key={crypto.id}
+                        onClick={() => setFormData({ ...formData, cryptoType: crypto.crypto_type })}
+                        className={`border rounded-lg p-4 cursor-pointer transition-all hover:border-primary ${
+                          formData.cryptoType === crypto.crypto_type ? 'border-primary bg-primary/5' : 'border-border'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 rounded-lg bg-orange-100 dark:bg-orange-900/20">
+                              <Bitcoin className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+                            </div>
+                            <div>
+                              <h4 className="font-medium text-foreground">{crypto.crypto_type}</h4>
+                              <p className="text-sm text-muted-foreground">{crypto.network}</p>
+                            </div>
+                          </div>
+                          {formData.cryptoType === crypto.crypto_type && (
+                            <CheckCircle className="w-5 h-5 text-green-600" />
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
+
+              {formData.cryptoType && (
+                <>
+                  <div>
+                    <label className="text-sm font-medium text-foreground">Deposit Address</label>
+                    <div className="mt-1 space-y-2">
+                      {cryptoAddresses
+                        .filter(crypto => crypto.crypto_type === formData.cryptoType)
+                        .map((crypto) => (
+                          <div key={crypto.id} className="border rounded-lg p-3 bg-muted/50">
+                            <div className="flex items-center justify-between">
+                              <div className="flex-1 mr-2">
+                                <p className="font-mono text-sm text-foreground break-all">
+                                  {crypto.address}
+                                </p>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  Network: {crypto.network}
+                                </p>
+                              </div>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  navigator.clipboard.writeText(crypto.address);
+                                  toast({
+                                    title: "Address Copied!",
+                                    description: "Crypto address copied to clipboard",
+                                  });
+                                }}
+                                className="flex items-center gap-1"
+                              >
+                                <Copy className="w-3 h-3" />
+                                Copy
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium text-foreground">Transaction ID (Optional)</label>
+                    <Input
+                      placeholder="Enter transaction hash after sending"
+                      value={formData.cryptoTransactionId || ''}
+                      onChange={(e) => setFormData({ ...formData, cryptoTransactionId: e.target.value })}
+                      className="mt-1"
+                    />
+                  </div>
+
+                  <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+                    <div className="flex items-start gap-2 text-sm text-orange-800 dark:text-orange-200">
+                      <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="font-medium mb-1">Important Instructions:</p>
+                        <ul className="list-disc list-inside space-y-1 text-xs">
+                          <li>Send {formData.cryptoType} to the address above</li>
+                          <li>Make sure you're sending on the correct network</li>
+                          <li>Minimum deposit: $10.00 USD equivalent</li>
+                          <li>Transaction will be credited after confirmation</li>
+                          <li>Save your transaction ID for reference</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
             </CardContent>
           </Card>
         );
