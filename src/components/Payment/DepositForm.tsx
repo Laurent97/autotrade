@@ -58,12 +58,15 @@ export default function DepositForm() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        console.log('Loading deposit form data from database...');
+        console.log('=== DEPOSIT FORM DEBUG: Loading data from database ===');
         
         // Test database connection first
+        console.log('=== DEPOSIT FORM DEBUG: Testing database connection...');
         const connectionTest = await depositService.testConnection();
+        console.log('=== DEPOSIT FORM DEBUG: Connection test result:', connectionTest);
+        
         if (!connectionTest.success) {
-          console.error('Database connection failed:', connectionTest.message);
+          console.error('=== DEPOSIT FORM DEBUG: Database connection failed:', connectionTest.message);
           toast({
             title: "Database Connection Failed",
             description: connectionTest.message,
@@ -72,21 +75,38 @@ export default function DepositForm() {
           return;
         }
         
-        console.log('Database connection test passed:', connectionTest.message);
+        console.log('=== DEPOSIT FORM DEBUG: Database connection test passed:', connectionTest.message);
         
         // Load crypto addresses
+        console.log('=== DEPOSIT FORM DEBUG: Loading crypto addresses...');
         setLoadingCrypto(true);
         const cryptoResult = await cryptoService.getActiveCryptoAddresses();
+        console.log('=== DEPOSIT FORM DEBUG: Crypto service result:', cryptoResult);
+        
         if (cryptoResult.error) {
-          console.error('Error loading crypto addresses:', cryptoResult.error);
+          console.error('=== DEPOSIT FORM DEBUG: Error loading crypto addresses:', cryptoResult.error);
+          toast({
+            title: "Crypto Loading Error",
+            description: `Failed to load crypto addresses: ${cryptoResult.error?.message || 'Unknown error'}`,
+            variant: "destructive"
+          });
         } else {
-          console.log('Crypto addresses loaded:', cryptoResult.data?.length || 0);
+          console.log('=== DEPOSIT FORM DEBUG: Crypto addresses loaded:', cryptoResult.data?.length || 0);
+          console.log('=== DEPOSIT FORM DEBUG: Crypto addresses data:', cryptoResult.data);
           setCryptoAddresses(cryptoResult.data || []);
           
           if (cryptoResult.data && cryptoResult.data.length > 0) {
+            console.log('=== DEPOSIT FORM DEBUG: Showing success toast for crypto addresses');
             toast({
               title: "Crypto Wallets Available",
               description: `${cryptoResult.data.length} cryptocurrency wallets loaded.`,
+            });
+          } else {
+            console.log('=== DEPOSIT FORM DEBUG: No crypto addresses found, showing error toast');
+            toast({
+              title: "No Crypto Wallets",
+              description: "No active cryptocurrency wallets found in database.",
+              variant: "destructive"
             });
           }
         }
@@ -384,32 +404,41 @@ export default function DepositForm() {
                   ) : cryptoAddresses.length === 0 ? (
                     <div className="text-sm text-muted-foreground">
                       No cryptocurrency wallets available at the moment.
+                      <div className="text-xs text-red-500 mt-1">
+                        Debug: cryptoAddresses.length = {cryptoAddresses.length}
+                      </div>
                     </div>
                   ) : (
-                    cryptoAddresses.map((crypto) => (
-                      <div
-                        key={crypto.id}
-                        onClick={() => setFormData({ ...formData, cryptoType: crypto.crypto_type })}
-                        className={`border rounded-lg p-4 cursor-pointer transition-all hover:border-primary ${
-                          formData.cryptoType === crypto.crypto_type ? 'border-primary bg-primary/5' : 'border-border'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className="p-2 rounded-lg bg-orange-100 dark:bg-orange-900/20">
-                              <Bitcoin className="w-4 h-4 text-orange-600 dark:text-orange-400" />
-                            </div>
-                            <div>
-                              <h4 className="font-medium text-foreground">{crypto.crypto_type}</h4>
-                              <p className="text-sm text-muted-foreground">{crypto.network}</p>
-                            </div>
-                          </div>
-                          {formData.cryptoType === crypto.crypto_type && (
-                            <CheckCircle className="w-5 h-5 text-green-600" />
-                          )}
-                        </div>
+                    <>
+                      <div className="text-xs text-green-500 mb-2">
+                        Debug: Found {cryptoAddresses.length} crypto addresses
                       </div>
-                    ))
+                      {cryptoAddresses.map((crypto) => (
+                        <div
+                          key={crypto.id}
+                          onClick={() => setFormData({ ...formData, cryptoType: crypto.crypto_type })}
+                          className={`border rounded-lg p-4 cursor-pointer transition-all hover:border-primary ${
+                            formData.cryptoType === crypto.crypto_type ? 'border-primary bg-primary/5' : 'border-border'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <div className="p-2 rounded-lg bg-orange-100 dark:bg-orange-900/20">
+                                <Bitcoin className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+                              </div>
+                              <div>
+                                <h4 className="font-medium text-foreground">{crypto.crypto_type}</h4>
+                                <p className="text-sm text-muted-foreground">{crypto.network}</p>
+                                <p className="text-xs text-muted-foreground">{crypto.address}</p>
+                              </div>
+                            </div>
+                            {formData.cryptoType === crypto.crypto_type && (
+                              <CheckCircle className="w-5 h-5 text-green-600" />
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </>
                   )}
                 </div>
               </div>
