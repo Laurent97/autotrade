@@ -310,11 +310,19 @@ export const walletService = {
 
       if (updateError) throw updateError;
 
-      // Update wallet balance
+      // Update wallet balance (reduce by withdrawal amount)
+      const { data: currentBalance, error: fetchBalanceError } = await supabase
+        .from('wallet_balances')
+        .select('balance')
+        .eq('user_id', transaction.user_id)
+        .single();
+
+      if (fetchBalanceError) throw fetchBalanceError;
+
       const { error: balanceError } = await supabase
         .from('wallet_balances')
         .update({
-          balance: -transaction.amount,
+          balance: currentBalance.balance - transaction.amount,
           updated_at: new Date().toISOString()
         })
         .eq('user_id', transaction.user_id);
