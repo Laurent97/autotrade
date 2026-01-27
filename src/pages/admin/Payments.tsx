@@ -45,7 +45,12 @@ import {
   Ban,
   Info,
   Copy,
-  Gift
+  Gift,
+  Building,
+  Percent,
+  Calendar,
+  Download,
+  Filter
 } from 'lucide-react';
 
 interface StripePaymentAttempt {
@@ -155,6 +160,26 @@ interface WalletBalance {
   };
 }
 
+interface LoanApplication {
+  id: string;
+  partner_name: string;
+  partner_email: string;
+  loan_amount: number;
+  loan_purpose: string;
+  loan_term: number;
+  status: 'pending' | 'approved' | 'rejected';
+  applied_date: string;
+  approved_date?: string;
+  rejected_date?: string;
+  credit_score: number;
+  annual_revenue: number;
+  documents: string[];
+  rejection_reason?: string;
+  admin_notes?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 const Payments: React.FC = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -163,6 +188,7 @@ const Payments: React.FC = () => {
   const [securityLogs, setSecurityLogs] = useState<PaymentSecurityLog[]>([]);
   const [walletTransactions, setWalletTransactions] = useState<WalletTransaction[]>([]);
   const [walletBalances, setWalletBalances] = useState<WalletBalance[]>([]);
+  const [loanApplications, setLoanApplications] = useState<LoanApplication[]>([]);
   const [stats, setStats] = useState<PaymentStats>({
     totalRevenue: 0,
     todayRevenue: 0,
@@ -182,10 +208,13 @@ const Payments: React.FC = () => {
   const [dateRange, setDateRange] = useState('30');
   const [walletTransactionType, setWalletTransactionType] = useState<string>('all');
   const [walletStatus, setWalletStatus] = useState<string>('all');
+  const [loanStatus, setLoanStatus] = useState<string>('all');
+  const [loanSearchTerm, setLoanSearchTerm] = useState('');
 
   // Dialog states
   const [selectedPayment, setSelectedPayment] = useState<StripePaymentAttempt | PendingPayment | null>(null);
   const [selectedLog, setSelectedLog] = useState<PaymentSecurityLog | null>(null);
+  const [selectedLoanApplication, setSelectedLoanApplication] = useState<LoanApplication | null>(null);
   const [processingAction, setProcessingAction] = useState<string | null>(null);
   const [error, setError] = useState('');
 
@@ -352,6 +381,60 @@ const Payments: React.FC = () => {
       );
 
       const totalWalletBalance = walletBalancesData?.reduce((sum, balance) => sum + (balance.balance || 0), 0) || 0;
+
+      // Mock loan applications data (replace with actual database call)
+      const mockLoanApplications: LoanApplication[] = [
+        {
+          id: 'APP001',
+          partner_name: 'John Auto Parts',
+          partner_email: 'john@example.com',
+          loan_amount: 15000,
+          loan_purpose: 'Inventory Expansion',
+          loan_term: 24,
+          status: 'pending',
+          applied_date: '2024-01-15',
+          credit_score: 720,
+          annual_revenue: 250000,
+          documents: ['tax_return.pdf', 'business_license.pdf'],
+          created_at: '2024-01-15T10:00:00Z',
+          updated_at: '2024-01-15T10:00:00Z'
+        },
+        {
+          id: 'APP002',
+          partner_name: 'Smith Motors',
+          partner_email: 'smith@example.com',
+          loan_amount: 50000,
+          loan_purpose: 'Equipment Purchase',
+          loan_term: 36,
+          status: 'approved',
+          applied_date: '2024-01-10',
+          approved_date: '2024-01-12',
+          credit_score: 680,
+          annual_revenue: 500000,
+          documents: ['financial_statements.pdf'],
+          created_at: '2024-01-10T14:30:00Z',
+          updated_at: '2024-01-12T09:15:00Z'
+        },
+        {
+          id: 'APP003',
+          partner_name: 'City Garage LLC',
+          partner_email: 'city@example.com',
+          loan_amount: 10000,
+          loan_purpose: 'Working Capital',
+          loan_term: 12,
+          status: 'rejected',
+          applied_date: '2024-01-05',
+          rejected_date: '2024-01-08',
+          credit_score: 650,
+          annual_revenue: 150000,
+          documents: ['bank_statements.pdf'],
+          rejection_reason: 'Insufficient credit history',
+          created_at: '2024-01-05T16:45:00Z',
+          updated_at: '2024-01-08T11:20:00Z'
+        }
+      ];
+
+      setLoanApplications(mockLoanApplications);
 
       setStats({
         totalRevenue: completedPayments.reduce((sum, p) => sum + (p.amount || 0), 0),
@@ -538,6 +621,70 @@ const Payments: React.FC = () => {
     navigator.clipboard.writeText(text);
     setError('Copied to clipboard!');
   };
+
+  // Loan application management functions
+  const approveLoanApplication = async (application: LoanApplication) => {
+    setProcessingAction(`approve-loan-${application.id}`);
+    setError('');
+    
+    try {
+      // Update loan application status
+      const updatedApplications = loanApplications.map(app => 
+        app.id === application.id 
+          ? { 
+              ...app, 
+              status: 'approved' as const, 
+              approved_date: new Date().toISOString().split('T')[0],
+              updated_at: new Date().toISOString()
+            }
+          : app
+      );
+      
+      setLoanApplications(updatedApplications);
+      setError('Loan application approved successfully');
+    } catch (error: any) {
+      console.error('Error approving loan application:', error);
+      setError('Failed to approve loan application');
+    } finally {
+      setProcessingAction(null);
+    }
+  };
+
+  const rejectLoanApplication = async (application: LoanApplication, reason: string) => {
+    setProcessingAction(`reject-loan-${application.id}`);
+    setError('');
+    
+    try {
+      // Update loan application status
+      const updatedApplications = loanApplications.map(app => 
+        app.id === application.id 
+          ? { 
+              ...app, 
+              status: 'rejected' as const, 
+              rejected_date: new Date().toISOString().split('T')[0],
+              rejection_reason: reason,
+              updated_at: new Date().toISOString()
+            }
+          : app
+      );
+      
+      setLoanApplications(updatedApplications);
+      setError('Loan application rejected successfully');
+    } catch (error: any) {
+      console.error('Error rejecting loan application:', error);
+      setError('Failed to reject loan application');
+    } finally {
+      setProcessingAction(null);
+    }
+  };
+
+  const filteredLoanApplications = loanApplications.filter(app => {
+    const matchesSearch = app.partner_name.toLowerCase().includes(loanSearchTerm.toLowerCase()) ||
+                         app.partner_email.toLowerCase().includes(loanSearchTerm.toLowerCase()) ||
+                         app.id.toLowerCase().includes(loanSearchTerm.toLowerCase());
+    const matchesStatus = loanStatus === 'all' || app.status === loanStatus;
+    return matchesSearch && matchesStatus;
+  });
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, { variant: 'default' | 'secondary' | 'destructive' | 'outline'; icon: React.ReactNode }> = {
@@ -759,6 +906,7 @@ const Payments: React.FC = () => {
         <TabsList>
           <TabsTrigger value="stripe">Stripe Attempts</TabsTrigger>
           <TabsTrigger value="pending">Pending Payments</TabsTrigger>
+          <TabsTrigger value="loans">Loan Applications</TabsTrigger>
           <TabsTrigger value="wallet">Wallet Management</TabsTrigger>
           <TabsTrigger value="security">Security Logs</TabsTrigger>
         </TabsList>
@@ -1191,6 +1339,270 @@ const Payments: React.FC = () => {
                             )}
                           </DialogContent>
                         </Dialog>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Loan Applications Tab */}
+        <TabsContent value="loans" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle>Loan Applications</CardTitle>
+                  <CardDescription>Review and manage partner loan applications</CardDescription>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm">
+                    <Download className="w-4 h-4 mr-2" />
+                    Export CSV
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {/* Loan Applications Filters */}
+              <div className="flex flex-wrap gap-4 mb-6">
+                <div className="flex-1 min-w-[200px]">
+                  <Label htmlFor="loan-search">Search</Label>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="loan-search"
+                      placeholder="Search by name, email, or application ID..."
+                      value={loanSearchTerm}
+                      onChange={(e) => setLoanSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+                
+                <div className="min-w-[150px]">
+                  <Label>Status</Label>
+                  <Select value={loanStatus} onValueChange={setLoanStatus}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="approved">Approved</SelectItem>
+                      <SelectItem value="rejected">Rejected</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Loan Applications Table */}
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Application ID</TableHead>
+                    <TableHead>Partner</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Purpose</TableHead>
+                    <TableHead>Term</TableHead>
+                    <TableHead>Credit Score</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Applied Date</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredLoanApplications.map((application) => (
+                    <TableRow key={application.id}>
+                      <TableCell className="font-mono text-xs">
+                        {application.id}
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">{application.partner_name}</div>
+                          <div className="text-sm text-muted-foreground">{application.partner_email}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="font-medium">${application.loan_amount.toLocaleString()}</div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm">{application.loan_purpose}</div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm">{application.loan_term} months</div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-sm">
+                          <Badge variant={application.credit_score >= 700 ? 'default' : application.credit_score >= 650 ? 'secondary' : 'destructive'}>
+                            {application.credit_score}
+                          </Badge>
+                        </div>
+                      </TableCell>
+                      <TableCell>{getStatusBadge(application.status)}</TableCell>
+                      <TableCell>
+                        <div className="text-sm">
+                          {new Date(application.applied_date).toLocaleDateString()}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setSelectedLoanApplication(application)}
+                              >
+                                <Eye className="w-4 h-4" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-3xl">
+                              <DialogHeader>
+                                <DialogTitle>Loan Application Details</DialogTitle>
+                                <DialogDescription>
+                                  Full information about this loan application
+                                </DialogDescription>
+                              </DialogHeader>
+                              {selectedLoanApplication && (
+                                <div className="space-y-6">
+                                  <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                      <Label>Application ID</Label>
+                                      <p className="font-mono text-sm bg-muted p-2 rounded">{selectedLoanApplication.id}</p>
+                                    </div>
+                                    <div>
+                                      <Label>Status</Label>
+                                      <div>{getStatusBadge(selectedLoanApplication.status)}</div>
+                                    </div>
+                                    <div>
+                                      <Label>Partner Name</Label>
+                                      <p className="font-medium">{selectedLoanApplication.partner_name}</p>
+                                      <p className="text-sm text-muted-foreground">{selectedLoanApplication.partner_email}</p>
+                                    </div>
+                                    <div>
+                                      <Label>Loan Amount</Label>
+                                      <p className="font-medium">${selectedLoanApplication.loan_amount.toLocaleString()}</p>
+                                    </div>
+                                    <div>
+                                      <Label>Loan Purpose</Label>
+                                      <p className="text-sm">{selectedLoanApplication.loan_purpose}</p>
+                                    </div>
+                                    <div>
+                                      <Label>Loan Term</Label>
+                                      <p className="text-sm">{selectedLoanApplication.loan_term} months</p>
+                                    </div>
+                                    <div>
+                                      <Label>Credit Score</Label>
+                                      <Badge variant={selectedLoanApplication.credit_score >= 700 ? 'default' : selectedLoanApplication.credit_score >= 650 ? 'secondary' : 'destructive'}>
+                                        {selectedLoanApplication.credit_score}
+                                      </Badge>
+                                    </div>
+                                    <div>
+                                      <Label>Annual Revenue</Label>
+                                      <p className="font-medium">${selectedLoanApplication.annual_revenue.toLocaleString()}</p>
+                                    </div>
+                                    <div>
+                                      <Label>Applied Date</Label>
+                                      <p className="text-sm">{new Date(selectedLoanApplication.applied_date).toLocaleDateString()}</p>
+                                    </div>
+                                    <div>
+                                      <Label>Documents</Label>
+                                      <div className="space-y-1">
+                                        {selectedLoanApplication.documents.map((doc, index) => (
+                                          <div key={index} className="text-sm text-muted-foreground flex items-center gap-2">
+                                            <FileText className="w-3 h-3" />
+                                            {doc}
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {selectedLoanApplication.rejection_reason && (
+                                    <div>
+                                      <Label>Rejection Reason</Label>
+                                      <p className="text-sm text-muted-foreground bg-red-50 p-2 rounded">{selectedLoanApplication.rejection_reason}</p>
+                                    </div>
+                                  )}
+
+                                  {selectedLoanApplication.status === 'pending' && (
+                                    <div className="flex gap-2 pt-4">
+                                      <Button
+                                        onClick={() => approveLoanApplication(selectedLoanApplication)}
+                                        disabled={processingAction === `approve-loan-${selectedLoanApplication.id}`}
+                                        className="flex-1"
+                                      >
+                                        {processingAction === `approve-loan-${selectedLoanApplication.id}` ? (
+                                          <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                                        ) : (
+                                          <CheckCircle className="w-4 h-4 mr-2" />
+                                        )}
+                                        Approve Application
+                                      </Button>
+                                      <Button
+                                        variant="destructive"
+                                        onClick={() => {
+                                          const reason = prompt('Please enter rejection reason:');
+                                          if (reason) {
+                                            rejectLoanApplication(selectedLoanApplication, reason);
+                                          }
+                                        }}
+                                        disabled={processingAction === `reject-loan-${selectedLoanApplication.id}`}
+                                        className="flex-1"
+                                      >
+                                        {processingAction === `reject-loan-${selectedLoanApplication.id}` ? (
+                                          <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                                        ) : (
+                                          <XCircle className="w-4 h-4 mr-2" />
+                                        )}
+                                        Reject Application
+                                      </Button>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </DialogContent>
+                          </Dialog>
+                          
+                          {application.status === 'pending' && (
+                            <>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => approveLoanApplication(application)}
+                                disabled={processingAction === `approve-loan-${application.id}`}
+                                className="text-green-600 hover:text-green-700"
+                              >
+                                {processingAction === `approve-loan-${application.id}` ? (
+                                  <RefreshCw className="w-4 h-4 animate-spin" />
+                                ) : (
+                                  <Check className="w-4 h-4" />
+                                )}
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  const reason = prompt('Please enter rejection reason:');
+                                  if (reason) {
+                                    rejectLoanApplication(application, reason);
+                                  }
+                                }}
+                                disabled={processingAction === `reject-loan-${application.id}`}
+                                className="text-red-600 hover:text-red-700"
+                              >
+                                {processingAction === `reject-loan-${application.id}` ? (
+                                  <RefreshCw className="w-4 h-4 animate-spin" />
+                                ) : (
+                                  <X className="w-4 h-4" />
+                                )}
+                              </Button>
+                            </>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
