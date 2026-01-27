@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { partnerService } from '../../lib/supabase/partner-service';
+import { earningsService } from '../../lib/supabase/earnings-service';
 import LoadingSpinner from '../../components/LoadingSpinner';
 
 export default function DashboardAnalytics() {
@@ -20,25 +21,47 @@ export default function DashboardAnalytics() {
     setError(null);
     
     try {
-      // ✅ FIXED: Use getPartnerStats instead of getDetailedAnalytics
+      // Get real earnings data
+      const { data: earningsData, error: earningsError } = await earningsService.getPartnerEarnings(userProfile.id);
+      
+      // Get partner stats for additional metrics
       const { data: stats, error: statsError } = await partnerService.getPartnerStats(userProfile.id);
       
-      if (statsError) {
-        throw new Error(statsError);
+      if (earningsError || statsError) {
+        throw new Error(earningsError?.message || statsError?.message || 'Failed to load analytics');
       }
       
-      if (stats) {
-        // Transform stats data to match component expectations
-        setAnalytics({
-          metrics: {
-            totalViews: 0, // You might need to get this from store_visits table
-            totalSales: stats.totalOrders || 0,
-            totalRevenue: stats.totalRevenue || 0,
-            conversionRate: 0, // Calculate from your data
-            avgOrderValue: stats.totalOrders > 0 ? (stats.totalRevenue / stats.totalOrders) : 0
-          }
-        });
-      }
+      // Calculate real conversion rate (if we had view data, for now use placeholder)
+      const totalViews = 0; // TODO: Implement store visits tracking
+      const conversionRate = totalViews > 0 ? (stats.totalOrders / totalViews) * 100 : 0;
+      
+      // Set comprehensive analytics data
+      setAnalytics({
+        metrics: {
+          totalViews: totalViews,
+          totalSales: stats.totalOrders || 0,
+          totalRevenue: earningsData?.allTime || 0,
+          conversionRate: conversionRate,
+          avgOrderValue: earningsData?.averageOrderValue || 0,
+          thisMonthEarnings: earningsData?.thisMonth || 0,
+          lastMonthEarnings: earningsData?.lastMonth || 0,
+          thisYearEarnings: earningsData?.thisYear || 0,
+          availableBalance: earningsData?.availableBalance || 0,
+          pendingBalance: earningsData?.pendingBalance || 0,
+          commissionEarned: earningsData?.commissionEarned || 0,
+          totalOrders: stats.totalOrders || 0,
+          paidOrders: stats.paidOrders || 0,
+          pendingOrders: stats.pendingOrders || 0,
+          completedOrders: stats.completedOrders || 0,
+          cancelledOrders: stats.cancelledOrders || 0
+        },
+        performance: {
+          topProducts: [], // TODO: Implement top products query
+          lowStockProducts: [], // TODO: Implement low stock query
+          recentActivity: stats.totalOrders || 0
+        }
+      });
+      
     } catch (err) {
       console.error('Error loading analytics:', err);
       setError(err instanceof Error ? err.message : 'Failed to load analytics');
@@ -81,7 +104,24 @@ export default function DashboardAnalytics() {
     totalSales: 0,
     totalRevenue: 0,
     conversionRate: 0,
-    avgOrderValue: 0
+    avgOrderValue: 0,
+    thisMonthEarnings: 0,
+    lastMonthEarnings: 0,
+    thisYearEarnings: 0,
+    availableBalance: 0,
+    pendingBalance: 0,
+    commissionEarned: 0,
+    totalOrders: 0,
+    paidOrders: 0,
+    pendingOrders: 0,
+    completedOrders: 0,
+    cancelledOrders: 0
+  };
+
+  const performance = analytics?.performance || {
+    topProducts: [],
+    lowStockProducts: [],
+    recentActivity: 0
   };
 
   return (
@@ -126,7 +166,7 @@ export default function DashboardAnalytics() {
             <div>
               <div className="text-gray-600 dark:text-gray-600 text-sm mb-2">Total Earnings</div>
               <div className="text-3xl font-bold text-yellow-700 dark:text-yellow-400">${(metrics.totalRevenue || 0).toFixed(2)}</div>
-              <div className="text-xs text-gray-500 dark:text-yellow-600 mt-1">Gross revenue</div>
+              <div className="text-xs text-gray-500 dark:text-yellow-600 mt-1">Commission earned</div>
             </div>
             <div className="w-12 h-12 bg-yellow-200 dark:bg-yellow-700 rounded-full flex items-center justify-center">
               <span className="text-yellow-700 dark:text-yellow-400 text-xl">💵</span>
@@ -146,16 +186,58 @@ export default function DashboardAnalytics() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Additional Real Data Metrics */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 hover:shadow-lg transition-shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-gray-600 dark:text-gray-400 text-sm mb-2">This Month</div>
+              <div className="text-2xl font-bold text-cyan-600 dark:text-cyan-400">${(metrics.thisMonthEarnings || 0).toFixed(2)}</div>
+              <div className="text-xs text-gray-500 dark:text-gray-500 mt-1">Monthly earnings</div>
+            </div>
+            <div className="w-10 h-10 bg-cyan-100 dark:bg-cyan-900/30 rounded-full flex items-center justify-center">
+              <span className="text-cyan-600 dark:text-cyan-400 text-lg">📅</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 hover:shadow-lg transition-shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-gray-600 dark:text-gray-400 text-sm mb-2">Available Balance</div>
+              <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">${(metrics.availableBalance || 0).toFixed(2)}</div>
+              <div className="text-xs text-gray-500 dark:text-gray-500 mt-1">Ready for withdrawal</div>
+            </div>
+            <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-900/30 rounded-full flex items-center justify-center">
+              <span className="text-emerald-600 dark:text-emerald-400 text-lg">💎</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 hover:shadow-lg transition-shadow">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="text-gray-600 dark:text-gray-400 text-sm mb-2">Pending Balance</div>
+              <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">${(metrics.pendingBalance || 0).toFixed(2)}</div>
+              <div className="text-xs text-gray-500 dark:text-gray-500 mt-1">Processing orders</div>
+            </div>
+            <div className="w-10 h-10 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center">
+              <span className="text-amber-600 dark:text-amber-400 text-lg">⏳</span>
+            </div>
+          </div>
+        </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 hover:shadow-lg transition-shadow">
           <div className="flex items-center justify-between">
             <div>
               <div className="text-gray-600 dark:text-gray-400 text-sm mb-2">Avg Order Value</div>
-              <div className="text-3xl font-bold text-orange-600 dark:text-orange-400">${(metrics.avgOrderValue || 0).toFixed(2)}</div>
+              <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">${(metrics.avgOrderValue || 0).toFixed(2)}</div>
               <div className="text-xs text-gray-500 dark:text-gray-500 mt-1">Per order average</div>
             </div>
-            <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center">
-              <span className="text-orange-600 dark:text-orange-400 text-xl">📦</span>
+            <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center">
+              <span className="text-orange-600 dark:text-orange-400 text-lg">📦</span>
             </div>
           </div>
         </div>
@@ -165,19 +247,33 @@ export default function DashboardAnalytics() {
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">📋 Performance Metrics</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
-            <div className="font-medium text-gray-700 dark:text-gray-300 mb-2">Top Performing Products</div>
-            <div className="text-2xl font-bold text-gray-900 dark:text-white">-</div>
-            <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">Based on sales volume</div>
+            <div className="font-medium text-gray-700 dark:text-gray-300 mb-2">Total Orders</div>
+            <div className="text-2xl font-bold text-gray-900 dark:text-white">{metrics.totalOrders || 0}</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">All time orders</div>
           </div>
           <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
-            <div className="font-medium text-gray-700 dark:text-gray-300 mb-2">Low Stock Products</div>
-            <div className="text-2xl font-bold text-red-600 dark:text-red-400">-</div>
-            <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">Products below threshold</div>
+            <div className="font-medium text-gray-700 dark:text-gray-300 mb-2">Completed Orders</div>
+            <div className="text-2xl font-bold text-green-600 dark:text-green-400">{metrics.completedOrders || 0}</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">Successfully delivered</div>
           </div>
           <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
-            <div className="font-medium text-gray-700 dark:text-gray-300 mb-2">Recent Activity</div>
-            <div className="text-2xl font-bold text-gray-900 dark:text-white">No recent activity</div>
-            <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">Last 24 hours</div>
+            <div className="font-medium text-gray-700 dark:text-gray-300 mb-2">Pending Orders</div>
+            <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">{metrics.pendingOrders || 0}</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">Awaiting processing</div>
+          </div>
+        </div>
+        
+        {/* Additional Order Statistics */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+          <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
+            <div className="font-medium text-gray-700 dark:text-gray-300 mb-2">Paid Orders</div>
+            <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{metrics.paidOrders || 0}</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">Payment confirmed</div>
+          </div>
+          <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
+            <div className="font-medium text-gray-700 dark:text-gray-300 mb-2">Cancelled Orders</div>
+            <div className="text-2xl font-bold text-red-600 dark:text-red-400">{metrics.cancelledOrders || 0}</div>
+            <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">Order cancellations</div>
           </div>
         </div>
       </div>
