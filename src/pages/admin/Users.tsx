@@ -233,7 +233,49 @@ export default function AdminUsers() {
     }
 
     try {
-      const { error } = await supabase.auth.admin.deleteUser(userId);
+      // First, delete user-related data from all tables
+      const { error: walletError } = await supabase
+        .from('wallet_balances')
+        .delete()
+        .eq('user_id', userId);
+
+      if (walletError) {
+        console.error('Error deleting wallet balance:', walletError);
+      }
+
+      const { error: transactionsError } = await supabase
+        .from('wallet_transactions')
+        .delete()
+        .eq('user_id', userId);
+
+      if (transactionsError) {
+        console.error('Error deleting wallet transactions:', transactionsError);
+      }
+
+      const { error: partnerError } = await supabase
+        .from('partner_profiles')
+        .delete()
+        .eq('user_id', userId);
+
+      if (partnerError) {
+        console.error('Error deleting partner profile:', partnerError);
+      }
+
+      // Delete user's orders
+      const { error: ordersError } = await supabase
+        .from('orders')
+        .delete()
+        .or(`customer_id.eq.${userId},partner_id.eq.${userId}`);
+
+      if (ordersError) {
+        console.error('Error deleting orders:', ordersError);
+      }
+
+      // Finally, delete the user from the users table
+      const { error } = await supabase
+        .from('users')
+        .delete()
+        .eq('id', userId);
       
       if (error) throw error;
       
@@ -241,7 +283,7 @@ export default function AdminUsers() {
       alert('User deleted successfully!');
     } catch (error) {
       console.error('Error deleting user:', error);
-      alert('Failed to delete user');
+      alert('Failed to delete user: ' + (error instanceof Error ? error.message : 'Unknown error'));
     }
   };
 

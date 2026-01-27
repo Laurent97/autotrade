@@ -68,6 +68,9 @@ import VerifyIdentity from "./pages/help/getting-started/VerifyIdentity";
 import FirstOrderGuide from "./pages/help/getting-started/FirstOrderGuide";
 import SearchProducts from "./pages/help/buying/SearchProducts";
 import TrackOrder from "./pages/TrackOrder";
+import TradeAssurance from "./pages/TradeAssurance";
+import Inspection from "./pages/Inspection";
+import Financing from "./pages/Financing";
 
 // Payment components for dashboard integration
 import CryptoDeposit from "./components/Payment/CryptoDeposit";
@@ -151,6 +154,9 @@ const App = () => (
               <Route path="/help/buying/search-products" element={<SearchProducts />} />
               <Route path="/returns" element={<Returns />} />
               <Route path="/track-order" element={<TrackOrder />} />
+              <Route path="/trade-assurance" element={<TradeAssurance />} />
+              <Route path="/inspection" element={<Inspection />} />
+              <Route path="/financing" element={<Financing />} />
               <Route path="/faq" element={<FAQ />} />
               <Route path="/faqs" element={<PartnerFAQ />} />
               <Route path="/careers" element={<Careers />} />
