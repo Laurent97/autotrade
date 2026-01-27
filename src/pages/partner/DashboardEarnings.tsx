@@ -34,6 +34,9 @@ export default function DashboardEarnings() {
     commissionEarned: 0,
     averageOrderValue: 0
   });
+  const [monthlyEarnings, setMonthlyEarnings] = useState<any[]>([]);
+  const [stores, setStores] = useState<any[]>([]);
+  const [storesLoading, setStoresLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   
@@ -47,7 +50,27 @@ export default function DashboardEarnings() {
 
   useEffect(() => {
     loadEarnings();
+    loadStores();
   }, [userProfile]);
+
+  const loadStores = async () => {
+    setStoresLoading(true);
+    try {
+      const { data: storesData, error: storesError } = await storeService.getAllStores();
+      
+      if (storesError) {
+        console.warn('Failed to load stores:', storesError);
+        setStores([]);
+      } else {
+        setStores(storesData || []);
+      }
+    } catch (err) {
+      console.warn('Error loading stores:', err);
+      setStores([]);
+    } finally {
+      setStoresLoading(false);
+    }
+  };
 
   const loadEarnings = async () => {
     if (!userProfile?.id) return;
@@ -61,10 +84,14 @@ export default function DashboardEarnings() {
       // Get accurate wallet balance from wallet service
       const { data: walletData, error: walletError } = await walletService.getBalance(userProfile.id);
       
+      // Get monthly earnings data for chart
+      const { data: monthlyData, error: monthlyError } = await earningsService.getMonthlyEarnings(userProfile.id);
+      
       console.log('🔍 Debug - Earnings Data:', earningsData);
       console.log('🔍 Debug - Wallet Data:', walletData);
       console.log('🔍 Debug - Earnings Balance:', earningsData?.availableBalance);
       console.log('🔍 Debug - Wallet Balance:', walletData?.balance);
+      console.log('📊 Debug - Monthly Data:', monthlyData);
       
       if (earningsError || walletError) {
         console.warn('Failed to load data:', { earningsError, walletError });
@@ -90,6 +117,14 @@ export default function DashboardEarnings() {
         setEarnings(finalEarnings);
       }
 
+      // Set monthly earnings data for chart
+      if (!monthlyError && monthlyData) {
+        setMonthlyEarnings(monthlyData);
+      } else {
+        console.warn('Failed to load monthly earnings:', monthlyError);
+        setMonthlyEarnings([]);
+      }
+
     } catch (err) {
       console.error('Failed to load earnings:', err);
       setError(err instanceof Error ? err.message : 'Failed to load earnings');
@@ -104,6 +139,7 @@ export default function DashboardEarnings() {
         commissionEarned: 0,
         averageOrderValue: 0
       });
+      setMonthlyEarnings([]);
     } finally {
       setLoading(false);
     }
@@ -359,21 +395,58 @@ export default function DashboardEarnings() {
               </div>
             </div>
 
-            {/* Earnings Growth Chart Placeholder */}
+            {/* Earnings Growth Chart */}
             <div className={`mt-6 p-4 rounded-lg ${isDarkMode ? 'bg-gray-700/30' : 'bg-white'}`}>
               <div className="flex items-center justify-between mb-4">
                 <span className={`text-sm font-medium ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
                   Earnings Trend (Last 6 Months)
                 </span>
-                <span className={`text-xs px-2 py-1 rounded ${isDarkMode ? 'bg-blue-900/30 text-blue-400' : 'bg-blue-100 text-blue-800'}`}>
-                  Growing
+                <span className={`text-xs px-2 py-1 rounded ${monthlyEarnings.length > 0 ? (isDarkMode ? 'bg-green-900/30 text-green-400' : 'bg-green-100 text-green-800') : (isDarkMode ? 'bg-gray-600/30 text-gray-400' : 'bg-gray-100 text-gray-600')}`}>
+                  {monthlyEarnings.length > 0 ? 'Active' : 'No Data'}
                 </span>
               </div>
-              <div className={`h-40 rounded ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'} flex items-center justify-center`}>
-                <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                  Chart showing monthly earnings growth
-                </p>
-              </div>
+              
+              {monthlyEarnings.length > 0 ? (
+                <div className="h-40">
+                  <div className="flex items-end justify-between h-full gap-2">
+                    {monthlyEarnings.slice(-6).map((month, index) => {
+                      const maxEarning = Math.max(...monthlyEarnings.slice(-6).map(m => m.earnings || 0));
+                      const height = maxEarning > 0 ? ((month.earnings || 0) / maxEarning) * 100 : 0;
+                      
+                      return (
+                        <div key={index} className="flex-1 flex flex-col items-center">
+                          <div className="w-full flex flex-col items-center">
+                            <span className={`text-xs font-medium mb-1 ${isDarkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                              ${((month.earnings || 0)).toFixed(0)}
+                            </span>
+                            <div 
+                              className={`w-full rounded-t transition-all duration-300 ${
+                                isDarkMode ? 'bg-blue-600 hover:bg-blue-500' : 'bg-blue-500 hover:bg-blue-600'
+                              }`}
+                              style={{ height: `${Math.max(height, 2)}%` }}
+                              title={`${month.month}: $${(month.earnings || 0).toFixed(2)}`}
+                            />
+                          </div>
+                          <span className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                            {month.month ? month.month.split('-')[1] : ''}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : (
+                <div className={`h-40 rounded ${isDarkMode ? 'bg-gray-800' : 'bg-gray-100'} flex items-center justify-center`}>
+                  <div className="text-center">
+                    <p className={`text-sm mb-2 ${isDarkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                      No earnings data available
+                    </p>
+                    <p className={`text-xs ${isDarkMode ? 'text-gray-500' : 'text-gray-400'}`}>
+                      Chart will appear once you have earnings
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
