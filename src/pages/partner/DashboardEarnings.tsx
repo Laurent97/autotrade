@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { partnerService } from '../../lib/supabase/partner-service';
 import { walletService } from '../../lib/supabase/wallet-service';
@@ -16,6 +17,7 @@ import {
 
 export default function DashboardEarnings() {
   const { userProfile } = useAuth();
+  const navigate = useNavigate();
   const [earnings, setEarnings] = useState({
     thisMonth: 0,
     lastMonth: 0,
@@ -208,7 +210,7 @@ export default function DashboardEarnings() {
       ) : (
         <>
           {/* Earnings Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             {/* This Month */}
             <div className={`rounded-xl p-6 border-2 transition-all hover:shadow-lg ${
               isDarkMode 
@@ -223,8 +225,8 @@ export default function DashboardEarnings() {
                 </div>
                 <TrendingUp className={`w-4 h-4 ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
               </div>
-              <p className={`text-sm mb-2 ${isDarkMode ? 'text-blue-300' : 'text-blue-700'}`}>This Month</p>
-              <p className={`text-3xl font-bold ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+              <p className={`text-xs mb-2 ${isDarkMode ? 'text-blue-300' : 'text-blue-700'}`}>This Month</p>
+              <p className={`text-xl font-bold ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`}>
                 ${earnings.thisMonth.toFixed(2)}
               </p>
             </div>
@@ -239,12 +241,12 @@ export default function DashboardEarnings() {
                 <div className={`p-2 rounded-lg ${
                   isDarkMode ? 'bg-purple-900/30' : 'bg-purple-100'
                 }`}>
-                  <Clock className={`w-5 h-5 ${isDarkMode ? 'text-purple-400' : 'text-purple-600'}`} />
+                  <Calendar className={`w-5 h-5 ${isDarkMode ? 'text-purple-400' : 'text-purple-600'}`} />
                 </div>
                 <TrendingDown className={`w-4 h-4 ${isDarkMode ? 'text-purple-400' : 'text-purple-600'}`} />
               </div>
-              <p className={`text-sm mb-2 ${isDarkMode ? 'text-purple-300' : 'text-purple-700'}`}>Last Month</p>
-              <p className={`text-3xl font-bold ${isDarkMode ? 'text-purple-400' : 'text-purple-600'}`}>
+              <p className={`text-xs mb-2 ${isDarkMode ? 'text-purple-300' : 'text-purple-700'}`}>Last Month</p>
+              <p className={`text-xl font-bold ${isDarkMode ? 'text-purple-400' : 'text-purple-600'}`}>
                 ${earnings.lastMonth.toFixed(2)}
               </p>
             </div>
@@ -263,8 +265,8 @@ export default function DashboardEarnings() {
                 </div>
                 <TrendingUp className={`w-4 h-4 ${isDarkMode ? 'text-green-400' : 'text-green-600'}`} />
               </div>
-              <p className={`text-sm mb-2 ${isDarkMode ? 'text-green-300' : 'text-green-700'}`}>This Year</p>
-              <p className={`text-3xl font-bold ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
+              <p className={`text-xs mb-2 ${isDarkMode ? 'text-green-300' : 'text-green-700'}`}>This Year</p>
+              <p className={`text-xl font-bold ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}>
                 ${earnings.thisYear.toFixed(2)}
               </p>
             </div>
@@ -283,8 +285,8 @@ export default function DashboardEarnings() {
                 </div>
                 <TrendingUp className={`w-4 h-4 ${isDarkMode ? 'text-orange-400' : 'text-orange-600'}`} />
               </div>
-              <p className={`text-sm mb-2 ${isDarkMode ? 'text-orange-300' : 'text-orange-700'}`}>All Time</p>
-              <p className={`text-3xl font-bold ${isDarkMode ? 'text-orange-400' : 'text-orange-600'}`}>
+              <p className={`text-xs mb-2 ${isDarkMode ? 'text-orange-300' : 'text-orange-700'}`}>All Time</p>
+              <p className={`text-xl font-bold ${isDarkMode ? 'text-orange-400' : 'text-orange-600'}`}>
                 ${earnings.allTime.toFixed(2)}
               </p>
             </div>
@@ -302,7 +304,7 @@ export default function DashboardEarnings() {
                 </p>
               </div>
               <button
-                onClick={() => setShowWithdrawalForm(!showWithdrawalForm)}
+                onClick={() => navigate('/payment/withdraw')}
                 className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                   isDarkMode 
                     ? 'bg-green-700 hover:bg-green-600 text-white' 
