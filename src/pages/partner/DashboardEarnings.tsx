@@ -18,7 +18,8 @@ import {
   Store,
   ExternalLink,
   Star,
-  MapPin
+  MapPin,
+  RefreshCw
 } from 'lucide-react';
 
 export default function DashboardEarnings() {
@@ -108,6 +109,29 @@ export default function DashboardEarnings() {
     }
   };
 
+  const recalculateWalletBalance = async () => {
+    if (!userProfile?.id) return;
+    
+    try {
+      console.log('🔄 Manually triggering wallet balance recalculation...');
+      const { data: recalculatedData, error } = await walletService.recalculateBalance(userProfile.id);
+      
+      if (error) {
+        console.error('❌ Failed to recalculate balance:', error);
+        alert('Failed to recalculate balance: ' + error.message);
+      } else {
+        console.log('✅ Balance recalculated successfully:', recalculatedData?.balance);
+        alert(`Balance recalculated! New balance: $${recalculatedData?.balance?.toFixed(2)}`);
+        
+        // Reload earnings data to show updated balance
+        loadEarnings();
+      }
+    } catch (err) {
+      console.error('❌ Error recalculating balance:', err);
+      alert('Error recalculating balance: ' + (err instanceof Error ? err.message : 'Unknown error'));
+    }
+  };
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -132,6 +156,21 @@ export default function DashboardEarnings() {
           {error}
         </div>
       )}
+
+      {/* Balance Recalculation Button */}
+      <div className="mb-6 flex justify-end">
+        <button
+          onClick={recalculateWalletBalance}
+          className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${
+            isDarkMode 
+              ? 'bg-amber-700 hover:bg-amber-600 text-white' 
+              : 'bg-amber-600 hover:bg-amber-700 text-white'
+          }`}
+        >
+          <RefreshCw className="w-4 h-4" />
+          Recalculate Balance
+        </button>
+      </div>
 
       {loading ? (
         <div className="flex justify-center py-8">

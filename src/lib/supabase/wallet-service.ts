@@ -79,6 +79,70 @@ export const walletService = {
     }
   },
 
+  // Recalculate wallet balance from transactions
+  async recalculateBalance(userId: string): Promise<{ data: WalletBalance | null; error: any }> {
+    try {
+      console.log('🔄 Recalculating wallet balance for user:', userId);
+      
+      // Get all completed transactions
+      const { data: transactions, error: transactionError } = await supabase
+        .from('wallet_transactions')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('status', 'completed');
+
+      if (transactionError) {
+        console.error('Error fetching transactions for recalculation:', transactionError);
+        return { data: null, error: transactionError };
+      }
+
+      // Calculate balance from transactions
+      let calculatedBalance = 0;
+      
+      if (transactions && transactions.length > 0) {
+        calculatedBalance = transactions.reduce((balance, transaction) => {
+          switch (transaction.type) {
+            case 'deposit':
+            case 'commission':
+            case 'bonus':
+            case 'order_refund':
+              return balance + transaction.amount;
+            case 'withdrawal':
+            case 'order_payment':
+              return balance - transaction.amount;
+            default:
+              return balance;
+          }
+        }, 0);
+      }
+
+      console.log('💰 Calculated balance from transactions:', calculatedBalance);
+
+      // Update wallet balance
+      const { data: updatedWallet, error: updateError } = await supabase
+        .from('wallet_balances')
+        .update({
+          balance: calculatedBalance,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', userId)
+        .select()
+        .single();
+
+      if (updateError) {
+        console.error('Error updating wallet balance:', updateError);
+        return { data: null, error: updateError };
+      }
+
+      console.log('✅ Wallet balance updated successfully:', updatedWallet?.balance);
+      return { data: updatedWallet, error: null };
+
+    } catch (error) {
+      console.error('Error recalculating wallet balance:', error);
+      return { data: null, error };
+    }
+  },
+
   // Get wallet transactions
   async getTransactions(userId: string, limit = 50, offset = 0): Promise<{ data: WalletTransaction[]; error: any }> {
     try {
