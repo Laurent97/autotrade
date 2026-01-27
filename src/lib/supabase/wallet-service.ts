@@ -96,6 +96,9 @@ export const walletService = {
         return { data: null, error: transactionError };
       }
 
+      console.log('📋 Found transactions:', transactions?.length || 0);
+      console.log('📋 Transaction details:', transactions);
+
       // Calculate balance from transactions
       let calculatedBalance = 0;
       
@@ -117,6 +120,50 @@ export const walletService = {
       }
 
       console.log('💰 Calculated balance from transactions:', calculatedBalance);
+
+      // Also check if there are any transactions (including non-completed)
+      const { data: allTransactions, error: allTxError } = await supabase
+        .from('wallet_transactions')
+        .select('*')
+        .eq('user_id', userId);
+
+      if (!allTxError) {
+        console.log('📊 All transactions (any status):', allTransactions?.length || 0);
+        console.log('📊 All transaction details:', allTransactions);
+      }
+
+      // If no transactions, try calculating from orders (this might be the expected balance)
+      if (calculatedBalance === 0) {
+        console.log('🔍 No wallet transactions found, trying to calculate from orders...');
+        
+        // Get partner ID from user ID
+        const { data: partnerProfile } = await supabase
+          .from('partner_profiles')
+          .select('id')
+          .eq('user_id', userId)
+          .single();
+
+        if (partnerProfile) {
+          console.log('👤 Found partner profile:', partnerProfile.id);
+          
+          // Get all paid orders for this partner
+          const { data: orders } = await supabase
+            .from('orders')
+            .select('total_amount, payment_status')
+            .eq('partner_id', partnerProfile.id)
+            .eq('payment_status', 'paid');
+
+          if (orders && orders.length > 0) {
+            const totalRevenue = orders.reduce((sum, order) => sum + (order.total_amount || 0), 0);
+            const commissionEarned = totalRevenue * 0.1; // 10% commission
+            
+            console.log('💵 Total revenue from orders:', totalRevenue);
+            console.log('💰 Commission earned (10%):', commissionEarned);
+            
+            calculatedBalance = commissionEarned;
+          }
+        }
+      }
 
       // Update wallet balance
       const { data: updatedWallet, error: updateError } = await supabase
