@@ -136,32 +136,30 @@ export const walletService = {
       if (calculatedBalance === 0) {
         console.log('🔍 No wallet transactions found, trying to calculate from orders...');
         
-        // Get partner ID from user ID
-        const { data: partnerProfile } = await supabase
-          .from('partner_profiles')
-          .select('id')
-          .eq('user_id', userId)
-          .single();
+        // Use the same approach as earningsService - get partner stats
+        const { data: stats } = await supabase
+          .from('orders')
+          .select('id, order_number, total_amount, status, payment_status')
+          .eq('partner_id', userId);
 
-        if (partnerProfile) {
-          console.log('👤 Found partner profile:', partnerProfile.id);
+        if (stats && stats.length > 0) {
+          console.log('� Found orders for partner:', stats.length);
           
-          // Get all paid orders for this partner
-          const { data: orders } = await supabase
-            .from('orders')
-            .select('total_amount, payment_status')
-            .eq('partner_id', partnerProfile.id)
-            .eq('payment_status', 'paid');
-
-          if (orders && orders.length > 0) {
-            const totalRevenue = orders.reduce((sum, order) => sum + (order.total_amount || 0), 0);
+          // Get all paid orders
+          const paidOrders = stats.filter(order => order.payment_status === 'paid');
+          console.log('💳 Paid orders:', paidOrders.length);
+          
+          if (paidOrders.length > 0) {
+            const totalRevenue = paidOrders.reduce((sum, order) => sum + (order.total_amount || 0), 0);
             const commissionEarned = totalRevenue * 0.1; // 10% commission
             
-            console.log('💵 Total revenue from orders:', totalRevenue);
+            console.log('💵 Total revenue from paid orders:', totalRevenue);
             console.log('💰 Commission earned (10%):', commissionEarned);
             
             calculatedBalance = commissionEarned;
           }
+        } else {
+          console.log('📦 No orders found for partner');
         }
       }
 
