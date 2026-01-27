@@ -61,6 +61,8 @@ import NotFound from "./pages/NotFound";
 import Shipping from "./pages/Shipping";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
+import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
 import Help from "./pages/Help";
 import CreateAccount from "./pages/help/getting-started/CreateAccount";
 import SetupProfile from "./pages/help/getting-started/SetupProfile";
@@ -152,6 +154,8 @@ const App = () => (
               <Route path="/my-orders" element={<MyOrders />} />
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/privacy" element={<Privacy />} />
               <Route path="/help" element={<Help />} />
               <Route path="/help/getting-started/create-account" element={<CreateAccount />} />
               <Route path="/help/getting-started/setup-profile" element={<SetupProfile />} />
