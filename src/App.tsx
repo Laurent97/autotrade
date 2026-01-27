@@ -105,10 +105,11 @@ const App = () => (
               <Route path="/cart" element={<Cart />} />
               <Route path="/checkout" element={<Checkout />} />
               <Route path="/checkout/payment" element={<Payment />} />
-              <Route path="/liked-items" element={<LikedItems />} />
-              <Route path="/notifications" element={<Notifications />} />
+              <Route path="/payment/withdraw" element={<Withdrawal />} />
               <Route path="/order-success" element={<OrderSuccess />} />
               <Route path="/order-success/:orderId" element={<OrderSuccessStore />} />
+              <Route path="/liked-items" element={<LikedItems />} />
+              <Route path="/notifications" element={<Notifications />} />
               <Route path="/stores" element={<Stores />} />
               <Route path="/manufacturers" element={<Manufacturers />} />
               <Route path="/store/:storeSlug" element={<Store />} />
