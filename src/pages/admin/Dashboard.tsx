@@ -71,22 +71,22 @@ const AdminDashboard = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'delivered': return 'bg-green-100 text-green-800';
-      case 'shipped': return 'bg-blue-100 text-blue-800';
-      case 'processing': return 'bg-yellow-100 text-yellow-800';
-      case 'pending': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'delivered': return 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300';
+      case 'shipped': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300';
+      case 'processing': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300';
+      case 'pending': return 'bg-gray-100 text-gray-800 dark:bg-gray-800/40 dark:text-gray-300';
+      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-800/40 dark:text-gray-300';
     }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col bg-background">
+      <div className="min-h-screen flex flex-col bg-background dark:bg-gray-950">
         <Navbar />
         <div className="flex-grow flex items-center justify-center">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-16 w-16 border-4 border-slate-200 border-t-primary mx-auto mb-4"></div>
-            <p className="text-muted-foreground font-medium">Loading your dashboard...</p>
+            <div className="animate-spin rounded-full h-16 w-16 border-4 border-slate-200 dark:border-gray-700 border-t-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground dark:text-gray-400 font-medium">Loading your dashboard...</p>
           </div>
         </div>
         <Footer />
@@ -95,7 +95,7 @@ const AdminDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col bg-background dark:bg-gray-950">
       <Navbar />
       <div className="flex-grow">
         <div className="container mx-auto px-4 py-4 sm:py-6 lg:py-8">
@@ -108,20 +108,20 @@ const AdminDashboard = () => {
               
               {/* Welcome Header */}
               <div className="mb-4 sm:mb-6 lg:mb-8 animate-fade-in">
-                <div className="bg-gradient-to-r from-primary to-primary/90 rounded-lg sm:rounded-xl lg:rounded-2xl p-3 sm:p-4 lg:p-6 text-primary-foreground shadow-lg flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+                <div className="bg-gradient-to-r from-primary to-primary/90 dark:from-blue-700 dark:to-blue-800 rounded-lg sm:rounded-xl lg:rounded-2xl p-3 sm:p-4 lg:p-6 text-primary-foreground dark:text-white shadow-lg flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
                   <div>
                     <h1 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold mb-1 sm:mb-2">Dashboard</h1>
-                    <p className="text-primary-foreground/90 text-sm sm:text-base lg:text-lg">Welcome back, <span className="font-semibold truncate max-w-[200px] sm:max-w-none inline-block">{userProfile?.email?.split('@')[0] || 'Admin'}</span></p>
-                    <p className="text-primary-foreground/70 mt-1 text-xs sm:text-sm lg:text-base hidden xs:block">Here's what's happening with your business today</p>
+                    <p className="text-primary-foreground/90 dark:text-white/90 text-sm sm:text-base lg:text-lg">Welcome back, <span className="font-semibold truncate max-w-[200px] sm:max-w-none inline-block">{userProfile?.email?.split('@')[0] || 'Admin'}</span></p>
+                    <p className="text-primary-foreground/70 dark:text-white/70 mt-1 text-xs sm:text-sm lg:text-base hidden xs:block">Here's what's happening with your business today</p>
                     {lastUpdate && (
-                      <p className="text-primary-foreground/50 text-xs mt-1">Last updated: {lastUpdate.toLocaleTimeString()}</p>
+                      <p className="text-primary-foreground/50 dark:text-white/50 text-xs mt-1">Last updated: {lastUpdate.toLocaleTimeString()}</p>
                     )}
                   </div>
                   <Button
                     onClick={refreshAllData}
                     variant="outline"
                     size="sm"
-                    className="text-primary-foreground border-primary/20 hover:bg-primary/10"
+                    className="text-primary-foreground dark:text-white border-primary/20 dark:border-blue-600 hover:bg-primary/10 dark:hover:bg-blue-700/20"
                   >
                     <RefreshCw className="w-4 h-4 mr-2" />
                     Refresh
@@ -239,10 +239,10 @@ const AdminDashboard = () => {
                             </div>
                             <div className="flex items-center gap-2 sm:gap-3">
                               <span className={`px-2 py-1 sm:px-3 sm:py-1 rounded-full text-xs font-semibold ${
-                                order?.status === 'delivered' ? 'bg-green-100 text-green-700' :
-                                order?.status === 'shipped' ? 'bg-blue-100 text-blue-700' :
-                                order?.status === 'processing' ? 'bg-amber-100 text-amber-700' :
-                                'bg-slate-100 text-slate-700'
+                                order?.status === 'delivered' ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300' :
+                                order?.status === 'shipped' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' :
+                                order?.status === 'processing' ? 'bg-amber-100 text-amber-700 dark:bg-yellow-900/40 dark:text-yellow-300' :
+                                'bg-slate-100 text-slate-700 dark:bg-gray-800/40 dark:text-gray-300'
                               }`}>
                                 {order?.status || 'Unknown'}
                               </span>
@@ -261,11 +261,11 @@ const AdminDashboard = () => {
                     <div className="bg-gradient-to-br from-warning/10 to-warning/5 dark:from-warning/20 dark:to-warning/10 rounded-lg sm:rounded-xl lg:rounded-2xl p-4 sm:p-6 border border-warning/20 shadow-md">
                       <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
                         <AlertCircle className="w-4 h-4 sm:w-5 sm:h-5 text-warning" />
-                        <h3 className="font-bold text-foreground text-sm sm:text-base">Pending Approvals</h3>
+                        <h3 className="font-bold text-foreground dark:text-white text-sm sm:text-base">Pending Approvals</h3>
                       </div>
-                      <p className="text-2xl sm:text-3xl font-bold text-foreground mb-2">{stats.pendingPartners}</p>
-                      <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4">Partner applications waiting</p>
-                      <Link to="/admin/partners" className="text-xs sm:text-sm font-semibold text-foreground hover:text-primary flex items-center gap-1">
+                      <p className="text-2xl sm:text-3xl font-bold text-foreground dark:text-white mb-2">{stats.pendingPartners}</p>
+                      <p className="text-xs sm:text-sm text-muted-foreground dark:text-gray-400 mb-3 sm:mb-4">Partner applications waiting</p>
+                      <Link to="/admin/partners" className="text-xs sm:text-sm font-semibold text-foreground dark:text-white hover:text-primary flex items-center gap-1">
                         Review now <ArrowUpRight className="w-3 h-3" />
                       </Link>
                     </div>
@@ -279,8 +279,8 @@ const AdminDashboard = () => {
                     </div>
                     <div className="space-y-2 sm:space-y-3">
                       <div className="flex items-center justify-between">
-                        <span className="text-xs sm:text-sm text-muted-foreground">Status</span>
-                        <span className="px-2 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-full flex items-center gap-1">
+                        <span className="text-xs sm:text-sm text-muted-foreground dark:text-gray-400">Status</span>
+                        <span className="px-2 py-1 bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300 text-xs font-semibold rounded-full flex items-center gap-1">
                           <CheckCircle className="w-3 h-3" /> Operational
                         </span>
                       </div>
@@ -297,11 +297,11 @@ const AdminDashboard = () => {
                       {users?.slice(0, 3).map((userItem) => (
                         <div key={userItem?.id} className="flex items-center justify-between">
                           <div className="flex-1 min-w-0">
-                            <p className="text-xs sm:text-sm font-medium text-foreground truncate">{userItem?.full_name || userItem?.email?.split('@')[0] || 'Unknown User'}</p>
-                            <p className="text-xs text-muted-foreground capitalize">{userItem?.user_type || 'unknown'}</p>
+                            <p className="text-xs sm:text-sm font-medium text-foreground dark:text-white truncate">{userItem?.full_name || userItem?.email?.split('@')[0] || 'Unknown User'}</p>
+                            <p className="text-xs text-muted-foreground dark:text-gray-400 capitalize">{userItem?.user_type || 'unknown'}</p>
                           </div>
                           {userItem?.user_type === 'partner' && userItem?.partner_status === 'approved' && (
-                            <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 text-green-600 flex-shrink-0" />
+                            <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 text-green-600 dark:text-green-400 flex-shrink-0" />
                           )}
                         </div>
                       ))}
@@ -313,10 +313,10 @@ const AdminDashboard = () => {
               {/* Quick Actions */}
               <div className="bg-card rounded-lg sm:rounded-xl lg:rounded-2xl shadow-md border border-border p-4 sm:p-6 lg:p-8 animate-fade-in hover:shadow-lg transition-shadow">
                 <div className="mb-4 sm:mb-6">
-                  <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-foreground flex items-center gap-2">
+                  <h2 className="text-lg sm:text-xl lg:text-2xl font-bold text-foreground dark:text-white flex items-center gap-2">
                     <span className="text-xl sm:text-2xl lg:text-3xl">⚡</span> Quick Actions
                   </h2>
-                  <p className="text-muted-foreground text-xs sm:text-sm mt-1">Frequently used admin functions</p>
+                  <p className="text-muted-foreground dark:text-gray-400 text-xs sm:text-sm mt-1">Frequently used admin functions</p>
                 </div>
                 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-3 sm:gap-4">

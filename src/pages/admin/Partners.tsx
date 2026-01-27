@@ -204,11 +204,11 @@ export default function AdminPartners() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'approved': return 'bg-green-100 text-green-800';
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'rejected': return 'bg-red-100 text-red-800';
-      case 'suspended': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'approved': return 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300';
+      case 'pending': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300';
+      case 'rejected': return 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300';
+      case 'suspended': return 'bg-gray-100 text-gray-800 dark:bg-gray-800/40 dark:text-gray-300';
+      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-800/40 dark:text-gray-300';
     }
   };
 
@@ -543,7 +543,7 @@ export default function AdminPartners() {
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50 animate-fade-in">
           <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-slate-200">
             <div className="p-6">
-              <h2 className="text-2xl font-bold text-slate-900 mb-6">Edit Partner Information</h2>
+              <h2 className="text-2xl font-bold text-foreground dark:text-white mb-6">Edit Partner Information</h2>
               
               <div className="space-y-4">
                 {/* Store Visits */}

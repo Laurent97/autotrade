@@ -686,14 +686,14 @@ export default function AdminOrders() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'completed':
-      case 'delivered': return 'bg-green-100 text-green-800';
+      case 'delivered': return 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300';
       case 'processing':
-      case 'shipped': return 'bg-blue-100 text-blue-800';
-      case 'waiting_confirmation': return 'bg-orange-100 text-orange-800';
+      case 'shipped': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300';
+      case 'waiting_confirmation': return 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300';
       case 'pending':
-      case 'confirmed': return 'bg-yellow-100 text-yellow-800';
-      case 'cancelled': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'confirmed': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300';
+      case 'cancelled': return 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300';
+      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-800/40 dark:text-gray-300';
     }
   };
 
@@ -880,8 +880,8 @@ export default function AdminOrders() {
                             <td className="px-6 py-4 whitespace-nowrap">
                               <span className={`px-3 py-1 text-xs font-semibold rounded-full ${
                                 order.payment_status === 'paid' 
-                                  ? 'bg-green-100 text-green-800' 
-                                  : 'bg-red-100 text-red-800'
+                                  ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300' 
+                                  : 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300'
                               }`}>
                                 {order.payment_status === 'paid' ? '💳 ' : '⏰ '}
                                 {order.payment_status}
@@ -1011,16 +1011,16 @@ export default function AdminOrders() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 {/* Customer Info */}
                 <div>
-                  <h3 className="text-lg font-semibold text-foreground mb-3">
+                  <h3 className="text-lg font-semibold text-foreground dark:text-white mb-3">
                     Customer Information
                   </h3>
-                  <div className="bg-muted p-4 rounded-lg space-y-2">
+                  <div className="bg-muted dark:bg-gray-800 p-4 rounded-lg space-y-2">
                     <div>
-                      <div className="text-sm text-muted-foreground">Name</div>
+                      <div className="text-sm text-muted-foreground dark:text-gray-400">Name</div>
                       <div className="font-medium text-foreground">{orderDetails.customer?.full_name || 'N/A'}</div>
                     </div>
                     <div>
-                      <div className="text-sm text-muted-foreground">Email</div>
+                      <div className="text-sm text-muted-foreground dark:text-gray-400">Email</div>
                       <div className="font-medium text-foreground">{orderDetails.customer?.email}</div>
                     </div>
                   </div>
@@ -1028,10 +1028,10 @@ export default function AdminOrders() {
 
                 {/* Shipping Address */}
                 <div>
-                  <h3 className="text-lg font-semibold text-foreground mb-3">
+                  <h3 className="text-lg font-semibold text-foreground dark:text-white mb-3">
                     Shipping Address
                   </h3>
-                  <div className="bg-muted p-4 rounded-lg">
+                  <div className="bg-muted dark:bg-gray-800 p-4 rounded-lg">
                     {orderDetails.shipping_address ? (
                       <div className="space-y-1 text-sm text-foreground">
                         <div>{orderDetails.shipping_address.address}</div>
@@ -1046,13 +1046,31 @@ export default function AdminOrders() {
 
                 {/* Order Status */}
                 <div>
-                  <h3 className="text-lg font-semibold text-foreground mb-3">
+                  <h3 className="text-lg font-semibold text-foreground dark:text-white mb-3">
                     Order Status
                   </h3>
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <span>Current Status:</span>
-                      <span className={`px-3 py-1 rounded-full text-sm font-semibold ${getStatusColor(orderDetails.status)}`}>
+                      <span className={`px-3 py-1 text-xs font-semibold rounded-full ${
+                        orderDetails.status === 'pending' 
+                          ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300' 
+                          : orderDetails.status === 'waiting_confirmation' 
+                            ? 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300' 
+                            : orderDetails.status === 'confirmed' 
+                              ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300' 
+                              : orderDetails.status === 'processing' 
+                                ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300' 
+                                : orderDetails.status === 'shipped' 
+                                  ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300' 
+                                  : orderDetails.status === 'delivered' 
+                                    ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300' 
+                                    : orderDetails.status === 'completed' 
+                                      ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300' 
+                                      : orderDetails.status === 'cancelled' 
+                                        ? 'bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-300' 
+                                        : 'bg-gray-100 text-gray-800 dark:bg-gray-800/40 dark:text-gray-300'
+                      }`}>
                         {orderDetails.status}
                       </span>
                     </div>
@@ -1082,14 +1100,14 @@ export default function AdminOrders() {
 
                 {/* Partner Info */}
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-800 mb-3">
+                  <h3 className="text-lg font-semibold text-foreground dark:text-white mb-3">
                     Partner Assignment
                   </h3>
-                  <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="bg-muted dark:bg-gray-800 p-4 rounded-lg">
                     {orderDetails.partner ? (
                       <div>
                         <div className="font-medium">{orderDetails.partner.store_name}</div>
-                        <div className="text-sm text-gray-600">Assigned Partner</div>
+                        <div className="text-sm text-muted-foreground dark:text-gray-400">Assigned Partner</div>
                       </div>
                     ) : (
                       <div>
@@ -1109,25 +1127,25 @@ export default function AdminOrders() {
               {/* Logistics Info */}
               {orderDetails.logistics && (
                 <div className="mb-6">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-3">
+                  <h3 className="text-lg font-semibold text-foreground dark:text-white mb-3">
                     Logistics Information
                   </h3>
-                  <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                  <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800/30">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       <div>
-                        <div className="text-sm text-gray-600">Provider</div>
+                        <div className="text-sm text-muted-foreground dark:text-gray-400">Provider</div>
                         <div className="font-medium">{orderDetails.logistics.shipping_provider}</div>
                       </div>
                       <div>
-                        <div className="text-sm text-gray-600">Tracking #</div>
+                        <div className="text-sm text-muted-foreground dark:text-gray-400">Tracking #</div>
                         <div className="font-medium text-sm">{orderDetails.logistics.tracking_number}</div>
                       </div>
                       <div>
-                        <div className="text-sm text-gray-600">Status</div>
+                        <div className="text-sm text-muted-foreground dark:text-gray-400">Status</div>
                         <div className="font-medium">{orderDetails.logistics.current_status}</div>
                       </div>
                       <div>
-                        <div className="text-sm text-gray-600">Est. Delivery</div>
+                        <div className="text-sm text-muted-foreground dark:text-gray-400">Est. Delivery</div>
                         <div className="font-medium">
                           {orderDetails.logistics.estimated_delivery ? 
                             new Date(orderDetails.logistics.estimated_delivery).toLocaleDateString() : 
@@ -1170,7 +1188,7 @@ export default function AdminOrders() {
               
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-sm font-medium text-foreground dark:text-gray-300 mb-2">
                     Select Partner *
                   </label>
                   <select
