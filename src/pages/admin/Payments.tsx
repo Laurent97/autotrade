@@ -456,7 +456,15 @@ const Payments: React.FC = () => {
     setError('');
     
     try {
-      const { error } = await supabase
+      console.log('🔍 Approving payment:', {
+        paymentId: payment.id,
+        orderId: payment.order_id,
+        amount: payment.amount,
+        paymentMethod: payment.payment_method
+      });
+
+      // First, update the pending payment status
+      const { error: paymentUpdateError } = await supabase
         .from('pending_payments')
         .update({
           status: 'confirmed',
@@ -465,58 +473,84 @@ const Payments: React.FC = () => {
         })
         .eq('id', payment.id);
 
-      if (error) throw error;
+      if (paymentUpdateError) {
+        console.error('Error updating pending payment:', paymentUpdateError);
+        throw paymentUpdateError;
+      }
 
-      // Update the order's payment_status to 'paid'
-      // Try multiple ways to match the order
-      let orderUpdateResult = await supabase
+      console.log('✅ Pending payment updated successfully');
+
+      // Find the corresponding order with multiple fallback strategies
+      let orderUpdateResult = { error: null as any };
+      let matchedOrder = null;
+
+      // Strategy 1: Try exact order_number match
+      const { data: orderByNumber } = await supabase
+        .from('orders')
+        .select('id, order_number, payment_status, status')
+        .eq('order_number', payment.order_id)
+        .single();
+
+      if (orderByNumber) {
+        console.log('✅ Found order by order_number:', orderByNumber.order_number);
+        matchedOrder = orderByNumber;
+      } else {
+        // Strategy 2: Try UUID match (convert payment.order_id to UUID if it looks like one)
+        const { data: orderById } = await supabase
+          .from('orders')
+          .select('id, order_number, payment_status, status')
+          .eq('id', payment.order_id)
+          .single();
+
+        if (orderById) {
+          console.log('✅ Found order by UUID:', orderById.id);
+          matchedOrder = orderById;
+        } else {
+          // Strategy 3: Try partial match or contains
+          const { data: orderByPartial } = await supabase
+            .from('orders')
+            .select('id, order_number, payment_status, status')
+            .or(`order_number.ilike.%${payment.order_id}%,id.ilike.%${payment.order_id}%`)
+            .limit(5);
+
+          if (orderByPartial && orderByPartial.length > 0) {
+            console.log('✅ Found order by partial match:', orderByPartial[0].order_number);
+            matchedOrder = orderByPartial[0];
+          }
+        }
+      }
+
+      if (!matchedOrder) {
+        console.error('❌ No matching order found for payment:', payment.order_id);
+        throw new Error(`No matching order found for payment ID: ${payment.order_id}`);
+      }
+
+      // Check if order is already paid
+      if (matchedOrder.payment_status === 'paid') {
+        console.log('ℹ️ Order is already marked as paid:', matchedOrder.order_number);
+        setError('Order is already marked as paid');
+        await fetchPaymentData();
+        return;
+      }
+
+      // Update the order's payment status
+      const { error: orderUpdateError } = await supabase
         .from('orders')
         .update({
           payment_status: 'paid',
           status: 'confirmed', // Also update order status to confirmed
           updated_at: new Date().toISOString()
         })
-        .eq('order_number', payment.order_id);
+        .eq('id', matchedOrder.id);
 
-      if (orderUpdateResult.error) {
-        console.error('Error updating order by order_number:', orderUpdateResult.error);
-        // Try by order_id (UUID) if order_number fails
-        orderUpdateResult = await supabase
-          .from('orders')
-          .update({
-            payment_status: 'paid',
-            status: 'confirmed',
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', payment.order_id);
+      if (orderUpdateError) {
+        console.error('Error updating order payment status:', orderUpdateError);
+        throw orderUpdateError;
       }
 
-      if (orderUpdateResult.error) {
-        console.error('Error updating order by order_id:', orderUpdateResult.error);
-        // Try a more flexible search
-        const { data: matchingOrders } = await supabase
-          .from('orders')
-          .select('id')
-          .or(`order_number.eq.${payment.order_id},id.eq.${payment.order_id}`);
+      console.log('✅ Order payment status updated successfully:', matchedOrder.order_number);
 
-        if (matchingOrders && matchingOrders.length > 0) {
-          orderUpdateResult = await supabase
-            .from('orders')
-            .update({
-              payment_status: 'paid',
-              status: 'confirmed',
-              updated_at: new Date().toISOString()
-            })
-            .eq('id', matchingOrders[0].id);
-        }
-      }
-
-      if (orderUpdateResult.error) {
-        console.error('Error updating order payment status after all attempts:', orderUpdateResult.error);
-        throw orderUpdateResult.error;
-      }
-
-      // Log the approval
+      // Log the approval for security
       await supabase
         .from('payment_security_logs')
         .insert({
@@ -525,17 +559,20 @@ const Payments: React.FC = () => {
           event_data: {
             payment_id: payment.id,
             order_id: payment.order_id,
+            matched_order_id: matchedOrder.id,
+            order_number: matchedOrder.order_number,
             amount: payment.amount,
             payment_method: payment.payment_method
           },
-          admin_id: user.id
+          admin_id: user.id,
+          created_at: new Date().toISOString()
         });
 
       await fetchPaymentData();
-      setError('Payment approved successfully and order status updated');
+      setError(`✅ Payment approved successfully! Order ${matchedOrder.order_number} marked as paid.`);
     } catch (error: any) {
-      console.error('Error approving payment:', error);
-      setError('Failed to approve payment');
+      console.error('❌ Error approving payment:', error);
+      setError(`Failed to approve payment: ${error.message || 'Unknown error'}`);
     } finally {
       setProcessingAction(null);
     }
