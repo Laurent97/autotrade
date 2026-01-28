@@ -6,7 +6,7 @@ import {
   TIER_CONFIG,
   getProviderIcon,
   getProviderColor
-} from '../../lib/constants/shippingProviders';
+} from '../lib/constants/shippingProviders';
 
 interface ShippingProviderSelectProps {
   value: string;
@@ -171,7 +171,7 @@ export const ShippingProviderSelect: React.FC<ShippingProviderSelectProps> = ({
                       
                       <div className="flex items-start gap-3">
                         <div 
-                          className="w-10 h-10 rounded-lg flex items-center justify-center text-lg flex-shrink-0"
+                          className="w-12 h-12 rounded-lg flex items-center justify-center text-2xl"
                           style={{ backgroundColor: `${provider.color}20` }}
                         >
                           {provider.icon}
