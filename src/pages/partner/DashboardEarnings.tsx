@@ -533,7 +533,10 @@ export default function DashboardEarnings() {
                 <div className="text-center p-4">
                   <p className="text-sm text-muted-foreground">Projected Annual</p>
                   <p className="text-lg font-semibold text-blue-600">
-                    {monthlyEarnings.length > 0 ? formatCurrency((monthlyEarnings.reduce((sum, month) => sum + (month.earnings || 0), 0) / monthlyEarnings.length * 12) : formatCurrency(earnings.thisMonth * 12)}
+                    {monthlyEarnings.length > 0 
+                      ? formatCurrency((monthlyEarnings.reduce((sum, month) => sum + (month.earnings || 0), 0) / monthlyEarnings.length) * 12)
+                      : formatCurrency(earnings.thisMonth * 12)
+                    }
                   </p>
                 </div>
                 <div className="text-center p-4">
