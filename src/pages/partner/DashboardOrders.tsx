@@ -12,8 +12,25 @@ import { OrderStatusBadge } from '../../components/OrderStatusBadge';
 import { useOrderRealtime } from '../../hooks/useOrderRealtime';
 import { 
   Wallet,
-  AlertCircle
+  AlertCircle,
+  Package,
+  TrendingUp,
+  DollarSign,
+  Users,
+  Calendar,
+  Search,
+  RefreshCw,
+  Eye,
+  Filter,
+  Grid3X3,
+  List,
+  ArrowUpRight,
+  ArrowDownRight
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export default function DashboardOrders() {
   const { user, userProfile } = useAuth();
@@ -22,6 +39,8 @@ export default function DashboardOrders() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<'all' | 'pending' | 'processing' | 'shipped' | 'completed' | 'cancelled'>('all');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
   
   // Wallet state
   const [walletBalance, setWalletBalance] = useState(0);
@@ -218,222 +237,429 @@ export default function DashboardOrders() {
     }
   };
 
-  const filteredOrders = filter === 'all' ? orders : orders.filter(o => o.status === filter);
+  const filteredOrders = filter === 'all' 
+    ? orders.filter(order => 
+        searchTerm === '' || 
+        order.order_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        order.user?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        order.user?.email?.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    : orders.filter(o => o.status === filter && (
+        searchTerm === '' || 
+        o.order_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        o.user?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        o.user?.email?.toLowerCase().includes(searchTerm.toLowerCase())
+      ));
+
+  // Calculate statistics
+  const stats = {
+    total: orders.length,
+    pending: orders.filter(o => o.status === 'pending').length,
+    processing: orders.filter(o => o.status === 'processing').length,
+    shipped: orders.filter(o => o.status === 'shipped').length,
+    completed: orders.filter(o => o.status === 'completed').length,
+    cancelled: orders.filter(o => o.status === 'cancelled').length,
+    totalRevenue: orders.reduce((sum, o) => sum + (o.total_amount || 0), 0),
+    pendingRevenue: orders.filter(o => o.status === 'pending').reduce((sum, o) => sum + (o.total_amount || 0), 0),
+    averageOrderValue: orders.length > 0 ? orders.reduce((sum, o) => sum + (o.total_amount || 0), 0) / orders.length : 0
+  };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border border-gray-200 dark:border-gray-700">
-      <div className="flex items-center justify-between mb-6">
+    <div className="space-y-6">
+      {/* Professional Header */}
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">📦 Your Orders</h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-4">Manage and track all customer orders</p>
-          <div className="text-xs text-gray-500 dark:text-gray-500">
-            Data updates in real-time • Last updated: Just now
-          </div>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Orders Management</h1>
+          <p className="text-muted-foreground">Manage and track all your customer orders in real-time</p>
         </div>
         
-        <div className="flex items-center gap-4">
-          {/* Wallet Display */}
-          <div className="px-4 py-2 bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700/50 rounded-lg">
-            <div className="flex items-center gap-2">
-              <Wallet className="w-4 h-4 text-amber-600 dark:text-amber-400" />
-              <span className="text-sm font-medium text-amber-700 dark:text-amber-300">
-                {walletLoading ? 'Loading...' : `$${walletBalance.toFixed(2)}`}
-              </span>
-            </div>
-          </div>
+        <div className="flex items-center gap-3">
+          {/* Modern Wallet Balance Card */}
+          <Card className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border-amber-200 dark:border-amber-700/50">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-amber-100 dark:bg-amber-800/50 rounded-lg">
+                  <Wallet className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Available Balance</p>
+                  <p className="text-lg font-semibold text-amber-700 dark:text-amber-300">
+                    {walletLoading ? 'Loading...' : `$${walletBalance.toFixed(2)}`}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
           <ThemeSwitcher />
         </div>
       </div>
 
-      {/* Error Display */}
-      {error && (
-        <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700/50 rounded-lg">
-          <div className="flex items-center gap-2 text-red-700 dark:text-red-300">
-            <AlertCircle className="w-5 h-5" />
-            <span>{error}</span>
-          </div>
-        </div>
-      )}
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
+            <Package className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats.total}</div>
+            <p className="text-xs text-muted-foreground">All time orders</p>
+          </CardContent>
+        </Card>
 
-      {/* Filters */}
-      <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-        <button
-          onClick={() => setFilter('all')}
-          className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-colors ${
-            filter === 'all' ? 'bg-amber-600 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-          }`}
-        >
-          All Orders ({orders.length})
-        </button>
-        {['pending', 'waiting_confirmation', 'processing', 'shipped', 'completed', 'cancelled'].map((status) => {
-          const count = orders.filter(o => o.status === status).length;
-          return (
-            <button
-              key={status}
-              onClick={() => setFilter(status as any)}
-              className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-colors capitalize ${
-                filter === status ? 'bg-amber-600 text-white' : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-              }`}
-            >
-              {status} ({count})
-            </button>
-          );
-        })}
-        <button
-          onClick={() => {
-            loadOrders();
-            loadTrackingData();
-          }}
-          className="px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-colors bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-900/50"
-        >
-          🔄 Refresh
-        </button>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Pending Orders</CardTitle>
+            <Calendar className="h-4 w-4 text-orange-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-orange-600">{stats.pending}</div>
+            <p className="text-xs text-muted-foreground">${stats.pendingRevenue.toFixed(2)} pending</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+            <DollarSign className="h-4 w-4 text-green-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">${stats.totalRevenue.toFixed(2)}</div>
+            <p className="text-xs text-muted-foreground">From completed orders</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Avg Order Value</CardTitle>
+            <TrendingUp className="h-4 w-4 text-blue-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-600">${stats.averageOrderValue.toFixed(2)}</div>
+            <p className="text-xs text-muted-foreground">Per order average</p>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Orders Table */}
+      {/* Error Display */}
+      {error && (
+        <Card className="border-red-200 dark:border-red-700/50 bg-red-50 dark:bg-red-900/20">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3 text-red-700 dark:text-red-300">
+              <AlertCircle className="w-5 h-5" />
+              <span>{error}</span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Filters and Search Bar */}
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div className="flex flex-col sm:flex-row gap-3 flex-1">
+              {/* Search Input */}
+              <div className="relative flex-1 max-w-md">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search orders by ID, customer name, or email..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              
+              {/* Status Filter */}
+              <Select value={filter} onValueChange={(value: any) => setFilter(value)}>
+                <SelectTrigger className="w-full sm:w-48">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Orders ({stats.total})</SelectItem>
+                  <SelectItem value="pending">Pending ({stats.pending})</SelectItem>
+                  <SelectItem value="processing">Processing ({stats.processing})</SelectItem>
+                  <SelectItem value="shipped">Shipped ({stats.shipped})</SelectItem>
+                  <SelectItem value="completed">Completed ({stats.completed})</SelectItem>
+                  <SelectItem value="cancelled">Cancelled ({stats.cancelled})</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              {/* View Mode Toggle */}
+              <div className="flex items-center border rounded-lg">
+                <Button
+                  variant={viewMode === 'table' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('table')}
+                  className="rounded-r-none"
+                >
+                  <List className="w-4 h-4" />
+                </Button>
+                <Button
+                  variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setViewMode('grid')}
+                  className="rounded-l-none"
+                >
+                  <Grid3X3 className="w-4 h-4" />
+                </Button>
+              </div>
+              
+              {/* Refresh Button */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  loadOrders();
+                  loadTrackingData();
+                }}
+                disabled={loading}
+              >
+                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+      </Card>
+
+      {/* Orders Display */}
       {loading || partnerLoading ? (
-        <div className="flex justify-center py-8">
-          <LoadingSpinner />
-        </div>
+        <Card>
+          <CardContent className="flex items-center justify-center py-12">
+            <LoadingSpinner />
+          </CardContent>
+        </Card>
       ) : filteredOrders.length === 0 ? (
-        <div className="text-center py-12 bg-gray-50 dark:bg-gray-700/50 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600">
-          <div className="text-6xl mb-4">📦</div>
-          <p className="text-gray-600 dark:text-gray-400 mb-4">No {filter === 'all' ? '' : filter} orders</p>
-          <p className="text-sm text-gray-500 dark:text-gray-500 mb-6">Orders will appear here when customers make purchases</p>
-          <button
-            onClick={() => window.location.href = '/partner/products/add'}
-            className="px-4 py-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white rounded-lg shadow transition-all"
-          >
-            📝 Add Products
-          </button>
-        </div>
-      ) : (
-        <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
-          <table className="w-full min-w-full">
-            <thead className="bg-gray-50 dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600">
-              <tr>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Order ID</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Customer</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Amount</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Items</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Status</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Tracking</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Date</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700 dark:text-gray-300">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              {filteredOrders.map((order) => (
-                <tr key={order.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                  <td className="px-6 py-4 font-mono text-sm text-gray-900 dark:text-white">
-                    {order.order_number || order.id.slice(0, 8)}...
-                  </td>
-                  <td className="px-6 py-4">
-                    <div>
-                      <p className="font-medium text-gray-900 dark:text-white">
-                        {order.user?.full_name || order.user?.email || 'Customer'}
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        {order.user?.email}
-                      </p>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 font-medium text-gray-900 dark:text-white">
-                    ${order.total_amount?.toFixed(2)}
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="space-y-1">
-                      <div className="font-medium">
-                        {order.order_items?.length || 0} item(s)
-                      </div>
-                      {order.order_items?.slice(0, 2).map((item, idx) => (
-                        <div key={idx} className="text-xs text-gray-500">
-                          • {item.quantity}x {item.product?.make || item.product?.title || 'Product'}
-                          {item.product?.sale_price && (
-                            <span className="text-gray-400 ml-1">
-                              (${item.product.sale_price} each)
-                            </span>
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-16">
+            <div className="text-6xl mb-4">📦</div>
+            <h3 className="text-xl font-semibold mb-2">No {filter === 'all' ? '' : filter} orders found</h3>
+            <p className="text-muted-foreground mb-6">Orders will appear here when customers make purchases</p>
+            <Link to="/partner/products/add">
+              <Button>
+                <Package className="w-4 h-4 mr-2" />
+                Add Products
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      ) : viewMode === 'table' ? (
+        /* Modern Table View */
+        <Card>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b bg-muted/50">
+                    <th className="text-left p-4 font-medium">Order ID</th>
+                    <th className="text-left p-4 font-medium">Customer</th>
+                    <th className="text-left p-4 font-medium">Amount</th>
+                    <th className="text-left p-4 font-medium">Items</th>
+                    <th className="text-left p-4 font-medium">Status</th>
+                    <th className="text-left p-4 font-medium">Tracking</th>
+                    <th className="text-left p-4 font-medium">Date</th>
+                    <th className="text-left p-4 font-medium">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredOrders.map((order) => (
+                    <tr key={order.id} className="border-b hover:bg-muted/30 transition-colors">
+                      <td className="p-4">
+                        <div className="font-mono text-sm">
+                          {order.order_number || order.id.slice(0, 8)}...
+                        </div>
+                      </td>
+                      <td className="p-4">
+                        <div>
+                          <div className="font-medium">
+                            {order.user?.full_name || order.user?.email || 'Customer'}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {order.user?.email}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="p-4">
+                        <div className="font-medium">
+                          ${order.total_amount?.toFixed(2)}
+                        </div>
+                      </td>
+                      <td className="p-4">
+                        <div className="space-y-1">
+                          <div className="font-medium">
+                            {order.order_items?.length || 0} item(s)
+                          </div>
+                          {order.order_items?.slice(0, 2).map((item, idx) => (
+                            <div key={idx} className="text-xs text-muted-foreground">
+                              • {item.quantity}x {item.product?.make || item.product?.title || 'Product'}
+                            </div>
+                          ))}
+                          {order.order_items && order.order_items.length > 2 && (
+                            <div className="text-xs text-muted-foreground">
+                              +{order.order_items.length - 2} more
+                            </div>
                           )}
                         </div>
-                      ))}
-                      {order.order_items && order.order_items.length > 2 && (
-                        <div className="text-xs text-gray-400">
-                          +{order.order_items.length - 2} more items
+                      </td>
+                      <td className="p-4">
+                        <OrderStatusBadge status={order.status} size="sm" />
+                      </td>
+                      <td className="p-4">
+                        <OrderTrackingBadge 
+                          tracking={trackingData[order.order_number] || null} 
+                          orderId={order.order_number}
+                        />
+                      </td>
+                      <td className="p-4">
+                        <div className="text-sm text-muted-foreground">
+                          {new Date(order.created_at).toLocaleDateString()}
                         </div>
-                      )}
+                      </td>
+                      <td className="p-4">
+                        <div className="flex items-center gap-2">
+                          {order.status === 'pending' && (
+                            <Button
+                              size="sm"
+                              onClick={() => handleProcessOrder(order)}
+                              className="bg-green-600 hover:bg-green-700"
+                            >
+                              <Wallet className="w-3 h-3 mr-1" />
+                              Pay
+                            </Button>
+                          )}
+                          
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              // TODO: Add order details modal
+                            }}
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                          
+                          <OrderActionsDropdown
+                            order={order}
+                            currentUser={user}
+                            onProcessOrder={handleProcessOrder}
+                            onRefresh={loadOrders}
+                            walletBalance={walletBalance}
+                          />
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        /* Grid View */
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredOrders.map((order) => (
+            <Card key={order.id} className="hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="font-mono text-sm text-muted-foreground">
+                    {order.order_number || order.id.slice(0, 8)}...
+                  </div>
+                  <OrderStatusBadge status={order.status} size="sm" />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <div className="font-medium">
+                      {order.user?.full_name || order.user?.email || 'Customer'}
                     </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <OrderStatusBadge status={order.status} size="sm" />
-                  </td>
-                  <td className="px-6 py-4">
+                    <div className="text-sm text-muted-foreground">
+                      {order.user?.email}
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <div className="text-2xl font-bold">${order.total_amount?.toFixed(2)}</div>
+                      <div className="text-sm text-muted-foreground">
+                        {order.order_items?.length || 0} items
+                      </div>
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      {new Date(order.created_at).toLocaleDateString()}
+                    </div>
+                  </div>
+                  
+                  <div>
                     <OrderTrackingBadge 
                       tracking={trackingData[order.order_number] || null} 
                       orderId={order.order_number}
                     />
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">
-                    {new Date(order.created_at).toLocaleDateString()}
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2">
-                      {/* Pay Order Button for pending orders */}
-                      {order.status === 'pending' && (
-                        <button
-                          onClick={() => handleProcessOrder(order)}
-                          className="px-3 py-1.5 text-xs font-medium bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors flex items-center gap-1"
-                          title="Process this order payment"
-                        >
-                          <Wallet className="w-3 h-3" />
-                          Pay Order
-                        </button>
-                      )}
-                       {/* Order Status Display */}
-                      {order.status === 'cancelled' && (
-                        <div className="text-xs text-red-600 dark:text-red-400 font-medium">
-                          ⚠️ Order was cancelled by admin
-                        </div>
-                      )}
-                       {/* Actions Dropdown */}
-                      <OrderActionsDropdown
-                        order={order}
-                        currentUser={user}
-                        onProcessOrder={handleProcessOrder}
-                        onRefresh={loadOrders}
-                        walletBalance={walletBalance}
-                      />
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    {order.status === 'pending' && (
+                      <Button
+                        size="sm"
+                        onClick={() => handleProcessOrder(order)}
+                        className="flex-1 bg-green-600 hover:bg-green-700"
+                      >
+                        <Wallet className="w-3 h-3 mr-1" />
+                        Pay Order
+                      </Button>
+                    )}
+                    
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        // TODO: Add order details modal
+                      }}
+                    >
+                      <Eye className="w-4 h-4" />
+                    </Button>
+                    
+                    <OrderActionsDropdown
+                      order={order}
+                      currentUser={user}
+                      onProcessOrder={handleProcessOrder}
+                      onRefresh={loadOrders}
+                      walletBalance={walletBalance}
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       )}
 
-      {/* Summary Footer */}
+      {/* Modern Summary Footer */}
       {orders.length > 0 && (
-        <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-          <div className="flex justify-between items-center text-sm text-gray-600 dark:text-gray-400">
-            <div>
-              Showing <span className="font-medium">{filteredOrders.length}</span> of <span className="font-medium">{orders.length}</span> orders
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+              <div className="text-sm text-muted-foreground">
+                Showing <span className="font-medium">{filteredOrders.length}</span> of{' '}
+                <span className="font-medium">{orders.length}</span> orders
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={loadOrders}>
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Refresh
+                </Button>
+                <Link to="/partner/products/add">
+                  <Button>
+                    <Package className="w-4 h-4 mr-2" />
+                    Add Products
+                  </Button>
+                </Link>
+              </div>
             </div>
-            <div className="space-x-4">
-              <button
-                onClick={loadOrders}
-                className="px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg transition-colors"
-              >
-                🔄 Refresh
-              </button>
-              <button
-                onClick={() => window.location.href = '/partner/products/add'}
-                className="px-4 py-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white rounded-lg shadow transition-all"
-              >
-                ➕ Add Products
-              </button>
-            </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   );
