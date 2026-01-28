@@ -381,8 +381,9 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({ children }) =>
       if (fetchError) throw fetchError;
 
       if (action === 'verify') {
-        // Update order status to paid
-        await updateOrderStatus(payment.order_id, 'paid', {
+        // Update order payment_status to paid and order status to confirmed
+        await updateOrderStatus(payment.order_id, 'confirmed', {
+          payment_status: 'paid',
           payment_method: payment.payment_method,
           payment_transaction_id: payment.crypto_transaction_id || payment.paypal_transaction_id,
           payment_verified_by: user?.id,
@@ -395,8 +396,9 @@ export const PaymentProvider: React.FC<PaymentProviderProps> = ({ children }) =>
         // Notify customer
         await notifyCustomerPaymentVerified(payment.customer_id, payment.order_id);
       } else {
-        // Update order status to payment failed
-        await updateOrderStatus(payment.order_id, 'payment_failed', {
+        // Update order payment_status to failed
+        await updateOrderStatus(payment.order_id, 'pending', {
+          payment_status: 'failed',
           payment_rejection_reason: data?.reason
         });
 

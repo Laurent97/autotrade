@@ -467,6 +467,21 @@ const Payments: React.FC = () => {
 
       if (error) throw error;
 
+      // Update the order's payment_status to 'paid'
+      const { error: orderError } = await supabase
+        .from('orders')
+        .update({
+          payment_status: 'paid',
+          status: 'confirmed', // Also update order status to confirmed
+          updated_at: new Date().toISOString()
+        })
+        .eq('order_number', payment.order_id);
+
+      if (orderError) {
+        console.error('Error updating order payment status:', orderError);
+        throw orderError;
+      }
+
       // Log the approval
       await supabase
         .from('payment_security_logs')
@@ -483,7 +498,7 @@ const Payments: React.FC = () => {
         });
 
       await fetchPaymentData();
-      setError('Payment approved successfully');
+      setError('Payment approved successfully and order status updated');
     } catch (error: any) {
       console.error('Error approving payment:', error);
       setError('Failed to approve payment');
@@ -509,6 +524,21 @@ const Payments: React.FC = () => {
 
       if (error) throw error;
 
+      // Update the order's payment_status to 'failed'
+      const { error: orderError } = await supabase
+        .from('orders')
+        .update({
+          payment_status: 'failed',
+          status: 'pending', // Keep order in pending status for retry
+          updated_at: new Date().toISOString()
+        })
+        .eq('order_number', payment.order_id);
+
+      if (orderError) {
+        console.error('Error updating order payment status:', orderError);
+        throw orderError;
+      }
+
       // Log the rejection
       await supabase
         .from('payment_security_logs')
@@ -526,7 +556,7 @@ const Payments: React.FC = () => {
         });
 
       await fetchPaymentData();
-      setError('Payment rejected successfully');
+      setError('Payment rejected successfully and order status updated');
     } catch (error: any) {
       console.error('Error rejecting payment:', error);
       setError('Failed to reject payment');
