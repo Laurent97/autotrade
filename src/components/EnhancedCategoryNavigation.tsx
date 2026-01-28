@@ -214,7 +214,7 @@ export default function EnhancedCategoryNavigation({
       {/* Section Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h2 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
+          <h2 className="text-2xl sm:text-3xl md:text-3xl lg:text-4xl font-bold text-foreground mb-2">
             Shop by Category
           </h2>
           <p className="text-muted-foreground">

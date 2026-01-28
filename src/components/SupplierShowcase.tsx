@@ -185,7 +185,7 @@ const SupplierShowcase = () => {
         {/* Top Suppliers Section */}
         <div className="mb-20">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+            <h2 className="text-2xl sm:text-3xl md:text-3xl lg:text-4xl font-bold text-foreground mb-4">
               Top Verified Suppliers
             </h2>
             <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
@@ -213,7 +213,7 @@ const SupplierShowcase = () => {
         {/* Testimonials Section */}
         <div>
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+            <h2 className="text-2xl sm:text-3xl md:text-3xl lg:text-4xl font-bold text-foreground mb-4">
               Trusted by Industry Leaders
             </h2>
             <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
@@ -229,7 +229,7 @@ const SupplierShowcase = () => {
 
           {/* Platform Stats */}
           <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-8 text-white text-center">
-            <h3 className="text-2xl font-bold mb-8">Join the Global Automotive Trade Community</h3>
+            <h3 className="text-xl sm:text-2xl md:text-2xl lg:text-3xl font-bold mb-8">Join the Global Automotive Trade Community</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
               {[
                 { value: "50,000+", label: "Active Buyers" },

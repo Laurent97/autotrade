@@ -247,7 +247,7 @@ const FeaturedProducts = () => {
         {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-12">
           <div>
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-3">
+            <h2 className="text-2xl sm:text-3xl md:text-3xl lg:text-4xl font-bold text-foreground mb-3">
               {activeTab === 'featured' && 'Featured Products'}
               {activeTab === 'liked' && 'Your Saved Products'}
               {activeTab === 'recent' && 'New Arrivals'}
@@ -395,7 +395,7 @@ const FeaturedProducts = () => {
 
         {/* Bottom CTA */}
         <div className="mt-12 text-center bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl p-8 text-white">
-          <h3 className="text-2xl font-bold mb-4">Ready to Source Automotive Parts?</h3>
+          <h3 className="text-xl sm:text-2xl md:text-2xl lg:text-3xl font-bold mb-4">Ready to Source Automotive Parts?</h3>
           <p className="text-blue-100 mb-6 max-w-2xl mx-auto">
             Connect with verified suppliers and get competitive pricing on quality automotive parts and accessories.
           </p>
