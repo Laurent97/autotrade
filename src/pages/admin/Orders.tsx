@@ -632,14 +632,14 @@ export default function AdminOrders() {
         .single();
 
       if (orderData?.partner_id) {
-        await supabase
+        const { data: trackingRecord } = await supabase
           .from('order_tracking')
           .upsert({
             order_id: orderData.order_number, // Use order_number consistently
             tracking_number: logisticsForm.tracking_number,
             shipping_method: logisticsForm.shipping_provider,
             carrier: logisticsForm.shipping_provider,
-            status: logisticsForm.current_status === 'processing' ? 'shipped' : logisticsForm.current_status,
+            status: 'shipped', // Always set to shipped when tracking is added
             admin_id: user?.id,
             partner_id: orderData.partner_id,
             estimated_delivery: logisticsForm.estimated_delivery,
@@ -647,7 +647,23 @@ export default function AdminOrders() {
             updated_at: new Date().toISOString()
           }, {
             onConflict: 'order_id'
-          });
+          })
+          .select()
+          .single();
+
+        // Add initial tracking update
+        if (trackingRecord?.id) {
+          await supabase
+            .from('tracking_updates')
+            .insert({
+              tracking_id: trackingRecord.id,
+              status: 'shipped',
+              description: `Package shipped via ${logisticsForm.shipping_provider}`,
+              location: 'Warehouse',
+              timestamp: new Date().toISOString(),
+              updated_by: user?.id
+            });
+        }
       }
 
       // Update order status to shipped

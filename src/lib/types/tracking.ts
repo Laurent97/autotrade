@@ -4,7 +4,7 @@ export interface OrderTracking {
   tracking_number?: string;
   shipping_method?: string;
   carrier?: string;
-  status: 'shipped' | 'in_transit' | 'out_for_delivery' | 'delivered';
+  status: 'processing' | 'shipped' | 'in_transit' | 'out_for_delivery' | 'delivered';
   admin_id?: string;
   partner_id?: string;
   estimated_delivery?: string;
@@ -50,6 +50,12 @@ export interface TrackingStatus {
 }
 
 export const TRACKING_STATUSES: Record<OrderTracking['status'], TrackingStatus> = {
+  processing: {
+    label: 'Processing',
+    color: 'yellow',
+    icon: 'Clock',
+    completed: false
+  },
   shipped: {
     label: 'Shipped',
     color: 'blue',
