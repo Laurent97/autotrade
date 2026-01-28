@@ -1640,6 +1640,244 @@ export default function AdminOrders() {
           </div>
         </div>
       )}
+
+      {/* Create Order Modal */}
+      {showCreateOrderModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                  📦 Create New Order
+                </h2>
+                <button
+                  onClick={() => setShowCreateOrderModal(false)}
+                  className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 text-2xl"
+                >
+                  ✕
+                </button>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Customer Email *
+                    </label>
+                    <input
+                      type="email"
+                      value={newOrder.customer_email}
+                      onChange={(e) => setNewOrder({...newOrder, customer_email: e.target.value})}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-gray-100"
+                      placeholder="customer@example.com"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Customer Name
+                    </label>
+                    <input
+                      type="text"
+                      value={newOrder.customer_name}
+                      onChange={(e) => setNewOrder({...newOrder, customer_name: e.target.value})}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-gray-100"
+                      placeholder="John Doe"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Partner Shop *
+                    </label>
+                    <select
+                      value={newOrder.partner_id}
+                      onChange={(e) => {
+                        const partnerId = e.target.value;
+                        setNewOrder({...newOrder, partner_id: partnerId, product_id: '', unit_price: 0});
+                        loadPartnerProducts(partnerId);
+                      }}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-gray-100"
+                    >
+                      <option value="">Select a partner shop...</option>
+                      {partners.map((partner) => (
+                        <option key={partner.id} value={partner.id}>
+                          {partner.store_name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Product *
+                    </label>
+                    <select
+                      value={newOrder.product_id}
+                      onChange={(e) => {
+                        const productId = e.target.value;
+                        const selectedProduct = partnerProducts.find(p => p.id === productId);
+                        setNewOrder({
+                          ...newOrder, 
+                          product_id: productId,
+                          unit_price: selectedProduct?.selling_price || 0
+                        });
+                      }}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-gray-100"
+                      disabled={!newOrder.partner_id || loadingPartnerProducts}
+                    >
+                      <option value="">
+                        {loadingPartnerProducts 
+                          ? 'Loading products...' 
+                          : newOrder.partner_id 
+                            ? 'Select a product...' 
+                            : 'Select a partner shop first'
+                        }
+                      </option>
+                      {!loadingPartnerProducts && partnerProducts.map((partnerProduct) => (
+                        <option key={partnerProduct.id} value={partnerProduct.id}>
+                          {partnerProduct.product?.title || 'Unknown Product'} - ${partnerProduct.selling_price}
+                        </option>
+                      ))}
+                    </select>
+                    {newOrder.partner_id && !loadingPartnerProducts && partnerProducts.length === 0 && (
+                      <p className="text-red-500 text-sm mt-1">
+                        No products found for this partner shop
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Quantity *
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={newOrder.quantity}
+                      onChange={(e) => setNewOrder({...newOrder, quantity: parseInt(e.target.value) || 1})}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-gray-100"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Unit Price ($) *
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={newOrder.unit_price}
+                      onChange={(e) => setNewOrder({...newOrder, unit_price: parseFloat(e.target.value) || 0})}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-gray-100"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Street Address
+                    </label>
+                    <input
+                      type="text"
+                      value={newOrder.shipping_address.address}
+                      onChange={(e) => setNewOrder({
+                        ...newOrder, 
+                        shipping_address: {...newOrder.shipping_address, address: e.target.value}
+                      })}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-gray-100"
+                      placeholder="123 Main St"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Phone Number
+                    </label>
+                    <input
+                      type="tel"
+                      value={newOrder.shipping_address.phone}
+                      onChange={(e) => setNewOrder({
+                        ...newOrder, 
+                        shipping_address: {...newOrder.shipping_address, phone: e.target.value}
+                      })}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-gray-100"
+                      placeholder="+1234567890"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      City
+                    </label>
+                    <input
+                      type="text"
+                      value={newOrder.shipping_address.city}
+                      onChange={(e) => setNewOrder({
+                        ...newOrder, 
+                        shipping_address: {...newOrder.shipping_address, city: e.target.value}
+                      })}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-gray-100"
+                      placeholder="New York"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Country
+                    </label>
+                    <input
+                      type="text"
+                      value={newOrder.shipping_address.country}
+                      onChange={(e) => setNewOrder({
+                        ...newOrder, 
+                        shipping_address: {...newOrder.shipping_address, country: e.target.value}
+                      })}
+                      className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-gray-100"
+                      placeholder="United States"
+                    />
+                  </div>
+                </div>
+
+                <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
+                  <div className="flex justify-between items-center">
+                    <span className="text-lg font-semibold text-gray-900 dark:text-gray-100">Total Amount:</span>
+                    <span className="text-2xl font-bold text-green-600 dark:text-green-400">
+                      ${(newOrder.quantity * newOrder.unit_price).toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex justify-end space-x-3 pt-6">
+                  <button
+                    onClick={() => setShowCreateOrderModal(false)}
+                    className="px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={createNewOrder}
+                    disabled={creatingOrder}
+                    className={`px-4 py-2 rounded-lg text-white transition-colors ${
+                      creatingOrder 
+                        ? 'bg-gray-400 cursor-not-allowed' 
+                        : 'bg-green-600 hover:bg-green-700'
+                    }`}
+                  >
+                    {creatingOrder ? 'Creating...' : 'Create Order'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
