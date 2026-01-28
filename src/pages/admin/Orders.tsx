@@ -20,7 +20,7 @@ import Footer from '../../components/Footer';
 import AdminSidebar from '../../components/Admin/AdminSidebar';
 
 interface LogisticsForm {
-  shipping_provider: string;
+  carrier: string;
   tracking_number: string;
   estimated_delivery: string;
   current_status: string;
@@ -65,7 +65,7 @@ export default function AdminOrders() {
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [showLogisticsModal, setShowLogisticsModal] = useState(false);
   const [logisticsForm, setLogisticsForm] = useState<LogisticsForm>({
-    shipping_provider: '',
+    carrier: '',
     tracking_number: '',
     estimated_delivery: '',
     current_status: 'processing'
@@ -655,7 +655,7 @@ export default function AdminOrders() {
   const saveLogisticsInfo = async () => {
     if (!selectedOrder) return;
 
-    if (!logisticsForm.shipping_provider || !logisticsForm.tracking_number) {
+    if (!logisticsForm.carrier || !logisticsForm.tracking_number) {
       alert('Please fill in all required fields');
       return;
     }
@@ -666,7 +666,7 @@ export default function AdminOrders() {
         .from('order_tracking')
         .upsert({
           order_id: selectedOrder.id,
-          shipping_provider: logisticsForm.shipping_provider,
+          carrier: logisticsForm.carrier,
           tracking_number: logisticsForm.tracking_number,
           estimated_delivery: logisticsForm.estimated_delivery,
           status: logisticsForm.current_status, // Map current_status to status column
@@ -696,8 +696,7 @@ export default function AdminOrders() {
           const trackingData = {
             order_id: orderData.order_number, // Use order_number consistently
             tracking_number: logisticsForm.tracking_number,
-            shipping_method: logisticsForm.shipping_provider,
-            carrier: logisticsForm.shipping_provider,
+            carrier: logisticsForm.carrier,
             status: 'shipped', // Always set to shipped when tracking is added
             admin_id: user?.id,
             partner_id: orderData.partner_id,
@@ -735,7 +734,7 @@ export default function AdminOrders() {
               .insert({
                 tracking_id: trackingRecord.id,
                 status: 'shipped',
-                description: `Package shipped via ${logisticsForm.shipping_provider}`,
+                description: `Package shipped via ${logisticsForm.carrier}`,
                 location: 'Warehouse',
                 timestamp: new Date().toISOString(),
                 updated_by: user?.id
@@ -772,7 +771,7 @@ export default function AdminOrders() {
             new_status: 'shipped',
             changed_by: user?.id,
             change_reason: 'Tracking information added',
-            notes: `Package shipped via ${logisticsForm.shipping_provider} with tracking number ${logisticsForm.tracking_number}`,
+            notes: `Package shipped via ${logisticsForm.carrier} with tracking number ${logisticsForm.tracking_number}`,
             created_at: new Date().toISOString()
           });
       }
@@ -801,14 +800,14 @@ export default function AdminOrders() {
     setSelectedOrder(orderWithDetails);
     if (orderDetails?.logistics) {
       setLogisticsForm({
-        shipping_provider: orderDetails.logistics.shipping_provider || '',
+        carrier: orderDetails.logistics.carrier || '',
         tracking_number: orderDetails.logistics.tracking_number || '',
         estimated_delivery: orderDetails.logistics.estimated_delivery || '',
         current_status: orderDetails.logistics.current_status || 'processing'
       });
     } else {
       setLogisticsForm({
-        shipping_provider: '',
+        carrier: '',
         tracking_number: '',
         estimated_delivery: '',
         current_status: 'processing'
@@ -1247,15 +1246,15 @@ export default function AdminOrders() {
                         <div>
                           <div className="text-sm font-medium text-muted-foreground dark:text-gray-400">Shipping Provider</div>
                           <div className="font-medium flex items-center gap-2">
-                            {orderDetails.logistics.shipping_provider && (
+                            {orderDetails.logistics.carrier && (
                               <span className="text-lg">
-                                {orderDetails.logistics.shipping_provider === 'DHL' ? '🚚' :
-                                 orderDetails.logistics.shipping_provider === 'FedEx' ? '✈️' :
-                                 orderDetails.logistics.shipping_provider === 'UPS' ? '📦' :
-                                 orderDetails.logistics.shipping_provider === 'USPS' ? '📬' : '🚛'}
+                                {orderDetails.logistics.carrier === 'DHL' ? '🚚' :
+                                 orderDetails.logistics.carrier === 'FedEx' ? '✈️' :
+                                 orderDetails.logistics.carrier === 'UPS' ? '📦' :
+                                 orderDetails.logistics.carrier === 'USPS' ? '📬' : '🚛'}
                               </span>
                             )}
-                            {orderDetails.logistics.shipping_provider || 'Not Assigned'}
+                            {orderDetails.logistics.carrier || 'Not Assigned'}
                           </div>
                         </div>
 
@@ -1382,7 +1381,7 @@ export default function AdminOrders() {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       <div>
                         <div className="text-sm text-muted-foreground dark:text-gray-400">Provider</div>
-                        <div className="font-medium">{orderDetails.logistics.shipping_provider}</div>
+                        <div className="font-medium">{orderDetails.logistics.carrier}</div>
                       </div>
                       <div>
                         <div className="text-sm text-muted-foreground dark:text-gray-400">Tracking #</div>
@@ -1486,8 +1485,8 @@ export default function AdminOrders() {
                     Shipping Provider *
                   </label>
                   <select
-                    value={logisticsForm.shipping_provider}
-                    onChange={(e) => setLogisticsForm({...logisticsForm, shipping_provider: e.target.value})}
+                    value={logisticsForm.carrier}
+                    onChange={(e) => setLogisticsForm({...logisticsForm, carrier: e.target.value})}
                     style={{ backgroundColor: 'white', color: '#111827', fontWeight: '500' }}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg"
                   >
