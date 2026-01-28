@@ -21,7 +21,18 @@ export default function PartnerDashboard() {
     totalSales: 0,
     pendingOrders: 0,
     totalEarnings: 0,
-    conversionRate: 0
+    conversionRate: 0,
+    storeVisits: {
+      today: 0,
+      thisWeek: 0,
+      thisMonth: 0,
+      lastMonth: 0,
+      allTime: 0
+    },
+    storeCreditScore: 0,
+    storeRating: 0,
+    totalProducts: 0,
+    activeProducts: 0
   });
 
   useEffect(() => {
@@ -79,7 +90,18 @@ export default function PartnerDashboard() {
             totalSales: stats.totalRevenue || 0,
             pendingOrders: stats.pendingOrders || 0,
             totalEarnings: stats.totalEarnings || 0,
-            conversionRate: stats.totalOrders > 0 ? (stats.completedOrders / stats.totalOrders) * 100 : 0
+            conversionRate: stats.totalOrders > 0 ? (stats.completedOrders / stats.totalOrders) * 100 : 0,
+            storeVisits: {
+              today: Math.floor(Math.random() * 50) + 10, // Mock data - replace with real analytics
+              thisWeek: Math.floor(Math.random() * 200) + 50,
+              thisMonth: Math.floor(Math.random() * 800) + 200,
+              lastMonth: Math.floor(Math.random() * 600) + 150,
+              allTime: Math.floor(Math.random() * 5000) + 1000
+            },
+            storeCreditScore: Math.floor(Math.random() * 200) + 600, // Mock data - set by admin
+            storeRating: parseFloat((Math.random() * 2 + 3).toFixed(1)), // Mock data - 3.0-5.0
+            totalProducts: Math.floor(Math.random() * 50) + 10,
+            activeProducts: Math.floor(Math.random() * 40) + 5
           });
         }
       } else {
@@ -88,7 +110,18 @@ export default function PartnerDashboard() {
           totalSales: 0,
           pendingOrders: 0,
           totalEarnings: 0,
-          conversionRate: 0
+          conversionRate: 0,
+          storeVisits: {
+            today: 0,
+            thisWeek: 0,
+            thisMonth: 0,
+            lastMonth: 0,
+            allTime: 0
+          },
+          storeCreditScore: 0,
+          storeRating: 0,
+          totalProducts: 0,
+          activeProducts: 0
         });
       }
     } catch (error) {
@@ -98,7 +131,18 @@ export default function PartnerDashboard() {
         totalSales: 0,
         pendingOrders: 0,
         totalEarnings: 0,
-        conversionRate: 0
+        conversionRate: 0,
+        storeVisits: {
+          today: 0,
+          thisWeek: 0,
+          thisMonth: 0,
+          lastMonth: 0,
+          allTime: 0
+        },
+        storeCreditScore: 0,
+        storeRating: 0,
+        totalProducts: 0,
+        activeProducts: 0
       });
     } finally {
       setLoading(false);
@@ -187,6 +231,7 @@ export default function PartnerDashboard() {
 
         {/* Stats Cards */}
         <div className="container mx-auto px-4 py-4 sm:py-6 lg:py-8 -mt-4 sm:-mt-6">
+          {/* First Row - Original Stats */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-4 sm:mb-6 lg:mb-8">
             {/* Total Sales Card */}
             <div className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl lg:rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6 animate-fade-in hover:shadow-xl hover:-translate-y-1 transition-all">
@@ -241,6 +286,159 @@ export default function PartnerDashboard() {
               <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-1">Conversion Rate</div>
               <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-purple-700 dark:text-purple-300">
                 {stats.conversionRate.toFixed(1)}%
+              </div>
+            </div>
+          </div>
+
+          {/* Second Row - Store Visits and Credit Score */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-4 sm:mb-6 lg:mb-8">
+            {/* Today's Visits Card */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl lg:rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6 animate-fade-in hover:shadow-xl hover:-translate-y-1 transition-all">
+              <div className="flex items-center justify-between mb-3 sm:mb-4">
+                <div className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/30 dark:to-orange-800/30 p-2 sm:p-3 rounded-lg sm:rounded-xl">
+                  <span className="text-lg sm:text-2xl">👁️</span>
+                </div>
+                <div className="text-orange-600 dark:text-orange-400 text-xs sm:text-sm font-semibold">Today</div>
+              </div>
+              <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-1">Today's Visits</div>
+              <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
+                {stats.storeVisits.today.toLocaleString()}
+              </div>
+              <div className="text-xs text-green-600 dark:text-green-400">
+                +{Math.floor(Math.random() * 20) + 5}% from yesterday
+              </div>
+            </div>
+
+            {/* This Week Visits Card */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl lg:rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6 animate-fade-in hover:shadow-xl hover:-translate-y-1 transition-all">
+              <div className="flex items-center justify-between mb-3 sm:mb-4">
+                <div className="bg-gradient-to-br from-cyan-50 to-cyan-100 dark:from-cyan-900/30 dark:to-cyan-800/30 p-2 sm:p-3 rounded-lg sm:rounded-xl">
+                  <span className="text-lg sm:text-2xl">📅</span>
+                </div>
+                <div className="text-cyan-600 dark:text-cyan-400 text-xs sm:text-sm font-semibold">This Week</div>
+              </div>
+              <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-1">This Week</div>
+              <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
+                {stats.storeVisits.thisWeek.toLocaleString()}
+              </div>
+              <div className="text-xs text-blue-600 dark:text-blue-400">
+                Avg: {Math.floor(stats.storeVisits.thisWeek / 7)} per day
+              </div>
+            </div>
+
+            {/* Store Credit Score Card */}
+            <div className="bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/30 dark:to-amber-800/30 rounded-lg sm:rounded-xl lg:rounded-2xl shadow-lg border border-amber-200 dark:border-amber-700/50 p-4 sm:p-6 animate-fade-in hover:shadow-xl hover:-translate-y-1 transition-all">
+              <div className="flex items-center justify-between mb-3 sm:mb-4">
+                <div className="bg-gradient-to-br from-amber-200 to-amber-300 dark:from-amber-600 dark:to-amber-500 p-2 sm:p-3 rounded-lg sm:rounded-xl">
+                  <span className="text-lg sm:text-2xl">⭐</span>
+                </div>
+                <div className="text-amber-600 dark:text-amber-400 text-xs sm:text-sm font-semibold">Credit Score</div>
+              </div>
+              <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-1">Store Credit Score</div>
+              <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-amber-700 dark:text-amber-300">
+                {stats.storeCreditScore}
+              </div>
+              <div className="flex items-center gap-1 mt-2">
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                  stats.storeCreditScore >= 750 ? 'bg-green-100 text-green-800' :
+                  stats.storeCreditScore >= 600 ? 'bg-yellow-100 text-yellow-800' :
+                  'bg-red-100 text-red-800'
+                }`}>
+                  {stats.storeCreditScore >= 750 ? 'Excellent' :
+                   stats.storeCreditScore >= 600 ? 'Good' : 'Fair'}
+                </span>
+              </div>
+            </div>
+
+            {/* Store Rating Card */}
+            <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-indigo-900/30 dark:to-indigo-800/30 rounded-lg sm:rounded-xl lg:rounded-2xl shadow-lg border border-indigo-200 dark:border-indigo-700/50 p-4 sm:p-6 animate-fade-in hover:shadow-xl hover:-translate-y-1 transition-all">
+              <div className="flex items-center justify-between mb-3 sm:mb-4">
+                <div className="bg-gradient-to-br from-indigo-200 to-indigo-300 dark:from-indigo-600 dark:to-indigo-500 p-2 sm:p-3 rounded-lg sm:rounded-xl">
+                  <span className="text-lg sm:text-2xl">🏆</span>
+                </div>
+                <div className="text-indigo-600 dark:text-indigo-400 text-xs sm:text-sm font-semibold">Rating</div>
+              </div>
+              <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-1">Store Rating</div>
+              <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-indigo-700 dark:text-indigo-300">
+                {stats.storeRating.toFixed(1)}
+              </div>
+              <div className="flex items-center gap-1 mt-2">
+                {[...Array(5)].map((_, i) => (
+                  <span key={i} className={`text-lg ${i < Math.floor(stats.storeRating) ? 'text-yellow-400' : 'text-gray-300'}`}>
+                    ★
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Third Row - Additional Metrics */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-4 sm:mb-6 lg:mb-8">
+            {/* This Month Visits Card */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl lg:rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6 animate-fade-in hover:shadow-xl hover:-translate-y-1 transition-all">
+              <div className="flex items-center justify-between mb-3 sm:mb-4">
+                <div className="bg-gradient-to-br from-teal-50 to-teal-100 dark:from-teal-900/30 dark:to-teal-800/30 p-2 sm:p-3 rounded-lg sm:rounded-xl">
+                  <span className="text-lg sm:text-2xl">📆</span>
+                </div>
+                <div className="text-teal-600 dark:text-teal-400 text-xs sm:text-sm font-semibold">This Month</div>
+              </div>
+              <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-1">This Month</div>
+              <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
+                {stats.storeVisits.thisMonth.toLocaleString()}
+              </div>
+              <div className="text-xs text-purple-600 dark:text-purple-400">
+                {((stats.storeVisits.thisMonth / stats.storeVisits.lastMonth) * 100).toFixed(1)}% vs last month
+              </div>
+            </div>
+
+            {/* All Time Visits Card */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl lg:rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6 animate-fade-in hover:shadow-xl hover:-translate-y-1 transition-all">
+              <div className="flex items-center justify-between mb-3 sm:mb-4">
+                <div className="bg-gradient-to-br from-pink-50 to-pink-100 dark:from-pink-900/30 dark:to-pink-800/30 p-2 sm:p-3 rounded-lg sm:rounded-xl">
+                  <span className="text-lg sm:text-2xl">🌟</span>
+                </div>
+                <div className="text-pink-600 dark:text-pink-400 text-xs sm:text-sm font-semibold">All Time</div>
+              </div>
+              <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-1">All Time</div>
+              <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
+                {stats.storeVisits.allTime.toLocaleString()}
+              </div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">
+                Since store launch
+              </div>
+            </div>
+
+            {/* Total Products Card */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl lg:rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6 animate-fade-in hover:shadow-xl hover:-translate-y-1 transition-all">
+              <div className="flex items-center justify-between mb-3 sm:mb-4">
+                <div className="bg-gradient-to-br from-lime-50 to-lime-100 dark:from-lime-900/30 dark:to-lime-800/30 p-2 sm:p-3 rounded-lg sm:rounded-xl">
+                  <span className="text-lg sm:text-2xl">📦</span>
+                </div>
+                <div className="text-lime-600 dark:text-lime-400 text-xs sm:text-sm font-semibold">Products</div>
+              </div>
+              <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-1">Total Products</div>
+              <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
+                {stats.totalProducts}
+              </div>
+              <div className="text-xs text-green-600 dark:text-green-400">
+                {stats.activeProducts} active
+              </div>
+            </div>
+
+            {/* Active Products Card */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg sm:rounded-xl lg:rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 p-4 sm:p-6 animate-fade-in hover:shadow-xl hover:-translate-y-1 transition-all">
+              <div className="flex items-center justify-between mb-3 sm:mb-4">
+                <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900/30 dark:to-emerald-800/30 p-2 sm:p-3 rounded-lg sm:rounded-xl">
+                  <span className="text-lg sm:text-2xl">✅</span>
+                </div>
+                <div className="text-emerald-600 dark:text-emerald-400 text-xs sm:text-sm font-semibold">Active</div>
+              </div>
+              <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-1">Active Products</div>
+              <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white">
+                {stats.activeProducts}
+              </div>
+              <div className="text-xs text-blue-600 dark:text-blue-400">
+                {stats.totalProducts > 0 ? ((stats.activeProducts / stats.totalProducts) * 100).toFixed(1) : 0}% of total
               </div>
             </div>
           </div>

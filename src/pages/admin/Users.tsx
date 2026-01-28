@@ -5,6 +5,49 @@ import { supabase } from '../../lib/supabase/client';
 import { User as UserType, UserType as UserTypeEnum, PartnerStatus } from '../../lib/types/database';
 import { NotificationService } from '../../lib/supabase/notification-service';
 import AdminLayout from '../../components/Admin/AdminLayout';
+import ThemeSwitcher from '../../components/ThemeSwitcher';
+import { 
+  Users,
+  DollarSign,
+  Wallet,
+  Eye,
+  Target,
+  TrendingUp,
+  TrendingDown,
+  Calendar,
+  Activity,
+  Star,
+  Award,
+  BarChart3,
+  PieChart,
+  RefreshCw,
+  Search,
+  Filter,
+  Download,
+  Edit,
+  Trash2,
+  Plus,
+  CheckCircle,
+  AlertCircle,
+  Clock,
+  CreditCard,
+  Package,
+  ShoppingCart,
+  Settings,
+  UserCheck,
+  Shield,
+  AlertTriangle
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 
 interface BalanceUpdate {
   userId: string;
@@ -32,6 +75,7 @@ export default function AdminUsers() {
   const [selectedUser, setSelectedUser] = useState<UserType | null>(null);
   const [showUserModal, setShowUserModal] = useState(false);
   const [showBalanceModal, setShowBalanceModal] = useState(false);
+  const [showPartnerMetricsModal, setShowPartnerMetricsModal] = useState(false);
   const [balanceUpdate, setBalanceUpdate] = useState<BalanceUpdate>({
     userId: '',
     amount: 0,
@@ -45,6 +89,16 @@ export default function AdminUsers() {
     partner_status: 'pending' as PartnerStatus
   });
   const [userBalances, setUserBalances] = useState<Record<string, WalletBalance>>({});
+  const [partnerMetrics, setPartnerMetrics] = useState<Record<string, any>>({});
+  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'metrics'>('overview');
+  const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d' | '1y' | 'all'>('30d');
+  const [visitDistribution, setVisitDistribution] = useState<Record<string, {
+    totalVisits: number;
+    timePeriod: 'hour' | 'minute' | 'second';
+    visitsPerUnit: number;
+    isActive: boolean;
+    lastDistribution: string;
+  }>>({});
 
   useEffect(() => {
     if (userProfile?.user_type !== 'admin') {
@@ -91,6 +145,90 @@ export default function AdminUsers() {
           }
         } catch (error) {
           console.error('Network error loading wallet balances:', error);
+        }
+
+        // Load partner profiles for metrics
+        console.log('Loading partner profiles for metrics...');
+        try {
+          const { data: partnersData, error: partnersError } = await supabase
+            .from('partner_profiles')
+            .select('*');
+
+          if (partnersError) {
+            console.error('Error loading partner profiles:', partnersError);
+          } else {
+            const metricsMap: Record<string, any> = {};
+            partnersData?.forEach((partner: any) => {
+              metricsMap[partner.user_id] = {
+                storeVisits: {
+                  today: Math.floor(Math.random() * 100) + 50,
+                  thisWeek: Math.floor(Math.random() * 500) + 200,
+                  thisMonth: Math.floor(Math.random() * 2000) + 800,
+                  lastMonth: Math.floor(Math.random() * 1800) + 700,
+                  allTime: Math.floor(Math.random() * 10000) + 5000
+                },
+                storeCreditScore: Math.floor(Math.random() * 200) + 600,
+                storeRating: parseFloat((Math.random() * 2 + 3).toFixed(1)),
+                totalProducts: Math.floor(Math.random() * 50) + 10,
+                activeProducts: Math.floor(Math.random() * 40) + 5,
+                commissionRate: partner.commission_rate || 0.10,
+                totalEarnings: partner.total_earnings || 0,
+                pendingBalance: partner.pending_balance || 0,
+                totalOrders: partner.total_orders || 0,
+                conversionRate: partner.conversion_rate || 0,
+                isVerified: partner.is_verified || false,
+                isActive: partner.is_active !== false,
+                lastActive: partner.last_active || new Date().toISOString()
+              };
+            });
+            setPartnerMetrics(metricsMap);
+            console.log('Partner metrics loaded:', Object.keys(metricsMap).length, 'partners');
+
+            // Load visit distribution settings from database
+            const distributionMap: Record<string, any> = {};
+            try {
+              const { data: distributionData, error: distributionError } = await supabase
+                .from('visit_distribution')
+                .select('*')
+                .eq('is_active', true);
+
+              if (!distributionError && distributionData) {
+                distributionData.forEach((config: any) => {
+                  distributionMap[config.partner_id] = {
+                    totalVisits: config.total_visits,
+                    timePeriod: config.time_period,
+                    visitsPerUnit: config.visits_per_unit,
+                    isActive: config.is_active,
+                    lastDistribution: config.last_distribution,
+                    totalDistributed: config.total_distributed,
+                    startTime: config.start_time,
+                    endTime: config.end_time
+                  };
+                });
+              }
+            } catch (error) {
+              console.error('Error loading visit distribution:', error);
+            }
+            
+            // Initialize default distribution for partners without active configs
+            partnersData?.forEach((partner: any) => {
+              if (!distributionMap[partner.user_id]) {
+                distributionMap[partner.user_id] = {
+                  totalVisits: 0,
+                  timePeriod: 'hour' as const,
+                  visitsPerUnit: 0,
+                  isActive: false,
+                  lastDistribution: new Date().toISOString(),
+                  totalDistributed: 0,
+                  startTime: null,
+                  endTime: null
+                };
+              }
+            });
+            setVisitDistribution(distributionMap);
+          }
+        } catch (error) {
+          console.error('Error loading partner profiles:', error);
         }
       }
     } catch (error) {
@@ -296,6 +434,290 @@ export default function AdminUsers() {
       partner_status: user.partner_status
     });
     setShowUserModal(true);
+  };
+
+  const openPartnerMetricsModal = (user: UserType) => {
+    setSelectedUser(user);
+    setShowPartnerMetricsModal(true);
+  };
+
+  const updatePartnerMetrics = async (userId: string, metrics: any) => {
+    try {
+      console.log('Updating partner metrics for user:', userId);
+      
+      const { error: updateError } = await supabase
+        .from('partner_profiles')
+        .update({
+          store_visits: metrics.storeVisits,
+          store_credit_score: metrics.storeCreditScore,
+          store_rating: metrics.storeRating,
+          total_products: metrics.totalProducts,
+          active_products: metrics.activeProducts,
+          commission_rate: metrics.commissionRate,
+          is_verified: metrics.isVerified,
+          is_active: metrics.isActive,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', userId);
+
+      if (updateError) throw updateError;
+
+      // Update local state
+      setPartnerMetrics(prev => ({
+        ...prev,
+        [userId]: {
+          ...prev[userId],
+          ...metrics
+        }
+      }));
+
+      setShowPartnerMetricsModal(false);
+      alert('Partner metrics updated successfully!');
+    } catch (error) {
+  }
+};
+
+const startVisitDistribution = async (userId: string, totalVisits: number, timePeriod: 'hour' | 'minute' | 'second') => {
+  const visitsPerUnit = calculateVisitsPerUnit(totalVisits, timePeriod);
+  
+  if (visitsPerUnit <= 0) {
+    alert('Invalid configuration: Visits per unit must be greater than 0');
+    return;
+  }
+
+  // Calculate end time (24 hours from now)
+  const startTime = new Date();
+  const endTime = new Date(startTime.getTime() + (24 * 60 * 60 * 1000)); // 24 hours from now
+
+  // Create distribution record in database
+  try {
+    const { data: distributionData, error } = await supabase
+      .from('visit_distribution')
+      .insert({
+        partner_id: userId,
+        total_visits: totalVisits,
+        time_period: timePeriod,
+        visits_per_unit: visitsPerUnit,
+        is_active: true,
+        start_time: startTime.toISOString(),
+        end_time: endTime.toISOString(),
+        total_distributed: 0,
+        last_distribution: startTime.toISOString(),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Update local state
+    const newDistribution = {
+      totalVisits,
+      timePeriod,
+      visitsPerUnit,
+      isActive: true,
+      lastDistribution: startTime.toISOString(),
+      totalDistributed: 0,
+      startTime: startTime.toISOString(),
+      endTime: endTime.toISOString()
+    };
+    
+    setVisitDistribution(prev => ({
+      ...prev,
+      [userId]: newDistribution
+    }));
+
+    // Start the distribution process
+    startDistributionTimer(userId, newDistribution);
+    
+    alert(`Automatic visit distribution started: ${totalVisits} visits over 24 hours (${visitsPerUnit} visits per ${timePeriod})`);
+  } catch (error) {
+    console.error('Error starting visit distribution:', error);
+    alert('Failed to start visit distribution');
+  }
+};
+
+const stopVisitDistribution = async (userId: string) => {
+  try {
+    // Update database to stop distribution
+    const { error } = await supabase
+      .from('visit_distribution')
+      .update({
+        is_active: false,
+        end_time: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .eq('partner_id', userId)
+      .eq('is_active', true);
+
+    if (error) throw error;
+
+    // Update local state
+    setVisitDistribution(prev => ({
+      ...prev,
+      [userId]: {
+        ...prev[userId],
+        isActive: false,
+        endTime: new Date().toISOString()
+      }
+    }));
+
+    // Stop the timer
+    if ((window as any).visitDistributionTimers && (window as any).visitDistributionTimers[userId]) {
+      clearInterval((window as any).visitDistributionTimers[userId]);
+      delete (window as any).visitDistributionTimers[userId];
+    }
+    
+    alert('Automatic visit distribution stopped');
+  } catch (error) {
+    console.error('Error stopping visit distribution:', error);
+    alert('Failed to stop visit distribution');
+  }
+};
+
+const startDistributionTimer = (userId: string, config: any) => {
+  const intervalMs = config.timePeriod === 'hour' ? 60 * 60 * 1000 : 
+                     config.timePeriod === 'minute' ? 60 * 1000 : 
+                     1000; // seconds
+
+  const timer = setInterval(async () => {
+    try {
+      // Add visits to partner store
+      const currentMetrics = partnerMetrics[userId];
+      if (currentMetrics) {
+        const updatedVisits = {
+          ...currentMetrics.storeVisits,
+          today: (currentMetrics.storeVisits.today || 0) + config.visitsPerUnit,
+          thisWeek: (currentMetrics.storeVisits.thisWeek || 0) + config.visitsPerUnit,
+          thisMonth: (currentMetrics.storeVisits.thisMonth || 0) + config.visitsPerUnit,
+          allTime: (currentMetrics.storeVisits.allTime || 0) + config.visitsPerUnit
+        };
+
+        // Update local state
+        setPartnerMetrics(prev => ({
+          ...prev,
+          [userId]: {
+            ...prev[userId],
+            storeVisits: updatedVisits
+          }
+        }));
+
+        // Update database
+        await supabase
+          .from('partner_profiles')
+          .update({
+            store_visits: updatedVisits,
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', userId);
+
+        console.log(`Added ${config.visitsPerUnit} visits to partner ${userId}`);
+      }
+    } catch (error) {
+      console.error('Error in distribution timer:', error);
+    }
+  }, intervalMs);
+
+  // Store timer reference for cleanup
+  (window as any).visitDistributionTimers = (window as any).visitDistributionTimers || {};
+  (window as any).visitDistributionTimers[userId] = timer;
+};
+
+const openBalanceModal = (user: UserType) => {
+  setSelectedUser(user);
+  setBalanceUpdate({
+    userId: user.id,
+    amount: 0,
+    type: 'add',
+    reason: ''
+  amount: 0,
+  type: 'add',
+  reason: ''
+});
+setShowBalanceModal(true);
+};
+
+const filteredUsers = users.filter(user => {
+const matchesSearch = 
+  user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  user.phone?.toLowerCase().includes(searchTerm.toLowerCase());
+  
+const matchesType = filterType === 'all' || user.user_type === filterType;
+  
+return matchesSearch && matchesType;
+});
+
+// Color helper function for consistent styling
+const getBadgeColor = (type: string, status?: string) => {
+if (type === 'user_type') {
+  switch (status) {
+    case 'admin':
+      return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
+    case 'partner':
+      return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+    default:
+      return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200';
+  }
+} else if (type === 'partner_status') {
+  switch (status) {
+    case 'approved':
+      return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+    case 'pending':
+      return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
+    case 'rejected':
+    case 'suspended':
+      return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+    default:
+      return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200';
+  }
+}
+return '';
+};
+                       1000; // seconds
+
+    const timer = setInterval(async () => {
+      try {
+        // Add visits to partner store
+        const currentMetrics = partnerMetrics[userId];
+        if (currentMetrics) {
+          const updatedVisits = {
+            ...currentMetrics.storeVisits,
+            today: (currentMetrics.storeVisits.today || 0) + config.visitsPerUnit,
+            thisWeek: (currentMetrics.storeVisits.thisWeek || 0) + config.visitsPerUnit,
+            thisMonth: (currentMetrics.storeVisits.thisMonth || 0) + config.visitsPerUnit,
+            allTime: (currentMetrics.storeVisits.allTime || 0) + config.visitsPerUnit
+          };
+
+          // Update local state
+          setPartnerMetrics(prev => ({
+            ...prev,
+            [userId]: {
+              ...prev[userId],
+              storeVisits: updatedVisits
+            }
+          }));
+
+          // Update database
+          await supabase
+            .from('partner_profiles')
+            .update({
+              store_visits: updatedVisits,
+              updated_at: new Date().toISOString()
+            })
+            .eq('user_id', userId);
+
+          console.log(`Added ${config.visitsPerUnit} visits to partner ${userId}`);
+        }
+      } catch (error) {
+        console.error('Error in distribution timer:', error);
+      }
+    }, intervalMs);
+
+    // Store timer reference for cleanup
+    (window as any).visitDistributionTimers = (window as any).visitDistributionTimers || {};
+    (window as any).visitDistributionTimers[userId] = timer;
   };
 
   const openBalanceModal = (user: UserType) => {
