@@ -11,10 +11,12 @@ import {
   STATUS_CATEGORIES,
   getNextStatuses 
 } from '../../lib/constants/orderStatuses';
+import { getProviderByCode, getProviderIcon } from '../../lib/constants/shippingProviders';
 import { OrderStatusBadge } from '../../components/OrderStatusBadge';
 import { CancelOrderButton } from '../../components/CancelOrderButton';
 import { useOrderRealtime } from '../../hooks/useOrderRealtime';
 import ShippingModal from '../../components/Admin/ShippingModal';
+import { ShippingProviderSelect } from '../../components/ShippingProviderSelect';
 import Navbar from '../../components/Navbar';
 import Footer from '../../components/Footer';
 import AdminSidebar from '../../components/Admin/AdminSidebar';
@@ -1247,15 +1249,24 @@ export default function AdminOrders() {
                           <div className="text-sm font-medium text-muted-foreground dark:text-gray-400">Shipping Provider</div>
                           <div className="font-medium flex items-center gap-2">
                             {orderDetails.logistics.carrier && (
-                              <span className="text-lg">
-                                {orderDetails.logistics.carrier === 'DHL' ? '🚚' :
-                                 orderDetails.logistics.carrier === 'FedEx' ? '✈️' :
-                                 orderDetails.logistics.carrier === 'UPS' ? '📦' :
-                                 orderDetails.logistics.carrier === 'USPS' ? '📬' : '🚛'}
-                              </span>
+                              <>
+                                <span className="text-lg">
+                                  {getProviderIcon(orderDetails.logistics.carrier)}
+                                </span>
+                                <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300">
+                                  {getProviderByCode(orderDetails.logistics.carrier)?.tier || 'standard'}
+                                </span>
+                              </>
                             )}
-                            {orderDetails.logistics.carrier || 'Not Assigned'}
+                            <span className="font-medium">
+                              {getProviderByCode(orderDetails.logistics.carrier)?.name || orderDetails.logistics.carrier || 'Not Assigned'}
+                            </span>
                           </div>
+                          {orderDetails.logistics.carrier && getProviderByCode(orderDetails.logistics.carrier) && (
+                            <div className="text-xs text-muted-foreground mt-1">
+                              {getProviderByCode(orderDetails.logistics.carrier)?.deliveryTime}
+                            </div>
+                          )}
                         </div>
 
                         {/* Current Tracking Status */}
@@ -1470,397 +1481,187 @@ export default function AdminOrders() {
         </div>
       )}
 
-      {/* Logistics Modal */}
+      {/* Professional Logistics Modal */}
       {showLogisticsModal && selectedOrder && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
-            <div className="p-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">
-                Update Logistics: {selectedOrder.order_number}
-              </h2>
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Shipping Provider *
-                  </label>
-                  <select
-                    value={logisticsForm.carrier}
-                    onChange={(e) => setLogisticsForm({...logisticsForm, carrier: e.target.value})}
-                    style={{ backgroundColor: 'white', color: '#111827', fontWeight: '500' }}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                  >
-                    <option value="">Select Provider</option>
-                    <option value="DHL">DHL Express</option>
-                    <option value="FedEx">FedEx</option>
-                    <option value="UPS">UPS</option>
-                    <option value="USPS">USPS</option>
-                    <option value="TNT">TNT</option>
-                    <option value="EMS">EMS</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Tracking Number *
-                  </label>
-                  <input
-                    type="text"
-                    value={logisticsForm.tracking_number}
-                    onChange={(e) => setLogisticsForm({...logisticsForm, tracking_number: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Estimated Delivery Date *
-                  </label>
-                  <input
-                    type="date"
-                    value={logisticsForm.estimated_delivery}
-                    onChange={(e) => setLogisticsForm({...logisticsForm, estimated_delivery: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Current Status *
-                  </label>
-                  <select
-                    value={logisticsForm.current_status}
-                    onChange={(e) => setLogisticsForm({...logisticsForm, current_status: e.target.value})}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                  >
-                    <optgroup label="Pre-Shipment">
-                      <option value="ORDER_RECEIVED">Order Received</option>
-                      <option value="PAYMENT_AUTHORIZED">Payment Authorized</option>
-                      <option value="ORDER_VERIFIED">Order Verified</option>
-                      <option value="INVENTORY_ALLOCATED">Inventory Allocated</option>
-                    </optgroup>
-                    <optgroup label="Fulfillment">
-                      <option value="ORDER_PROCESSING">Order Processing</option>
-                      <option value="PICKING_STARTED">Picking Started</option>
-                      <option value="PICKING_COMPLETED">Picking Completed</option>
-                      <option value="PACKING_STARTED">Packing Started</option>
-                      <option value="PACKING_COMPLETED">Packing Completed</option>
-                      <option value="READY_TO_SHIP">Ready to Ship</option>
-                    </optgroup>
-                    <optgroup label="Shipping">
-                      <option value="CARRIER_PICKUP_SCHEDULED">Pickup Scheduled</option>
-                      <option value="PICKED_UP">Picked Up</option>
-                      <option value="IN_TRANSIT">In Transit</option>
-                      <option value="ARRIVED_AT_ORIGIN">Arrived at Origin Facility</option>
-                      <option value="DEPARTED_ORIGIN">Departed Origin Facility</option>
-                      <option value="ARRIVED_AT_SORT">Arrived at Sort Facility</option>
-                      <option value="PROCESSED_AT_SORT">Processed at Sort Facility</option>
-                      <option value="DEPARTED_SORT">Departed Sort Facility</option>
-                      <option value="ARRIVED_AT_DESTINATION">Arrived at Destination</option>
-                    </optgroup>
-                    <optgroup label="Delivery">
-                      <option value="OUT_FOR_DELIVERY">Out for Delivery</option>
-                      <option value="DELIVERY_ATTEMPTED">Delivery Attempted</option>
-                      <option value="DELIVERED">Delivered</option>
-                    </optgroup>
-                    <optgroup label="Exceptions">
-                      <option value="DELAYED">Delayed</option>
-                      <option value="WEATHER_DELAY">Weather Delay</option>
-                      <option value="MECHANICAL_DELAY">Mechanical Delay</option>
-                      <option value="ADDRESS_ISSUE">Address Issue</option>
-                      <option value="CUSTOMER_UNAVAILABLE">Customer Unavailable</option>
-                      <option value="SECURITY_DELAY">Security Delay</option>
-                      <option value="CUSTOMS_HOLD">Customs Hold</option>
-                      <option value="DAMAGED">Package Damaged</option>
-                      <option value="LOST">Package Lost</option>
-                    </optgroup>
-                  </select>
-                </div>
-
-                <div className="flex justify-end space-x-3 pt-6">
-                  <button
-                    onClick={() => setShowLogisticsModal(false)}
-                    className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={saveLogisticsInfo}
-                    className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
-                  >
-                    Save & Mark as Shipped
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Create Order Modal */}
-      {showCreateOrderModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-900">Create New Order</h2>
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                    🚚 Professional Shipping Management
+                  </h2>
+                  <p className="text-gray-600 dark:text-gray-400 mt-1">
+                    Order: {selectedOrder.order_number}
+                  </p>
+                </div>
                 <button
-                  onClick={() => setShowCreateOrderModal(false)}
-                  className="text-gray-400 hover:text-gray-500 text-2xl"
+                  onClick={() => setShowLogisticsModal(false)}
+                  className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 text-2xl"
                 >
                   ✕
                 </button>
               </div>
-              
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Left Column - Provider Selection */}
+                <div className="space-y-6">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Customer Email *
-                    </label>
-                    <input
-                      type="email"
-                      value={newOrder.customer_email}
-                      onChange={(e) => setNewOrder({...newOrder, customer_email: e.target.value})}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                      placeholder="customer@example.com"
-                      style={{ backgroundColor: 'white', color: '#111827', fontWeight: '500' }}
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Customer Name
-                    </label>
-                    <input
-                      type="text"
-                      value={newOrder.customer_name}
-                      onChange={(e) => setNewOrder({...newOrder, customer_name: e.target.value})}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                      placeholder="John Doe"
-                      style={{ backgroundColor: 'white', color: '#111827', fontWeight: '500' }}
+                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                      📦 Select Shipping Provider
+                    </h3>
+                    <ShippingProviderSelect
+                      value={logisticsForm.carrier}
+                      onChange={(carrier) => setLogisticsForm({...logisticsForm, carrier})}
+                      showCurrentInfo={{
+                        currentCarrier: orderDetails?.logistics?.carrier,
+                        currentTrackingNumber: orderDetails?.logistics?.tracking_number,
+                        currentStatus: orderDetails?.logistics?.current_status,
+                        lastUpdated: orderDetails?.logistics?.updated_at
+                      }}
                     />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Right Column - Tracking Details */}
+                <div className="space-y-6">
+                  {/* Tracking Number Input */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Partner Shop *
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      📋 Tracking Number *
                     </label>
-                    <select
-                      value={newOrder.partner_id}
-                      onChange={(e) => {
-                        const partnerId = e.target.value;
-                        console.log('Partner selected:', partnerId);
-                        setNewOrder({...newOrder, partner_id: partnerId, product_id: '', unit_price: 0});
-                        loadPartnerProducts(partnerId);
-                      }}
-                      style={{ backgroundColor: 'white', color: '#111827', fontWeight: '500' }}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                    >
-                      <option value="">Select a partner shop...</option>
-                      {partners.map((partner) => (
-                        <option key={partner.id} value={partner.id}>
-                          {partner.store_name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Product *
-                    </label>
-                    <select
-                      value={newOrder.product_id}
-                      onChange={(e) => {
-                        const productId = e.target.value;
-                        const selectedProduct = partnerProducts.find(p => p.id === productId);
-                        setNewOrder({
-                          ...newOrder, 
-                          product_id: productId,
-                          unit_price: selectedProduct?.selling_price || 0
-                        });
-                      }}
-                      style={{ backgroundColor: 'white', color: '#111827', fontWeight: '500' }}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                      disabled={!newOrder.partner_id || loadingPartnerProducts}
-                    >
-                      <option value="">
-                        {loadingPartnerProducts 
-                          ? 'Loading products...' 
-                          : newOrder.partner_id 
-                            ? 'Select a product...' 
-                            : 'Select a partner shop first'
-                        }
-                      </option>
-                      {!loadingPartnerProducts && partnerProducts.map((partnerProduct) => (
-                        <option key={partnerProduct.id} value={partnerProduct.id}>
-                          {partnerProduct.product?.title || 'Unknown Product'} - ${partnerProduct.selling_price}
-                        </option>
-                      ))}
-                    </select>
-                    {newOrder.partner_id && !loadingPartnerProducts && partnerProducts.length === 0 && (
-                      <p className="text-red-500 text-sm mt-1">
-                        No products found for this partner shop
-                      </p>
+                    <input
+                      type="text"
+                      value={logisticsForm.tracking_number}
+                      onChange={(e) => setLogisticsForm({...logisticsForm, tracking_number: e.target.value})}
+                      placeholder="Enter tracking number (e.g., 1Z9999W99999999999)"
+                      className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-gray-100"
+                    />
+                    {logisticsForm.tracking_number && (
+                      <div className="mt-2">
+                        <button
+                          onClick={() => navigator.clipboard.writeText(logisticsForm.tracking_number)}
+                          className="text-xs px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
+                        >
+                          📋 Copy to Clipboard
+                        </button>
+                      </div>
                     )}
                   </div>
-                </div>
 
-                {newOrder.product_id && (
-                  <div className="bg-blue-50 p-4 rounded-lg">
-                    <h4 className="font-semibold text-blue-800 mb-2">Selected Product Details</h4>
-                    {(() => {
-                      const selectedProduct = partnerProducts.find(p => p.id === newOrder.product_id);
-                      const product = selectedProduct?.product;
-                      return product ? (
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                          <div>
-                            <span className="text-gray-600">SKU:</span>
-                            <span className="ml-2 font-medium">{product.sku}</span>
+                  {/* Estimated Delivery */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      📅 Estimated Delivery Date *
+                    </label>
+                    <input
+                      type="date"
+                      value={logisticsForm.estimated_delivery}
+                      onChange={(e) => setLogisticsForm({...logisticsForm, estimated_delivery: e.target.value})}
+                      min={new Date().toISOString().split('T')[0]}
+                      className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-gray-100"
+                    />
+                  </div>
+
+                  {/* Professional Status Selection */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      📊 Current Tracking Status *
+                    </label>
+                    <select
+                      value={logisticsForm.current_status}
+                      onChange={(e) => setLogisticsForm({...logisticsForm, current_status: e.target.value})}
+                      className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-gray-100"
+                    >
+                      <optgroup label="Pre-Shipment">
+                        <option value="ORDER_RECEIVED">📥 Order Received</option>
+                        <option value="PAYMENT_AUTHORIZED">💳 Payment Authorized</option>
+                        <option value="ORDER_VERIFIED">✅ Order Verified</option>
+                        <option value="INVENTORY_ALLOCATED">📦 Inventory Allocated</option>
+                      </optgroup>
+                      <optgroup label="Fulfillment">
+                        <option value="ORDER_PROCESSING">⚙️ Order Processing</option>
+                        <option value="PICKING_STARTED">🏪 Picking Started</option>
+                        <option value="PICKING_COMPLETED">✓ Picking Completed</option>
+                        <option value="PACKING_STARTED">📦 Packing Started</option>
+                        <option value="PACKING_COMPLETED">✓ Packing Completed</option>
+                        <option value="READY_TO_SHIP">🚚 Ready to Ship</option>
+                      </optgroup>
+                      <optgroup label="Shipping">
+                        <option value="CARRIER_PICKUP_SCHEDULED">📅 Pickup Scheduled</option>
+                        <option value="PICKED_UP">🚚 Picked Up</option>
+                        <option value="IN_TRANSIT">🚛 In Transit</option>
+                        <option value="ARRIVED_AT_ORIGIN">🏭 Arrived at Origin Facility</option>
+                        <option value="DEPARTED_ORIGIN">🚜 Departed Origin Facility</option>
+                        <option value="ARRIVED_AT_SORT">📋 Arrived at Sort Facility</option>
+                        <option value="PROCESSED_AT_SORT">⚙️ Processed at Sort Facility</option>
+                        <option value="DEPARTED_SORT">🚛 Departed Sort Facility</option>
+                        <option value="ARRIVED_AT_DESTINATION">🏠 Arrived at Destination</option>
+                      </optgroup>
+                      <optgroup label="Delivery">
+                        <option value="OUT_FOR_DELIVERY">🚚 Out for Delivery</option>
+                        <option value="DELIVERY_ATTEMPTED">📬 Delivery Attempted</option>
+                        <option value="DELIVERED">✅ Delivered</option>
+                      </optgroup>
+                      <optgroup label="Exceptions">
+                        <option value="DELAYED">⏰ Delayed</option>
+                        <option value="WEATHER_DELAY">🌧️ Weather Delay</option>
+                        <option value="MECHANICAL_DELAY">🔧 Mechanical Delay</option>
+                        <option value="ADDRESS_ISSUE">📍 Address Issue</option>
+                        <option value="CUSTOMER_UNAVAILABLE">👤 Customer Unavailable</option>
+                        <option value="SECURITY_DELAY">🔒 Security Delay</option>
+                        <option value="CUSTOMS_HOLD">🛃 Customs Hold</option>
+                        <option value="DAMAGED">📦 Package Damaged</option>
+                        <option value="LOST">❓ Package Lost</option>
+                      </optgroup>
+                    </select>
+                  </div>
+
+                  {/* Selected Provider Summary */}
+                  {logisticsForm.carrier && getProviderByCode(logisticsForm.carrier) && (
+                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border border-blue-200 dark:border-blue-800/30 rounded-lg p-4">
+                      <h4 className="text-sm font-semibold text-blue-800 dark:text-blue-200 mb-3">
+                        Selected Provider Summary
+                      </h4>
+                      <div className="flex items-center gap-3">
+                        <div className="text-2xl">
+                          {getProviderIcon(logisticsForm.carrier)}
+                        </div>
+                        <div className="flex-1">
+                          <div className="font-medium text-blue-900 dark:text-blue-100">
+                            {getProviderByCode(logisticsForm.carrier)?.name}
                           </div>
-                          <div>
-                            <span className="text-gray-600">Make/Model:</span>
-                            <span className="ml-2 font-medium">{product.make} {product.model}</span>
+                          <div className="text-sm text-blue-700 dark:text-blue-300">
+                            {getProviderByCode(logisticsForm.carrier)?.deliveryTime}
                           </div>
-                          <div>
-                            <span className="text-gray-600">Category:</span>
-                            <span className="ml-2 font-medium">{product.category}</span>
+                          <div className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                            {getProviderByCode(logisticsForm.carrier)?.description}
                           </div>
                         </div>
-                      ) : null;
-                    })()}
-                  </div>
-                )}
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Quantity *
-                    </label>
-                    <input
-                      type="number"
-                      min="1"
-                      value={newOrder.quantity}
-                      onChange={(e) => setNewOrder({...newOrder, quantity: parseInt(e.target.value) || 1})}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                      style={{ backgroundColor: 'white', color: '#111827', fontWeight: '500' }}
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Unit Price ($) *
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={newOrder.unit_price}
-                      onChange={(e) => setNewOrder({...newOrder, unit_price: parseFloat(e.target.value) || 0})}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                      style={{ backgroundColor: 'white', color: '#111827', fontWeight: '500' }}
-                    />
-                  </div>
+                        <div className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
+                          {getProviderByCode(logisticsForm.carrier)?.tier}
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
+              </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Street Address
-                    </label>
-                    <input
-                      type="text"
-                      value={newOrder.shipping_address.address}
-                      onChange={(e) => setNewOrder({
-                        ...newOrder, 
-                        shipping_address: {...newOrder.shipping_address, address: e.target.value}
-                      })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                      placeholder="123 Main St"
-                      style={{ backgroundColor: 'white', color: '#111827', fontWeight: '500' }}
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Phone Number
-                    </label>
-                    <input
-                      type="tel"
-                      value={newOrder.shipping_address.phone}
-                      onChange={(e) => setNewOrder({
-                        ...newOrder, 
-                        shipping_address: {...newOrder.shipping_address, phone: e.target.value}
-                      })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                      placeholder="+1234567890"
-                      style={{ backgroundColor: 'white', color: '#111827', fontWeight: '500' }}
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      City
-                    </label>
-                    <input
-                      type="text"
-                      value={newOrder.shipping_address.city}
-                      onChange={(e) => setNewOrder({
-                        ...newOrder, 
-                        shipping_address: {...newOrder.shipping_address, city: e.target.value}
-                      })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                      placeholder="New York"
-                      style={{ backgroundColor: 'white', color: '#111827', fontWeight: '500' }}
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Country
-                    </label>
-                    <input
-                      type="text"
-                      value={newOrder.shipping_address.country}
-                      onChange={(e) => setNewOrder({
-                        ...newOrder, 
-                        shipping_address: {...newOrder.shipping_address, country: e.target.value}
-                      })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                      placeholder="United States"
-                      style={{ backgroundColor: 'white', color: '#111827', fontWeight: '500' }}
-                    />
-                  </div>
-                </div>
-
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <div className="flex justify-between items-center">
-                    <span className="text-lg font-semibold">Total Amount:</span>
-                    <span className="text-2xl font-bold text-green-600">
-                      ${(newOrder.quantity * newOrder.unit_price).toFixed(2)}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex justify-end space-x-3 pt-6">
-                  <button
-                    onClick={() => setShowCreateOrderModal(false)}
-                    className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={createNewOrder}
-                    disabled={creatingOrder}
-                    className={`px-4 py-2 ${creatingOrder ? 'bg-gray-400' : 'bg-green-600'} text-white rounded-lg hover:bg-green-700`}
-                  >
-                    {creatingOrder ? 'Creating...' : 'Create Order'}
-                  </button>
-                </div>
+              {/* Action Buttons */}
+              <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200 dark:border-gray-700 mt-6">
+                <button
+                  onClick={() => setShowLogisticsModal(false)}
+                  className="px-6 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={saveLogisticsInfo}
+                  disabled={!logisticsForm.carrier || !logisticsForm.tracking_number || !logisticsForm.estimated_delivery}
+                  className="px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
+                >
+                  🚚 Save & Mark as Shipped
+                </button>
               </div>
             </div>
           </div>
