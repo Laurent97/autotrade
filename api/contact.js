@@ -50,60 +50,57 @@ export default async function handler(req, res) {
       `
     };
 
-    // Option 1: Using Resend (temporarily disabled for testing)
+    // Option 1: Using Resend (now enabled - waiting for domain verification)
     const RESEND_API_KEY = process.env.RESEND_API_KEY;
     
     console.log('RESEND_API_KEY exists:', !!RESEND_API_KEY);
     console.log('RESEND_API_KEY length:', RESEND_API_KEY?.length);
     console.log('RESEND_API_KEY starts with re_:', RESEND_API_KEY?.startsWith('re_'));
     
-    // Temporarily skip Resend to test form functionality
-    console.log('Skipping Resend for now - using fallback logging');
-    
-    // if (RESEND_API_KEY) {
-    //   try {
-    //     console.log('Attempting to send email via Resend...');
+    if (RESEND_API_KEY) {
+      try {
+        console.log('Attempting to send email via Resend...');
         
-    //     const response = await fetch('https://api.resend.com/emails', {
-    //       method: 'POST',
-    //       headers: {
-    //         'Authorization': `Bearer ${RESEND_API_KEY}`,
-    //         'Content-Type': 'application/json',
-    //       },
-    //       body: JSON.stringify({
-    //         from: 'test@resend.dev', // Use Resend's test sender
-    //         to: ['support@athub.store', 'admin@athub.store'], // Send to both emails
-    //         subject: emailData.subject,
-    //         html: emailData.html,
-    //         replyTo: email,
-    //       }),
-    //     });
+        const response = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${RESEND_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            from: 'onboarding@resend.dev', // Use Resend's verified sender for now
+            to: ['support@athub.store', 'admin@athub.store'], // Send to both emails
+            subject: emailData.subject,
+            html: emailData.html,
+            replyTo: email,
+          }),
+        });
 
-    //     console.log('Resend response status:', response.status);
-    //     console.log('Resend response headers:', Object.fromEntries(response.headers.entries()));
+        console.log('Resend response status:', response.status);
+        console.log('Resend response headers:', Object.fromEntries(response.headers.entries()));
         
-    //     if (response.ok) {
-    //       const responseData = await response.json();
-    //       console.log('Resend success response:', responseData);
-    //       return res.status(200).json({ message: 'Email sent successfully!' });
-    //     } else {
-    //       const errorText = await response.text();
-    //       console.error('Resend error response:', errorText);
-    //       console.error('Resend error status:', response.status);
-    //       throw new Error(`Resend API error: ${response.status} - ${errorText}`);
-    //     }
-    //   } catch (fetchError) {
-    //     console.error('Fetch error to Resend:', fetchError);
-    //     console.error('Fetch error details:', {
-    //       message: fetchError.message,
-    //       stack: fetchError.stack,
-    //       name: fetchError.name
-    //     });
-    //     throw fetchError;
-    //   }
-    // } else {
-    //   console.log('No RESEND_API_KEY found, using fallback logging');
-    // }
+        if (response.ok) {
+          const responseData = await response.json();
+          console.log('Resend success response:', responseData);
+          return res.status(200).json({ message: 'Email sent successfully!' });
+        } else {
+          const errorText = await response.text();
+          console.error('Resend error response:', errorText);
+          console.error('Resend error status:', response.status);
+          throw new Error(`Resend API error: ${response.status} - ${errorText}`);
+        }
+      } catch (fetchError) {
+        console.error('Fetch error to Resend:', fetchError);
+        console.error('Fetch error details:', {
+          message: fetchError.message,
+          stack: fetchError.stack,
+          name: fetchError.name
+        });
+        throw fetchError;
+      }
+    } else {
+      console.log('No RESEND_API_KEY found, using fallback logging');
+    }
 
     // Option 2: Using EmailJS (alternative - you need to configure EmailJS)
     const EMAILJS_SERVICE_ID = process.env.EMAILJS_SERVICE_ID;
