@@ -88,6 +88,7 @@ export default function AdminOrders() {
   const [partnerProducts, setPartnerProducts] = useState<PartnerProduct[]>([]);
   const [loadingPartnerProducts, setLoadingPartnerProducts] = useState(false);
   const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(null);
+  const [creatingOrder, setCreatingOrder] = useState(false);
 
   useEffect(() => {
     if (userProfile?.user_type !== 'admin') {
@@ -313,6 +314,8 @@ export default function AdminOrders() {
       return;
     }
 
+    setCreatingOrder(true);
+    
     try {
       // Get the selected partner product
       const selectedProduct = partnerProducts.find(p => p.id === newOrder.product_id);
@@ -329,10 +332,6 @@ export default function AdminOrders() {
         .eq('email', newOrder.customer_email)
         .maybeSingle();
 
-      if (fetchError && fetchError.code !== 'PGRST116') {
-        console.error('Error fetching user:', fetchError);
-      }
-
       if (existingCustomer) {
         customerId = existingCustomer.id;
         console.log('✅ Found existing customer ID:', customerId);
@@ -345,7 +344,13 @@ export default function AdminOrders() {
         });
 
         if (userError) {
-          console.error('User creation error:', userError);
+          console.error('RPC User creation error:', {
+            code: userError.code,
+            message: userError.message,
+            details: userError.details,
+            hint: userError.hint
+          });
+          
           // Fallback: try direct insert
           const { data: fallbackUser, error: fallbackError } = await supabase
             .from('users')
@@ -353,19 +358,22 @@ export default function AdminOrders() {
               email: newOrder.customer_email,
               full_name: newOrder.customer_name,
               user_type: 'user',
-              created_at: new Date().toISOString()
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
             })
             .select('id')
             .single();
           
           if (fallbackError) {
             console.error('Fallback user creation failed:', fallbackError);
-            throw new Error('Failed to create user: ' + fallbackError.message);
+            throw new Error(`Failed to create user: ${fallbackError.message}`);
           }
           
           customerId = fallbackUser.id;
+          console.log('✅ Created user via fallback with ID:', customerId);
         } else {
           customerId = newUser;
+          console.log('✅ RPC returned user ID:', customerId);
         }
         
         console.log('✅ Created new customer with ID:', customerId);
@@ -429,10 +437,17 @@ export default function AdminOrders() {
       setPartnerProducts([]);
       
       loadOrders();
-      alert('Order created and assigned to partner successfully!');
-    } catch (error) {
-      console.error('Error creating order:', error);
-      alert('Failed to create order');
+      alert(`✅ Order ${orderNumber} created and assigned to partner successfully!`);
+    } catch (error: any) {
+      console.error('❌ Error creating order:', {
+        error,
+        message: error.message,
+        stack: error.stack
+      });
+      
+      alert(`Failed to create order: ${error.message || 'Unknown error'}`);
+    } finally {
+      setCreatingOrder(false);
     }
   };
 
@@ -768,7 +783,7 @@ export default function AdminOrders() {
 
   const filteredOrders = (orders || []).filter(order => {
     const matchesSearch = 
-      order.order_number.toLowerCase().includes(searchTerm.toLowerCase());
+      (order.order_number || '').toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = filterStatus === 'all' || 
       filterStatus === 'active' ? !['cancelled', 'completed'].includes(order.status) : 
@@ -1673,9 +1688,10 @@ export default function AdminOrders() {
                   </button>
                   <button
                     onClick={createNewOrder}
-                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                    disabled={creatingOrder}
+                    className={`px-4 py-2 ${creatingOrder ? 'bg-gray-400' : 'bg-green-600'} text-white rounded-lg hover:bg-green-700`}
                   >
-                    Create Order
+                    {creatingOrder ? 'Creating...' : 'Create Order'}
                   </button>
                 </div>
               </div>
