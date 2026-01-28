@@ -7,7 +7,30 @@ SELECT
   COUNT(*) as record_count
 FROM order_tracking;
 
+-- Get a real admin user ID for testing (or use NULL if no admin exists)
+DO $$
+DECLARE
+  test_admin_id UUID;
+  test_partner_id UUID;
+BEGIN
+  -- Try to get a real admin user
+  SELECT id INTO test_admin_id FROM users WHERE user_type = 'admin' LIMIT 1;
+  
+  -- Try to get a real partner user
+  SELECT id INTO test_partner_id FROM users WHERE user_type = 'partner' LIMIT 1;
+  
+  -- If no users exist, we'll skip the foreign key constraints by using NULL
+  IF test_admin_id IS NULL THEN
+    RAISE NOTICE 'No admin user found, using NULL for admin_id';
+  END IF;
+  
+  IF test_partner_id IS NULL THEN
+    RAISE NOTICE 'No partner user found, using NULL for partner_id';
+  END IF;
+END $$;
+
 -- Test 1: Insert a new tracking record (simulating admin action)
+-- Use NULL for foreign keys if no users exist, or get real user IDs
 INSERT INTO order_tracking (
   order_id,
   tracking_number,
@@ -25,8 +48,8 @@ INSERT INTO order_tracking (
   'Standard Shipping',
   'FedEx',
   'shipped',
-  '00000000-0000-0000-0000-000000000000'::uuid, -- Test admin ID
-  '00000000-0000-0000-0000-000000000000'::uuid, -- Test partner ID
+  (SELECT id FROM users WHERE user_type = 'admin' LIMIT 1), -- Real admin ID or NULL
+  (SELECT id FROM users WHERE user_type = 'partner' LIMIT 1), -- Real partner ID or NULL
   NOW() + INTERVAL '7 days',
   NOW(),
   NOW()
@@ -60,7 +83,7 @@ SELECT
   'Package shipped via FedEx',
   'Warehouse',
   NOW(),
-  '00000000-0000-0000-0000-000000000000'::uuid
+  (SELECT id FROM users WHERE user_type = 'admin' LIMIT 1) -- Real admin ID or NULL
 FROM order_tracking 
 WHERE order_id = 'TEST-ORDER-001';
 
