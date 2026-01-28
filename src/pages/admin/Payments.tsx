@@ -1214,7 +1214,7 @@ const Payments: React.FC = () => {
                                     </div>
                                   )}
 
-                                  {selectedPayment.status === 'pending_confirmation' && (
+                                  {(selectedPayment.status === 'pending_confirmation' || selectedPayment.status === 'pending') && (
                                     <div className="flex gap-2">
                                       <Button
                                         onClick={() => approvePayment(selectedPayment as PendingPayment)}
