@@ -68,7 +68,7 @@ export default async function handler(req, res) {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            from: 'support@athub.store', // Use your existing verified email
+            from: 'onboarding@resend.dev', // Use Resend's verified sender
             to: ['support@athub.store', 'admin@athub.store'], // Send to both emails
             subject: emailData.subject,
             html: emailData.html,
