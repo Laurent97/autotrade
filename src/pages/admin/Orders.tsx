@@ -663,7 +663,7 @@ export default function AdminOrders() {
           shipping_provider: logisticsForm.shipping_provider,
           tracking_number: logisticsForm.tracking_number,
           estimated_delivery: logisticsForm.estimated_delivery,
-          current_status: logisticsForm.current_status,
+          status: logisticsForm.current_status, // Map current_status to status column
           updated_at: new Date().toISOString()
         }, {
           onConflict: 'order_id'
