@@ -558,18 +558,18 @@ export default function AdminUsers() {
                           <div className="flex flex-col space-y-2">
                             <button
                               onClick={() => {
-  setSelectedUser(user);
-  setShowUserModal(true);
-}}
+                                setSelectedUser(user);
+                                setShowUserModal(true);
+                              }}
                               className="text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 text-left font-medium flex items-center gap-1 transition-colors"
                             >
                               ✏️ Edit Info
                             </button>
                             <button
                               onClick={() => {
-  setSelectedUser(user);
-  setShowBalanceModal(true);
-}}
+                                setSelectedUser(user);
+                                setShowBalanceModal(true);
+                              }}
                               className="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 text-left font-medium flex items-center gap-1 transition-colors"
                             >
                               💰 Adjust Balance
@@ -577,9 +577,9 @@ export default function AdminUsers() {
                             {user.user_type === 'partner' && (
                               <button
                                 onClick={() => {
-  setSelectedUser(user);
-  setShowPartnerMetricsModal(true);
-}}
+                                  setSelectedUser(user);
+                                  setShowPartnerMetricsModal(true);
+                                }}
                                 className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-left font-medium flex items-center gap-1 transition-colors"
                               >
                                 📊 Partner Metrics
@@ -587,12 +587,12 @@ export default function AdminUsers() {
                             )}
                             <button
                               onClick={() => {
-  if (window.confirm(`Are you sure you want to delete user ${user.email}?`)) {
-    setSelectedUser(user);
-    // TODO: Implement actual delete functionality
-    console.log('Delete user:', user.id);
-  }
-}}
+                                if (window.confirm(`Are you sure you want to delete user ${user.email}?`)) {
+                                  setSelectedUser(user);
+                                  // TODO: Implement actual delete functionality
+                                  console.log('Delete user:', user.id);
+                                }
+                              }}
                               className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 text-left font-medium flex items-center gap-1 transition-colors"
                             >
                               🗑️ Delete User
