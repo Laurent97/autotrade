@@ -35,7 +35,7 @@ CREATE POLICY "Admins can manage all visit distributions" ON visit_distribution
     EXISTS (
       SELECT 1 FROM users 
       WHERE users.id = auth.uid() 
-      AND users.user_type = 'admin'
+      AND users.user_type IN ('admin', 'partner')
     )
   );
 
@@ -43,6 +43,26 @@ CREATE POLICY "Admins can manage all visit distributions" ON visit_distribution
 CREATE POLICY "Partners can view own visit distributions" ON visit_distribution
   FOR SELECT USING (
     partner_id = auth.uid()
+  );
+
+-- Policy for inserting visit records (for the distribution system)
+CREATE POLICY "Service role can insert visit distribution" ON visit_distribution
+  FOR INSERT WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM users 
+      WHERE users.id = auth.uid() 
+      AND users.user_type IN ('admin', 'partner')
+    )
+  );
+
+-- Policy for updating visit distributions
+CREATE POLICY "Service role can update visit distribution" ON visit_distribution
+  FOR UPDATE USING (
+    EXISTS (
+      SELECT 1 FROM users 
+      WHERE users.id = auth.uid() 
+      AND users.user_type IN ('admin', 'partner')
+    )
   );
 
 -- Add comments for documentation
