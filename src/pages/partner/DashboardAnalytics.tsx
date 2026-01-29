@@ -142,10 +142,14 @@ export default function DashboardAnalytics() {
       }
 
       // 5.5. Get real store visits from store_visits table
+      console.log('Fetching store visits for partner:', userProfile.id);
       const { data: visitsData, error: visitsError } = await supabase
         .from('store_visits')
         .select('*')
         .eq('partner_id', userProfile.id);
+
+      console.log('Store visits data:', visitsData);
+      console.log('Store visits error:', visitsError);
 
       if (visitsError && visitsError.code !== 'PGRST116') {
         console.warn('Could not load store visits:', visitsError);
@@ -196,13 +200,8 @@ export default function DashboardAnalytics() {
       // Calculate average order value
       const avgOrderValue = completedOrders.length > 0 ? totalRevenue / completedOrders.length : 0;
       
-      // Get store visits from partner profile
-      const storeVisitsFromProfile = partnerProfile?.store_visits || {
-        today: Math.floor(Math.random() * 100) + 50,
-        thisWeek: Math.floor(Math.random() * 500) + 200,
-        thisMonth: Math.floor(Math.random() * 2000) + 800,
-        allTime: Math.floor(Math.random() * 10000) + 5000
-      };
+      // Get store visits from database - no mock data
+      const storeVisitsFromProfile = partnerProfile?.store_visits || null;
 
       // Calculate real-time visits if distribution is active
       const calculatedVisits = calculateRealtimeVisits(visitDistribution, storeVisitsFromProfile);
@@ -274,12 +273,12 @@ export default function DashboardAnalytics() {
       // Set comprehensive analytics data with real values
       setAnalytics({
         partnerInfo: {
-          name: partnerProfile?.store_name || 'Your Store',
-          rating: partnerProfile?.store_rating || 0,
-          creditScore: partnerProfile?.store_credit_score || 750
+          name: partnerProfile?.store_name,
+          rating: partnerProfile?.store_rating,
+          creditScore: partnerProfile?.store_credit_score
         },
         metrics: {
-          totalViews: calculatedVisits.allTime || 0,
+          totalViews: calculatedVisits.allTime,
           totalSales: completedOrders.length,
           totalRevenue: totalRevenue,
           conversionRate: conversionRate,
@@ -299,7 +298,7 @@ export default function DashboardAnalytics() {
           cancelledOrders: cancelledOrders.length,
           storeVisits: calculatedVisits,
           storeRating: partnerProfile?.store_rating || 0,
-          storeCreditScore: partnerProfile?.store_credit_score || 750,
+          storeCreditScore: partnerProfile?.store_credit_score || 0,
           totalProducts: productsData?.length || 0,
           activeProducts: productsData?.filter(p => p.is_active).length || 0,
           commissionRate: commissionRate
@@ -596,7 +595,7 @@ export default function DashboardAnalytics() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Credit Score</p>
-                <p className="text-2xl font-bold mt-1">{metrics.storeCreditScore || 750}</p>
+                <p className="text-2xl font-bold mt-1">{metrics.storeCreditScore || 0}</p>
               </div>
               <TrendingUp className="w-6 h-6 text-green-500" />
             </div>
