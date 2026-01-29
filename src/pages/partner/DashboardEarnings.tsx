@@ -75,9 +75,14 @@ export default function DashboardEarnings() {
   const loadStores = async () => {
     setStoresLoading(true);
     try {
-      // Stores functionality not implemented yet - using empty array
-      console.log('Stores functionality not implemented');
-      setStores([]);
+      const { data: storesData, error: storesError } = await storeService.getAllStores();
+      
+      if (storesError) {
+        console.warn('Failed to load stores:', storesError);
+        setStores([]);
+      } else {
+        setStores(storesData || []);
+      }
     } catch (err) {
       console.warn('Error loading stores:', err);
       setStores([]);

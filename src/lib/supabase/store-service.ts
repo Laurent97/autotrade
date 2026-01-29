@@ -13,9 +13,14 @@ export interface Store {
   address?: string;
   city?: string;
   country?: string;
+  postal_code?: string;
   is_active: boolean;
   rating?: number;
   total_products?: number;
+  active_products?: number;
+  total_orders?: number;
+  total_revenue?: number;
+  owner_id: string;
   created_at: string;
   updated_at: string;
 }
@@ -45,7 +50,6 @@ export const storeService = {
         .from('stores')
         .select('*')
         .eq('slug', slug)
-        .eq('is_active', true)
         .single();
 
       if (error) throw error;
