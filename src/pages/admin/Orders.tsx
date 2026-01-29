@@ -663,49 +663,8 @@ export default function AdminOrders() {
     }
 
     try {
-      // Map detailed status to valid order_tracking status values
-      const getValidStatus = (detailedStatus: string) => {
-        const statusMap: { [key: string]: string } = {
-          // Pre-Shipment -> pending
-          'ORDER_RECEIVED': 'pending',
-          'PAYMENT_AUTHORIZED': 'pending',
-          'ORDER_VERIFIED': 'pending',
-          'INVENTORY_ALLOCATED': 'pending',
-          
-          // Fulfillment -> processing
-          'ORDER_PROCESSING': 'processing',
-          'PICKING_STARTED': 'processing',
-          'PICKING_COMPLETED': 'processing',
-          'PACKING_STARTED': 'processing',
-          'PACKING_COMPLETED': 'processing',
-          'READY_TO_SHIP': 'processing',
-          'processing': 'processing',
-          
-          // Shipping -> shipped
-          'CARRIER_PICKUP_SCHEDULED': 'shipped',
-          'PICKED_UP': 'shipped',
-          'IN_TRANSIT': 'shipped',
-          'in_transit': 'shipped',
-          
-          // Delivered -> delivered
-          'DELIVERED': 'delivered',
-          'delivered': 'delivered',
-          
-          // Other statuses
-          'pending': 'pending',
-          'shipped': 'shipped',
-          'cancelled': 'cancelled',
-          'completed': 'completed',
-          'waiting_confirmation': 'waiting_confirmation',
-          'confirmed': 'confirmed'
-        };
-        
-        return statusMap[detailedStatus] || 'pending'; // Default to pending if not found
-      };
-
-      const validStatus = getValidStatus(logisticsForm.current_status);
-
       // Update order_tracking table using the correct structure
+      // The database constraint now accepts all logistics status values directly
       const { error } = await supabase
         .from('order_tracking')
         .upsert({
@@ -713,7 +672,7 @@ export default function AdminOrders() {
           carrier: logisticsForm.carrier,
           tracking_number: logisticsForm.tracking_number,
           estimated_delivery: logisticsForm.estimated_delivery,
-          status: validStatus, // Use mapped valid status
+          status: logisticsForm.current_status, // Use status directly - database constraint now supports all logistics statuses
           updated_at: new Date().toISOString()
         }, {
           onConflict: 'order_id'
