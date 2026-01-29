@@ -185,29 +185,35 @@ export default function DashboardEarnings() {
           commissionRate: 0.10
         });
       } else {
-        // Calculate real metrics from orders data
+        // Calculate real metrics from orders data - COMMISSION ONLY
         const totalOrders = ordersData?.length || 0;
         const totalRevenue = ordersData?.reduce((sum, order) => sum + (order.total_amount || 0), 0) || 0;
         const totalCommission = ordersData?.reduce((sum, order) => sum + (order.commission_amount || 0), 0) || 0;
         const avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
         
-        // Calculate pending balance from actual pending transactions
+        // Calculate pending balance from PENDING COMMISSIONS ONLY
         const pendingBalance = pendingTransactions?.reduce((sum, transaction) => {
-          if (transaction.type === 'deposit' || transaction.type === 'commission' || transaction.type === 'bonus') {
+          if (transaction.type === 'commission') {
             return sum + transaction.amount;
           }
-          return sum; // Don't include withdrawals in pending balance
+          return sum; // Only include commission transactions
         }, 0) || 0;
+        
+        // Calculate commission-only earnings from orders
+        const commissionThisMonth = earningsData?.thisMonth || 0;
+        const commissionLastMonth = earningsData?.lastMonth || 0;
+        const commissionThisYear = earningsData?.thisYear || 0;
+        const commissionAllTime = totalCommission; // Only commission from orders
         
         // Use wallet balance for availableBalance, not earnings service
         const finalEarnings = {
-          thisMonth: earningsData?.thisMonth || 0,
-          lastMonth: earningsData?.lastMonth || 0,
-          thisYear: earningsData?.thisYear || 0,
-          allTime: earningsData?.allTime || totalCommission,
+          thisMonth: commissionThisMonth, // Commission only
+          lastMonth: commissionLastMonth, // Commission only
+          thisYear: commissionThisYear, // Commission only
+          allTime: commissionAllTime, // Commission only
           availableBalance: walletData?.balance || 0, // Use accurate wallet balance
-          pendingBalance: pendingBalance, // Use calculated pending balance
-          commissionEarned: totalCommission,
+          pendingBalance: pendingBalance, // Pending commissions only
+          commissionEarned: totalCommission, // Total commission earned
           averageOrderValue: avgOrderValue,
           totalOrders: totalOrders,
           storeRating: partnerProfile?.store_rating || 0,

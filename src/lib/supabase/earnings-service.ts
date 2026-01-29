@@ -30,7 +30,7 @@ export const earningsService = {
       // Get all orders for this partner
       const { data: orders, error: ordersError } = await supabase
         .from('orders')
-        .select('id, total_amount, status, payment_status, created_at')
+        .select('id, total_amount, commission_amount, status, payment_status, created_at')
         .eq('partner_id', partnerId)
         .order('created_at', { ascending: false });
 
@@ -77,25 +77,23 @@ export const earningsService = {
         order.status === 'pending' || order.status === 'processing'
       ) || [];
 
-      // Calculate earnings (assuming 10% commission)
-      const commissionRate = 0.1;
-      
-      const thisMonthEarnings = thisMonthOrders.reduce((sum, order) => sum + (order.total_amount || 0), 0) * commissionRate;
-      const lastMonthEarnings = lastMonthOrders.reduce((sum, order) => sum + (order.total_amount || 0), 0) * commissionRate;
-      const thisYearEarnings = thisYearOrders.reduce((sum, order) => sum + (order.total_amount || 0), 0) * commissionRate;
-      const allTimeEarnings = allTimeOrders.reduce((sum, order) => sum + (order.total_amount || 0), 0) * commissionRate;
+      // Calculate earnings from COMMISSION AMOUNT ONLY
+      const thisMonthEarnings = thisMonthOrders.reduce((sum, order) => sum + (order.commission_amount || 0), 0);
+      const lastMonthEarnings = lastMonthOrders.reduce((sum, order) => sum + (order.commission_amount || 0), 0);
+      const thisYearEarnings = thisYearOrders.reduce((sum, order) => sum + (order.commission_amount || 0), 0);
+      const allTimeEarnings = allTimeOrders.reduce((sum, order) => sum + (order.commission_amount || 0), 0);
 
       const totalRevenue = allTimeOrders.reduce((sum, order) => sum + (order.total_amount || 0), 0);
       const averageOrderValue = allTimeOrders.length > 0 ? totalRevenue / allTimeOrders.length : 0;
 
       const earningsData: EarningsData = {
-        thisMonth: thisMonthEarnings,
-        lastMonth: lastMonthEarnings,
-        thisYear: thisYearEarnings,
-        allTime: allTimeEarnings,
+        thisMonth: thisMonthEarnings, // Commission only
+        lastMonth: lastMonthEarnings, // Commission only
+        thisYear: thisYearEarnings, // Commission only
+        allTime: allTimeEarnings, // Commission only
         availableBalance: availableBalance,
-        pendingBalance: pendingOrders.reduce((sum, order) => sum + (order.total_amount || 0), 0) * commissionRate,
-        commissionEarned: allTimeEarnings,
+        pendingBalance: pendingOrders.reduce((sum, order) => sum + (order.commission_amount || 0), 0), // Pending commission only
+        commissionEarned: allTimeEarnings, // Total commission earned
         averageOrderValue: averageOrderValue,
         totalOrders: allTimeOrders.length
       };
