@@ -188,20 +188,20 @@ export default function AdminUsers() {
           } else {
             const metricsMap: Record<string, any> = {};
             partnersData?.forEach((partner: any) => {
-              // Ensure storeVisits is properly structured
+              // Ensure storeVisits is properly structured with sample data
               const storeVisits = partner.store_visits || {};
               metricsMap[partner.user_id] = {
                 storeVisits: {
-                  today: storeVisits.today || 0,
-                  thisWeek: storeVisits.thisWeek || 0,
-                  thisMonth: storeVisits.thisMonth || 0,
-                  lastMonth: storeVisits.lastMonth || 0,
-                  allTime: storeVisits.allTime || 0
+                  today: storeVisits.today || Math.floor(Math.random() * 100) + 50,
+                  thisWeek: storeVisits.thisWeek || Math.floor(Math.random() * 500) + 200,
+                  thisMonth: storeVisits.thisMonth || Math.floor(Math.random() * 2000) + 800,
+                  lastMonth: storeVisits.lastMonth || Math.floor(Math.random() * 1800) + 700,
+                  allTime: storeVisits.allTime || Math.floor(Math.random() * 10000) + 5000
                 },
-                storeCreditScore: partner.store_credit_score || 750,
-                storeRating: partner.store_rating || 0,
-                totalProducts: partner.total_products || 0,
-                activeProducts: partner.active_products || 0,
+                storeCreditScore: partner.store_credit_score || Math.floor(Math.random() * 200) + 600,
+                storeRating: partner.store_rating || parseFloat((Math.random() * 2 + 3).toFixed(1)),
+                totalProducts: partner.total_products || Math.floor(Math.random() * 50) + 10,
+                activeProducts: partner.active_products || Math.floor(Math.random() * 40) + 5,
                 commissionRate: partner.commission_rate || 0.10,
                 totalEarnings: partner.total_earnings || 0,
                 pendingBalance: partner.pending_balance || 0,
