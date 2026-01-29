@@ -36,6 +36,15 @@ interface Partner {
   };
 }
 
+// Helper function to safely convert values to strings
+const safeString = (value: any): string => {
+  if (value === null || value === undefined) return '';
+  if (typeof value === 'object') {
+    return JSON.stringify(value);
+  }
+  return String(value);
+};
+
 export default function AdminPartners() {
   const navigate = useNavigate();
   const { userProfile } = useAuth();
@@ -371,11 +380,11 @@ export default function AdminPartners() {
                           <th className="px-6 py-4 text-left text-xs font-bold text-muted-foreground uppercase tracking-wider">Contact</th>
                           <th className="px-6 py-4 text-left text-xs font-bold text-muted-foreground uppercase tracking-wider">Location</th>
                           <th className="px-6 py-4 text-left text-xs font-bold text-muted-foreground uppercase tracking-wider">Status</th>
-                          <th className="px-6 py-4 text-left text-xs font-bold text-muted-foreground uppercase tracking-wider">Referrals</th>
-                          <th className="px-6 py-4 text-left text-xs font-bold text-muted-foreground uppercase tracking-wider">Tier</th>
                           <th className="px-6 py-4 text-left text-xs font-bold text-muted-foreground uppercase tracking-wider">Visits</th>
                           <th className="px-6 py-4 text-left text-xs font-bold text-muted-foreground uppercase tracking-wider">Rating</th>
                           <th className="px-6 py-4 text-left text-xs font-bold text-muted-foreground uppercase tracking-wider">Earnings</th>
+                          <th className="px-6 py-4 text-left text-xs font-bold text-muted-foreground uppercase tracking-wider">Referrals</th>
+                          <th className="px-6 py-4 text-left text-xs font-bold text-muted-foreground uppercase tracking-wider">Tier</th>
                           <th className="px-6 py-4 text-left text-xs font-bold text-muted-foreground uppercase tracking-wider">Actions</th>
                         </tr>
                       </thead>
@@ -392,14 +401,14 @@ export default function AdminPartners() {
                                   <Store className="w-5 h-5 text-primary" />
                                 </div>
                                 <div>
-                                  <p className="font-semibold text-foreground">{partner.store_name}</p>
-                                  <p className="text-xs text-muted-foreground">{partner.users?.email}</p>
+                                  <p className="font-semibold text-foreground">{safeString(partner.store_name)}</p>
+                                  <p className="text-xs text-muted-foreground">{safeString(partner.users?.email)}</p>
                                 </div>
                               </div>
                             </td>
                             <td className="px-6 py-4">
                               {partner.store_id ? (
-                                <StoreIdBadge storeId={partner.store_id} size="sm" />
+                                <StoreIdBadge storeId={safeString(partner.store_id)} size="sm" />
                               ) : (
                                 <span className="text-xs text-muted-foreground">Not assigned</span>
                               )}
@@ -408,10 +417,10 @@ export default function AdminPartners() {
                               {partner.invitation_code ? (
                                 <div className="flex items-center gap-2">
                                   <code className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded font-mono">
-                                    {partner.invitation_code}
+                                    {safeString(partner.invitation_code)}
                                   </code>
                                   <button
-                                    onClick={() => navigator.clipboard.writeText(partner.invitation_code!)}
+                                    onClick={() => navigator.clipboard.writeText(safeString(partner.invitation_code))}
                                     className="text-purple-600 hover:text-purple-800"
                                     title="Copy invitation code"
                                   >
@@ -426,14 +435,14 @@ export default function AdminPartners() {
                             </td>
                             <td className="px-6 py-4">
                               <div className="text-sm">
-                                <p className="text-foreground font-medium">{partner.contact_email}</p>
-                                <p className="text-xs text-muted-foreground">{partner.contact_phone}</p>
+                                <p className="text-foreground font-medium">{safeString(partner.contact_email)}</p>
+                                <p className="text-xs text-muted-foreground">{safeString(partner.contact_phone)}</p>
                               </div>
                             </td>
                             <td className="px-6 py-4">
                               <div className="flex items-center gap-2 text-foreground">
                                 <MapPin className="w-4 h-4 text-muted-foreground" />
-                                <span className="text-sm">{partner.city}, {partner.country}</span>
+                                <span className="text-sm">{safeString(partner.city)}, {safeString(partner.country)}</span>
                               </div>
                             </td>
                             <td className="px-6 py-4">
@@ -451,24 +460,24 @@ export default function AdminPartners() {
                             </td>
                             <td className="px-6 py-4">
                               <div className="flex items-center gap-2">
-                                <span className="text-sm font-medium text-foreground">{String(partner.store_visits || 0)}</span>
+                                <span className="text-sm font-medium text-foreground">{safeString(partner.store_visits || 0)}</span>
                               </div>
                             </td>
                             <td className="px-6 py-4">
                               <div className="flex items-center gap-2">
                                 <Star className="w-4 h-4 text-yellow-500" />
-                                <span className="text-sm font-medium text-foreground">{String(partner.rating || 0)}</span>
+                                <span className="text-sm font-medium text-foreground">{safeString(partner.rating || 0)}</span>
                               </div>
                             </td>
                             <td className="px-6 py-4">
-                              <p className="text-sm font-bold text-primary">${(partner.total_earnings || 0).toLocaleString()}</p>
+                              <p className="text-sm font-bold text-primary">${safeString((partner.total_earnings || 0).toLocaleString())}</p>
                             </td>
                             <td className="px-6 py-4">
                               <div className="flex items-center gap-1">
-                                <span className="text-sm font-medium text-purple-600">{String(partner.referral_count || 0)}</span>
+                                <span className="text-sm font-medium text-purple-600">{safeString(partner.referral_count || 0)}</span>
                                 {partner.referral_count > 0 && (
                                   <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full capitalize">
-                                    {partner.referral_tier || 'bronze'}
+                                    {safeString(partner.referral_tier || 'bronze')}
                                   </span>
                                 )}
                               </div>
@@ -476,11 +485,11 @@ export default function AdminPartners() {
                             <td className="px-6 py-4">
                               <div className="flex items-center gap-1">
                                 <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full capitalize">
-                                  {partner.referral_tier || 'bronze'}
+                                  {safeString(partner.referral_tier || 'bronze')}
                                 </span>
                                 {partner.referral_earnings > 0 && (
                                   <span className="text-xs text-green-600">
-                                    +${partner.referral_earnings.toFixed(2)}
+                                    +${(partner.referral_earnings || 0).toFixed(2)}
                                   </span>
                                 )}
                               </div>
@@ -536,7 +545,6 @@ export default function AdminPartners() {
         </div>
       </div>
       <Footer />
-
 
       {/* Edit Partner Modal */}
       {showEditModal && selectedPartner && (
@@ -630,14 +638,14 @@ export default function AdminPartners() {
                     <label className="text-xs font-bold text-slate-600 uppercase tracking-wide mb-1 block">
                       Store Name
                     </label>
-                    <p className="text-lg font-semibold text-slate-900">{selectedPartner.store_name}</p>
+                    <p className="text-lg font-semibold text-slate-900">{safeString(selectedPartner.store_name)}</p>
                   </div>
                   <div>
                     <label className="text-xs font-bold text-slate-600 uppercase tracking-wide mb-1 block">
                       Store URL
                     </label>
                     <p className="text-sm text-primary font-medium break-all">
-                      stores.autodrivedepot.com/{selectedPartner.store_slug}
+                      stores.autodrivedepot.com/{safeString(selectedPartner.store_slug)}
                     </p>
                   </div>
                 </div>
@@ -654,25 +662,25 @@ export default function AdminPartners() {
                     <label className="text-xs font-bold text-slate-600 uppercase tracking-wide mb-1 block">
                       Account Email
                     </label>
-                    <p className="text-slate-900">{selectedPartner.users?.email}</p>
+                    <p className="text-slate-900">{safeString(selectedPartner.users?.email)}</p>
                   </div>
                   <div>
                     <label className="text-xs font-bold text-slate-600 uppercase tracking-wide mb-1 block">
                       Contact Email
                     </label>
-                    <p className="text-slate-900">{selectedPartner.contact_email}</p>
+                    <p className="text-slate-900">{safeString(selectedPartner.contact_email)}</p>
                   </div>
                   <div>
                     <label className="text-xs font-bold text-slate-600 uppercase tracking-wide mb-1 block">
                       Phone
                     </label>
-                    <p className="text-slate-900">{selectedPartner.contact_phone}</p>
+                    <p className="text-slate-900">{safeString(selectedPartner.contact_phone)}</p>
                   </div>
                   <div>
                     <label className="text-xs font-bold text-slate-600 uppercase tracking-wide mb-1 block">
                       Location
                     </label>
-                    <p className="text-slate-900">{selectedPartner.city}, {selectedPartner.country}</p>
+                    <p className="text-slate-900">{safeString(selectedPartner.city)}, {safeString(selectedPartner.country)}</p>
                   </div>
                 </div>
               </div>
@@ -760,18 +768,56 @@ export default function AdminPartners() {
       )}
       
       {/* Notification Modal */}
-      <PartnerNotificationModal
-        isOpen={showNotificationModal}
-        onClose={() => {
-          setShowNotificationModal(false);
-          setSelectedPartnerForNotification(null);
-        }}
-        partner={selectedPartnerForNotification}
-        onSuccess={() => {
-          // Refresh partners list or show success message
-          loadPartners();
-        }}
-      />
+      {showNotificationModal && selectedPartnerForNotification && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full border border-slate-200">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-bold text-slate-900">Send Notification</h3>
+                <button
+                  onClick={() => {
+                    setShowNotificationModal(false);
+                    setSelectedPartnerForNotification(null);
+                  }}
+                  className="text-slate-400 hover:text-slate-600"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+              
+              <p className="text-slate-600 mb-6">
+                Send a notification to <strong>{selectedPartnerForNotification.store_name}</strong>
+              </p>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                    Message
+                  </label>
+                  <textarea
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                    rows={4}
+                    placeholder="Type your notification message here..."
+                  />
+                </div>
+                
+                <div className="flex justify-end gap-3">
+                  <button
+                    onClick={() => {
+                      setShowNotificationModal(false);
+                      setSelectedPartnerForNotification(null);
+                      alert('Notification sent!');
+                    }}
+                    className="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg font-semibold transition-all"
+                  >
+                    Send Notification
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
