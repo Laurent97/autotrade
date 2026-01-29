@@ -6,7 +6,6 @@ import { User as UserType, UserType as UserTypeEnum, PartnerStatus } from '../..
 import { NotificationService } from '../../lib/supabase/notification-service';
 import { getPartnerProductsWithDetails } from '../../services/partnerProductsService';
 import AdminLayout from '../../components/Admin/AdminLayout';
-import ThemeSwitcher from '../../components/ThemeSwitcher';
 import { 
   Users,
   DollarSign,
@@ -39,16 +38,6 @@ import {
   Shield,
   AlertTriangle
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
 
 interface BalanceUpdate {
   userId: string;
@@ -589,12 +578,12 @@ export default function AdminUsers() {
       setTimeout(() => {
         setSavingMetrics(null);
         setShowPartnerMetricsModal(false);
-        alert('âœ… Partner metrics updated successfully!');
+        alert('✅ Partner metrics updated successfully!');
       }, 500);
     } catch (error: any) {
       console.error('Error updating partner metrics:', error);
       setSavingMetrics(null);
-      alert(`âŒ Failed to update partner metrics: ${error.message || 'Unknown error'}`);
+      alert(`❌ Failed to update partner metrics: ${error.message || 'Unknown error'}`);
     }
   };
 
@@ -665,10 +654,10 @@ export default function AdminUsers() {
       // Start the distribution process
       startDistributionTimer(userId, newDistribution);
       
-      alert(`âœ… Automatic visit distribution started: ${totalVisits} visits over 24 hours (${visitsPerUnit.toFixed(4)} visits per ${timePeriod})`);
+      alert(`✅ Automatic visit distribution started: ${totalVisits} visits over 24 hours (${visitsPerUnit.toFixed(4)} visits per ${timePeriod})`);
     } catch (error) {
       console.error('Error starting visit distribution:', error);
-      alert('âŒ Failed to start visit distribution');
+      alert('❌ Failed to start visit distribution');
     }
   };
 
@@ -703,10 +692,10 @@ export default function AdminUsers() {
         delete (window as any).visitDistributionTimers[userId];
       }
       
-      alert('âœ… Automatic visit distribution stopped');
+      alert('✅ Automatic visit distribution stopped');
     } catch (error) {
       console.error('Error stopping visit distribution:', error);
-      alert('âŒ Failed to stop visit distribution');
+      alert('❌ Failed to stop visit distribution');
     }
   };
 
@@ -853,10 +842,10 @@ export default function AdminUsers() {
         })
         .eq('user_id', userId);
 
-      alert(`âœ… Added ${visitsToAdd} visits successfully!`);
+      alert(`✅ Added ${visitsToAdd} visits successfully!`);
     } catch (error) {
       console.error('Error adding visits:', error);
-      alert('âŒ Failed to add visits');
+      alert('❌ Failed to add visits');
     }
   };
 
@@ -926,7 +915,7 @@ export default function AdminUsers() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                ðŸ” Search Users
+                🔍 Search Users
               </label>
               <input
                 type="text"
@@ -939,17 +928,17 @@ export default function AdminUsers() {
             
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                ðŸ“‹ Filter by Type
+                🔎 Filter by Type
               </label>
               <select
                 value={filterType}
                 onChange={(e) => setFilterType(e.target.value as UserTypeEnum | 'all')}
                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 dark:focus:ring-amber-400 dark:focus:border-amber-400 bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-all"
               >
-                <option value="all">ðŸ‘¥ All Types</option>
-                <option value="customer">ðŸ›’ Customers</option>
-                <option value="partner">ðŸª Partners</option>
-                <option value="admin">âš™ï¸ Admins</option>
+                <option value="all">👤 All Types</option>
+                <option value="customer">🥇 Customers</option>
+                <option value="partner">🏪 Partners</option>
+                <option value="admin">⚙️ Admins</option>
               </select>
             </div>
             
@@ -958,7 +947,7 @@ export default function AdminUsers() {
                 onClick={loadUsers}
                 className="w-full bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white px-4 py-2 rounded-lg transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-2"
               >
-                ðŸ”„ Refresh Users
+                🔄 Refresh Users
               </button>
             </div>
           </div>
@@ -969,7 +958,7 @@ export default function AdminUsers() {
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 p-6 animate-fade-in hover:shadow-lg transition-shadow hover:scale-105 transform">
             <div className="flex items-center justify-between mb-4">
               <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/30 dark:to-blue-800/30 p-3 rounded-xl">
-                <span className="text-2xl">ðŸ‘¥</span>
+                <span className="text-2xl">👤</span>
               </div>
               <div className="text-blue-600 dark:text-blue-400 text-sm font-semibold">Total</div>
             </div>
@@ -980,7 +969,7 @@ export default function AdminUsers() {
           <div className="bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/30 dark:to-amber-800/30 rounded-2xl shadow-md border border-amber-200 dark:border-amber-700/50 p-6 animate-fade-in hover:shadow-lg transition-shadow hover:scale-105 transform">
             <div className="flex items-center justify-between mb-4">
               <div className="bg-gradient-to-br from-amber-200 to-amber-300 dark:from-amber-600 dark:to-amber-500 p-3 rounded-xl">
-                <span className="text-2xl">ðŸ’°</span>
+                <span className="text-2xl">💰</span>
               </div>
               <div className="text-amber-600 dark:text-amber-400 text-sm font-semibold">Revenue</div>
             </div>
@@ -993,7 +982,7 @@ export default function AdminUsers() {
           <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/30 dark:to-green-800/30 rounded-2xl shadow-md border border-green-200 dark:border-green-700/50 p-6 animate-fade-in hover:shadow-lg transition-shadow hover:scale-105 transform">
             <div className="flex items-center justify-between mb-4">
               <div className="bg-gradient-to-br from-green-200 to-green-300 dark:from-green-600 dark:to-green-500 p-3 rounded-xl">
-                <span className="text-2xl">ðŸª</span>
+                <span className="text-2xl">🏪</span>
               </div>
               <div className="text-green-600 dark:text-green-400 text-sm font-semibold">Partners</div>
             </div>
@@ -1006,7 +995,7 @@ export default function AdminUsers() {
           <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-900/30 dark:to-yellow-800/30 rounded-2xl shadow-md border border-yellow-200 dark:border-yellow-700/50 p-6 animate-fade-in hover:shadow-lg transition-shadow hover:scale-105 transform">
             <div className="flex items-center justify-between mb-4">
               <div className="bg-gradient-to-br from-yellow-200 to-yellow-300 dark:from-yellow-600 dark:to-yellow-500 p-3 rounded-xl">
-                <span className="text-2xl">â³</span>
+                <span className="text-2xl">⚠️</span>
               </div>
               <div className="text-yellow-600 dark:text-yellow-400 text-sm font-semibold">Pending</div>
             </div>
@@ -1026,7 +1015,7 @@ export default function AdminUsers() {
             </div>
           ) : filteredUsers.length === 0 ? (
             <div className="p-8 text-center">
-              <span className="text-4xl mb-4 block">ðŸ‘¥</span>
+              <span className="text-4xl mb-4 block">👤</span>
               <p className="text-gray-600 dark:text-gray-400">No users found</p>
             </div>
           ) : (
@@ -1035,19 +1024,19 @@ export default function AdminUsers() {
                 <thead className="bg-gray-50 dark:bg-gray-900/50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                      ðŸ‘¤ User
+                      👤 User
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                      ðŸ“Š Type & Status
+                      📊 Type & Status
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                      ðŸ’° Wallet Balance
+                      💰 Wallet Balance
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                      ðŸ“… Joined
+                      📅 Joined
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                      âš¡ Actions
+                      ⚡ Actions
                     </th>
                   </tr>
                 </thead>
@@ -1072,17 +1061,17 @@ export default function AdminUsers() {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex flex-col space-y-2">
                             <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getBadgeColor('user_type', user.user_type)}`}>
-                              {user.user_type === 'admin' && 'âš™ï¸ '}
-                              {user.user_type === 'partner' && 'ðŸª '}
-                              {user.user_type === 'user' && 'ðŸ›’ '}
+                              {user.user_type === 'admin' && '⚙️ '}
+                              {user.user_type === 'partner' && '🏪 '}
+                              {user.user_type === 'user' && '🥇 '}
                               {user.user_type}
                             </span>
                             {user.user_type === 'partner' && (
                               <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getBadgeColor('partner_status', user.partner_status)}`}>
-                                {user.partner_status === 'approved' && 'âœ… '}
-                                {user.partner_status === 'pending' && 'â³ '}
-                                {user.partner_status === 'rejected' && 'âŒ '}
-                                {user.partner_status === 'suspended' && 'ðŸš« '}
+                                {user.partner_status === 'approved' && '✅ '}
+                                {user.partner_status === 'pending' && '⚠️ '}
+                                {user.partner_status === 'rejected' && '❌ '}
+                                {user.partner_status === 'suspended' && '🚫 '}
                                 {user.partner_status}
                               </span>
                             )}
@@ -1105,27 +1094,27 @@ export default function AdminUsers() {
                               onClick={() => openUserModal(user)}
                               className="text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 text-left font-medium flex items-center gap-1 transition-colors"
                             >
-                              âœï¸ Edit Info
+                              ✏️ Edit Info
                             </button>
                             <button
                               onClick={() => openBalanceModal(user)}
                               className="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 text-left font-medium flex items-center gap-1 transition-colors"
                             >
-                              ðŸ’° Adjust Balance
+                              💰 Adjust Balance
                             </button>
                             {user.user_type === 'partner' && (
                               <button
                                 onClick={() => openPartnerMetricsModal(user)}
                                 className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-left font-medium flex items-center gap-1 transition-colors"
                               >
-                                ðŸ“Š Partner Metrics
+                                📊 Partner Metrics
                               </button>
                             )}
                             <button
                               onClick={() => deleteUser(user.id)}
                               className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 text-left font-medium flex items-center gap-1 transition-colors"
                             >
-                              ðŸ—‘ï¸ Delete User
+                              🗑️ Delete User
                             </button>
                           </div>
                         </td>
@@ -1152,7 +1141,7 @@ export default function AdminUsers() {
                   onClick={() => setShowUserModal(false)}
                   className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 text-2xl"
                 >
-                  âœ•
+                  ×
                 </button>
               </div>
               
@@ -1247,7 +1236,7 @@ export default function AdminUsers() {
                   onClick={() => setShowBalanceModal(false)}
                   className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 text-2xl"
                 >
-                  âœ•
+                  ×
                 </button>
               </div>
               
@@ -1357,7 +1346,7 @@ export default function AdminUsers() {
                   onClick={() => setShowPartnerMetricsModal(false)}
                   className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 text-2xl"
                 >
-                  âœ•
+                  ×
                 </button>
               </div>
 
@@ -1411,13 +1400,13 @@ export default function AdminUsers() {
                           <input
                             type="number"
                             min="0"
-                            value={String(partnerMetrics[selectedUser.id]?.storeVisits?.today || 0)}
+                            value={partnerMetrics[selectedUser.id]?.storeVisits?.today || 0}
                             onChange={(e) => {
                               const value = parseInt(e.target.value) || 0;
                               const currentMetrics = partnerMetrics[selectedUser.id];
                               
                               // Calculate week/month based on today's change
-                              const todayChange = value - (currentMetrics?.storeVisits?.today || 0);
+                              const todayChange = value - (currentMetrics.storeVisits?.today || 0);
                               
                               setPartnerMetrics(prev => ({
                                 ...prev,
@@ -1453,7 +1442,7 @@ export default function AdminUsers() {
                               <input
                                 type="number"
                                 readOnly
-                                value={String(partnerMetrics[selectedUser.id]?.storeVisits?.[key] || 0)}
+                                value={partnerMetrics[selectedUser.id]?.storeVisits?.[key] || 0}
                                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900/50 text-gray-700 dark:text-gray-300 cursor-not-allowed"
                               />
                               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent dark:via-gray-800/5 rounded-lg pointer-events-none" />
@@ -1588,7 +1577,7 @@ export default function AdminUsers() {
                           </div>
                         ))}
                         <div className="text-xs text-gray-500 dark:text-gray-400 bg-blue-50 dark:bg-blue-900/20 p-2 rounded border border-blue-200 dark:border-blue-800">
-                          ðŸ’¡ Product counts are fetched from the partner's actual inventory at https://www.athub.store/partner/dashboard/inventory
+                          🔔 Product counts are fetched from the partner's actual inventory at https://www.athub.store/partner/dashboard/inventory
                         </div>
                       </div>
                     </div>
@@ -1648,6 +1637,7 @@ export default function AdminUsers() {
                                 setPartnerMetrics(prev => ({
                                   ...prev,
                                   [selectedUser.id]: {
+                                    ...prev[selectedUser.id],
                                     isActive: checked
                                   }
                                 }));
@@ -1657,123 +1647,123 @@ export default function AdminUsers() {
                         </div>
                       </div>
                     </div>
+                  </div>
 
-                    {/* Auto-save indicator */}
-                    {savingMetrics === selectedUser.id && (
-                      <div className="mt-6 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <RefreshCw className="w-4 h-4 text-blue-600 dark:text-blue-400 animate-spin" />
-                          <span className="text-sm text-blue-700 dark:text-blue-300">
-                            Saving changes to database...
-                          </span>
-                        </div>
-                        <span className="text-xs text-blue-600 dark:text-blue-400 px-2 py-1 bg-blue-100 dark:bg-blue-900 rounded">
-                          Real-time
+                  {/* Auto-save indicator */}
+                  {savingMetrics === selectedUser.id && (
+                    <div className="mt-6 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <RefreshCw className="w-4 h-4 text-blue-600 dark:text-blue-400 animate-spin" />
+                        <span className="text-sm text-blue-700 dark:text-blue-300">
+                          Saving changes to database...
                         </span>
                       </div>
-                    )}
+                      <span className="text-xs text-blue-600 dark:text-blue-400 px-2 py-1 bg-blue-100 dark:bg-blue-900 rounded">
+                        Real-time
+                      </span>
+                    </div>
+                  )}
 
-                    {/* Visit Distribution Controls */}
-                    <div className="mt-6 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
-                      <div className="flex items-center justify-between mb-3">
-                        <h4 className="text-sm font-semibold text-amber-800 dark:text-amber-200 flex items-center gap-2">
-                          <Activity className="w-4 h-4" />
-                          Automatic Visit Distribution
-                        </h4>
-                        {visitDistribution[selectedUser.id]?.isActive ? (
-                          <span className="text-xs bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-2 py-1 rounded">
-                            Active
-                          </span>
-                        ) : (
-                          <span className="text-xs bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 px-2 py-1 rounded">
-                            Inactive
-                          </span>
-                        )}
-                      </div>
-ã€€ã€€ã€€ã€€ã€€ã€€ã€€ã€€ã€€ã€€
+                  {/* Visit Distribution Controls */}
+                  <div className="mt-6 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="text-sm font-semibold text-amber-800 dark:text-amber-200 flex items-center gap-2">
+                        <Activity className="w-4 h-4" />
+                        Automatic Visit Distribution
+                      </h4>
                       {visitDistribution[selectedUser.id]?.isActive ? (
-                        <div className="space-y-2">
-                          <p className="text-xs text-amber-700 dark:text-amber-300">
-                            ðŸ”„ Currently distributing {visitDistribution[selectedUser.id].totalVisits} visits over 24 hours
-                          </p>
-                          <p className="text-xs text-amber-600 dark:text-amber-400">
-                            Rate: {visitDistribution[selectedUser.id].visitsPerUnit.toFixed(4)} visits per {visitDistribution[selectedUser.id].timePeriod}
-                          </p>
-                          <button
-                            onClick={() => stopVisitDistribution(selectedUser.id)}
-                            className="w-full px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg transition-colors flex items-center justify-center gap-2"
-                          >
-                            <Activity className="w-4 h-4" />
-                            Stop Distribution
-                          </button>
-                        </div>
+                        <span className="text-xs bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-2 py-1 rounded">
+                          Active
+                        </span>
                       ) : (
-                        <div className="space-y-2">
-                          <p className="text-xs text-amber-700 dark:text-amber-300">
-                            ðŸ“Š Distribute today's visits ({String(partnerMetrics[selectedUser.id]?.storeVisits?.today || 0)}) automatically over 24 hours
-                          </p>
-                          <div className="grid grid-cols-3 gap-2">
-                            <button
-                              onClick={() => startVisitDistribution(selectedUser.id, Number(partnerMetrics[selectedUser.id]?.storeVisits?.today || 0), 'hour')}
-                              className="px-2 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs rounded-lg transition-colors"
-                            >
-                              Per Hour
-                            </button>
-                            <button
-                              onClick={() => startVisitDistribution(selectedUser.id, Number(partnerMetrics[selectedUser.id]?.storeVisits?.today || 0), 'minute')}
-                              className="px-2 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs rounded-lg transition-colors"
-                            >
-                              Per Minute
-                            </button>
-                            <button
-                              onClick={() => startVisitDistribution(selectedUser.id, Number(partnerMetrics[selectedUser.id]?.storeVisits?.today || 0), 'second')}
-                              className="px-2 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs rounded-lg transition-colors"
-                            >
-                              Per Second
-                            </button>
-                          </div>
-                        </div>
+                        <span className="text-xs bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 px-2 py-1 rounded">
+                          Inactive
+                        </span>
                       )}
                     </div>
 
-                    {/* Action Buttons */}
-                    <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200 dark:border-gray-700">
-                      <button
-                        onClick={() => setShowPartnerMetricsModal(false)}
-                        className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                      >
-                        Close
-                      </button>
-                      <button
-                        onClick={() => {
-                          const metrics = partnerMetrics[selectedUser.id];
-                          if (metrics) {
-                            updatePartnerMetrics(selectedUser.id, metrics);
-                          }
-                        }}
-                        disabled={savingMetrics === selectedUser.id}
-                        className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition-all shadow-md hover:shadow-lg flex items-center gap-2"
-                      >
-                        {savingMetrics === selectedUser.id ? (
-                          <>
-                            <RefreshCw className="w-4 h-4 animate-spin" />
-                            Saving...
-                          </>
-                        ) : (
-                          <>
-                            <CheckCircle className="w-4 h-4" />
-                            Update All Changes
-                          </>
-                        )}
-                      </button>
-                    </div>
+                    {visitDistribution[selectedUser.id]?.isActive ? (
+                      <div className="space-y-2">
+                        <p className="text-xs text-amber-700 dark:text-amber-300">
+                          🔄 Currently distributing {visitDistribution[selectedUser.id].totalVisits} visits over 24 hours
+                        </p>
+                        <p className="text-xs text-amber-600 dark:text-amber-400">
+                          Rate: {visitDistribution[selectedUser.id].visitsPerUnit.toFixed(4)} visits per {visitDistribution[selectedUser.id].timePeriod}
+                        </p>
+                        <button
+                          onClick={() => stopVisitDistribution(selectedUser.id)}
+                          className="w-full px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg transition-colors flex items-center justify-center gap-2"
+                        >
+                          <Activity className="w-4 h-4" />
+                          Stop Distribution
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <p className="text-xs text-amber-700 dark:text-amber-300">
+                          📊 Distribute today's visits ({partnerMetrics[selectedUser.id]?.storeVisits?.today || 0}) automatically over 24 hours
+                        </p>
+                        <div className="grid grid-cols-3 gap-2">
+                          <button
+                            onClick={() => startVisitDistribution(selectedUser.id, partnerMetrics[selectedUser.id]?.storeVisits?.today || 0, 'hour')}
+                            className="px-2 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs rounded-lg transition-colors"
+                          >
+                            Per Hour
+                          </button>
+                          <button
+                            onClick={() => startVisitDistribution(selectedUser.id, partnerMetrics[selectedUser.id]?.storeVisits?.today || 0, 'minute')}
+                            className="px-2 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs rounded-lg transition-colors"
+                          >
+                            Per Minute
+                          </button>
+                          <button
+                            onClick={() => startVisitDistribution(selectedUser.id, partnerMetrics[selectedUser.id]?.storeVisits?.today || 0, 'second')}
+                            className="px-2 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs rounded-lg transition-colors"
+                          >
+                            Per Second
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </div>
-              </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200 dark:border-gray-700">
+                    <button
+                      onClick={() => setShowPartnerMetricsModal(false)}
+                      className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                    >
+                      Close
+                    </button>
+                    <button
+                      onClick={() => {
+                        const metrics = partnerMetrics[selectedUser.id];
+                        if (metrics) {
+                          updatePartnerMetrics(selectedUser.id, metrics);
+                        }
+                      }}
+                      disabled={savingMetrics === selectedUser.id}
+                      className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition-all shadow-md hover:shadow-lg flex items-center gap-2"
+                    >
+                      {savingMetrics === selectedUser.id ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle className="w-4 h-4" />
+                          Update All Changes
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
-      </AdminLayout>
+      )}
+    </AdminLayout>
   );
 }
-
