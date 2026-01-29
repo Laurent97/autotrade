@@ -950,9 +950,6 @@ export default function DashboardAnalytics() {
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-blue-700 dark:text-blue-300">
                     <Zap className="w-3 h-3 inline mr-1" />
-                    Auto-visits active: {visitDistribution.total_visits || 0} visits
-                  </span>
-                  <span className="text-xs text-muted-foreground">
                     {visitDistribution.time_period === 'second' ? 'Per Second' :
                      visitDistribution.time_period === 'minute' ? 'Per Minute' : 'Per Hour'}
                   </span>
