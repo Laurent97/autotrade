@@ -3,10 +3,10 @@
 
 CREATE TABLE IF NOT EXISTS visit_distribution (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  partner_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  partner_id UUID NOT NULL REFERENCES partner_profiles(user_id) ON DELETE CASCADE,
   total_visits INTEGER NOT NULL DEFAULT 0,
   time_period VARCHAR(10) NOT NULL CHECK (time_period IN ('hour', 'minute', 'second')),
-  visits_per_unit INTEGER NOT NULL DEFAULT 0,
+  visits_per_unit DECIMAL(10,2) NOT NULL DEFAULT 0,
   is_active BOOLEAN NOT NULL DEFAULT false,
   start_time TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   end_time TIMESTAMP WITH TIME ZONE,

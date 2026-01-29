@@ -1,5 +1,6 @@
 -- Add RLS policies for store_visits table
 -- This allows the visit distribution system to insert visit records
+-- NOTE: Make sure store_visits.partner_id references users(id), not partner_profiles(user_id)
 
 -- Enable RLS if not already enabled
 ALTER TABLE store_visits ENABLE ROW LEVEL SECURITY;
