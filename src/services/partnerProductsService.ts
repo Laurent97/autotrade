@@ -27,20 +27,13 @@ export interface PartnerProduct {
   }
 }
 
-// Get partner products using RPC function
+// Get partner products using direct query (bypass broken RPC function)
 export async function getPartnerProducts(partnerId: string): Promise<PartnerProduct[]> {
   try {
-    const { data, error } = await supabase
-      .rpc('get_partner_products', { p_partner_id: partnerId })
-
-    if (error) {
-      console.error('Error fetching partner products:', error)
-      return []
-    }
-
-    return data || []
+    // Use the fallback method directly since RPC function is broken
+    return await getPartnerProductsFallback(partnerId);
   } catch (err) {
-    console.error('Unexpected error:', err)
+    console.error('Error fetching partner products:', err)
     return []
   }
 }
@@ -158,15 +151,9 @@ export async function togglePartnerProductStatus(id: string, currentStatus: bool
 // Get partner products with product details (enhanced)
 export async function getPartnerProductsWithDetails(partnerId: string): Promise<PartnerProduct[]> {
   try {
-    // Try RPC function first
-    const rpcResult = await getPartnerProducts(partnerId)
-    if (rpcResult.length > 0) {
-      return rpcResult
-    }
-
-    // Fallback to direct query
-    const fallbackResult = await getPartnerProductsFallback(partnerId)
-    return fallbackResult
+    // Use the fallback method directly since RPC function is broken
+    const fallbackResult = await getPartnerProductsFallback(partnerId);
+    return fallbackResult;
   } catch (err) {
     console.error('Error in enhanced partner products fetch:', err)
     return []
