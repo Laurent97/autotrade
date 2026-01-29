@@ -141,6 +141,35 @@ export default function DashboardAnalytics() {
         console.warn('Could not load partner products:', productsError);
       }
 
+      // 5.5. Get real store visits from store_visits table
+      const { data: visitsData, error: visitsError } = await supabase
+        .from('store_visits')
+        .select('*')
+        .eq('partner_id', userProfile.id);
+
+      if (visitsError && visitsError.code !== 'PGRST116') {
+        console.warn('Could not load store visits:', visitsError);
+      }
+
+      // Calculate store visits from actual data
+      const now = new Date();
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const weekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      
+      const allVisits = visitsData || [];
+      const todayVisits = allVisits.filter(visit => new Date(visit.created_at) >= todayStart).length;
+      const weekVisits = allVisits.filter(visit => new Date(visit.created_at) >= weekStart).length;
+      const monthVisits = allVisits.filter(visit => new Date(visit.created_at) >= monthStart).length;
+      const totalVisits = allVisits.length;
+
+      const storeVisits = {
+        today: todayVisits,
+        thisWeek: weekVisits,
+        thisMonth: monthVisits,
+        allTime: totalVisits
+      };
+
       // 6. Get partner stats
       const partnerStats = await partnerService.getPartnerStats(userProfile.id);
       
@@ -168,7 +197,7 @@ export default function DashboardAnalytics() {
       const avgOrderValue = completedOrders.length > 0 ? totalRevenue / completedOrders.length : 0;
       
       // Get store visits from partner profile
-      const storeVisits = partnerProfile?.store_visits || {
+      const storeVisitsFromProfile = partnerProfile?.store_visits || {
         today: Math.floor(Math.random() * 100) + 50,
         thisWeek: Math.floor(Math.random() * 500) + 200,
         thisMonth: Math.floor(Math.random() * 2000) + 800,
@@ -176,14 +205,13 @@ export default function DashboardAnalytics() {
       };
 
       // Calculate real-time visits if distribution is active
-      const calculatedVisits = calculateRealtimeVisits(visitDistribution, storeVisits);
+      const calculatedVisits = calculateRealtimeVisits(visitDistribution, storeVisitsFromProfile);
       
       // Calculate conversion rate
       const conversionRate = calculatedVisits.thisMonth > 0 ? 
         (completedOrders.length / calculatedVisits.thisMonth) * 100 : 0;
 
       // Calculate time-based earnings
-      const now = new Date();
       const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
       const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
       const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
@@ -203,7 +231,6 @@ export default function DashboardAnalytics() {
         .reduce((sum, order) => sum + ((order.total_amount || 0) * commissionRate), 0);
 
       // Calculate today's earnings
-      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       const todayEarnings = completedOrders
         .filter(order => new Date(order.created_at) >= todayStart)
         .reduce((sum, order) => sum + ((order.total_amount || 0) * commissionRate), 0);
