@@ -451,13 +451,13 @@ export default function AdminPartners() {
                             </td>
                             <td className="px-6 py-4">
                               <div className="flex items-center gap-2">
-                                <span className="text-sm font-medium text-foreground">{partner.store_visits || 0}</span>
+                                <span className="text-sm font-medium text-foreground">{String(partner.store_visits || 0)}</span>
                               </div>
                             </td>
                             <td className="px-6 py-4">
                               <div className="flex items-center gap-2">
                                 <Star className="w-4 h-4 text-yellow-500" />
-                                <span className="text-sm font-medium text-foreground">{partner.rating || 0}</span>
+                                <span className="text-sm font-medium text-foreground">{String(partner.rating || 0)}</span>
                               </div>
                             </td>
                             <td className="px-6 py-4">
@@ -465,7 +465,7 @@ export default function AdminPartners() {
                             </td>
                             <td className="px-6 py-4">
                               <div className="flex items-center gap-1">
-                                <span className="text-sm font-medium text-purple-600">{partner.referral_count || 0}</span>
+                                <span className="text-sm font-medium text-purple-600">{String(partner.referral_count || 0)}</span>
                                 {partner.referral_count > 0 && (
                                   <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full capitalize">
                                     {partner.referral_tier || 'bronze'}
@@ -554,7 +554,7 @@ export default function AdminPartners() {
                   <input
                     type="number"
                     min="0"
-                    value={editForm.store_visits}
+                    value={String(editForm.store_visits)}
                     onChange={(e) => setEditForm({...editForm, store_visits: parseInt(e.target.value) || 0})}
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
                   />
@@ -570,7 +570,7 @@ export default function AdminPartners() {
                     min="0"
                     max="5"
                     step="0.1"
-                    value={editForm.rating}
+                    value={String(editForm.rating)}
                     onChange={(e) => setEditForm({...editForm, rating: parseFloat(e.target.value) || 0})}
                     className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
                   />
