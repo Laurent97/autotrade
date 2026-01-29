@@ -1400,13 +1400,13 @@ export default function AdminUsers() {
                           <input
                             type="number"
                             min="0"
-                            value={partnerMetrics[selectedUser.id]?.storeVisits?.today || 0}
+                            value={String(partnerMetrics[selectedUser.id]?.storeVisits?.today || 0)}
                             onChange={(e) => {
                               const value = parseInt(e.target.value) || 0;
                               const currentMetrics = partnerMetrics[selectedUser.id];
                               
                               // Calculate week/month based on today's change
-                              const todayChange = value - (currentMetrics.storeVisits?.today || 0);
+                              const todayChange = value - (currentMetrics?.storeVisits?.today || 0);
                               
                               setPartnerMetrics(prev => ({
                                 ...prev,
@@ -1442,7 +1442,7 @@ export default function AdminUsers() {
                               <input
                                 type="number"
                                 readOnly
-                                value={partnerMetrics[selectedUser.id]?.storeVisits?.[key] || 0}
+                                value={String(partnerMetrics[selectedUser.id]?.storeVisits?.[key] || 0)}
                                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900/50 text-gray-700 dark:text-gray-300 cursor-not-allowed"
                               />
                               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent dark:via-gray-800/5 rounded-lg pointer-events-none" />
@@ -1701,23 +1701,23 @@ export default function AdminUsers() {
                     ) : (
                       <div className="space-y-2">
                         <p className="text-xs text-amber-700 dark:text-amber-300">
-                          📊 Distribute today's visits ({partnerMetrics[selectedUser.id]?.storeVisits?.today || 0}) automatically over 24 hours
+                          📊 Distribute today's visits ({String(partnerMetrics[selectedUser.id]?.storeVisits?.today || 0)}) automatically over 24 hours
                         </p>
                         <div className="grid grid-cols-3 gap-2">
                           <button
-                            onClick={() => startVisitDistribution(selectedUser.id, partnerMetrics[selectedUser.id]?.storeVisits?.today || 0, 'hour')}
+                            onClick={() => startVisitDistribution(selectedUser.id, Number(partnerMetrics[selectedUser.id]?.storeVisits?.today || 0), 'hour')}
                             className="px-2 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs rounded-lg transition-colors"
                           >
                             Per Hour
                           </button>
                           <button
-                            onClick={() => startVisitDistribution(selectedUser.id, partnerMetrics[selectedUser.id]?.storeVisits?.today || 0, 'minute')}
+                            onClick={() => startVisitDistribution(selectedUser.id, Number(partnerMetrics[selectedUser.id]?.storeVisits?.today || 0), 'minute')}
                             className="px-2 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs rounded-lg transition-colors"
                           >
                             Per Minute
                           </button>
                           <button
-                            onClick={() => startVisitDistribution(selectedUser.id, partnerMetrics[selectedUser.id]?.storeVisits?.today || 0, 'second')}
+                            onClick={() => startVisitDistribution(selectedUser.id, Number(partnerMetrics[selectedUser.id]?.storeVisits?.today || 0), 'second')}
                             className="px-2 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs rounded-lg transition-colors"
                           >
                             Per Second
