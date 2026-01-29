@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase/client';
 import { User as UserType, UserType as UserTypeEnum, PartnerStatus } from '../../lib/types/database';
 import { NotificationService } from '../../lib/supabase/notification-service';
+import { getPartnerProductsWithDetails } from '../../services/partnerProductsService';
 import AdminLayout from '../../components/Admin/AdminLayout';
 import ThemeSwitcher from '../../components/ThemeSwitcher';
 import { 
@@ -100,6 +101,33 @@ export default function AdminUsers() {
     lastDistribution: string;
   }>>({});
   const [savingMetrics, setSavingMetrics] = useState<string | null>(null);
+
+  // Function to fetch real product counts for a partner
+  const fetchPartnerProductCounts = async (partnerId: string) => {
+    try {
+      const products = await getPartnerProductsWithDetails(partnerId);
+      const totalProducts = products.length;
+      const activeProducts = products.filter(p => p.is_active).length;
+      
+      return { totalProducts, activeProducts };
+    } catch (error) {
+      console.error('Error fetching partner product counts:', error);
+      return { totalProducts: 0, activeProducts: 0 };
+    }
+  };
+
+  // Function to update partner metrics with real product counts
+  const updatePartnerMetricsWithProducts = async (partnerId: string) => {
+    const productCounts = await fetchPartnerProductCounts(partnerId);
+    
+    setPartnerMetrics(prev => ({
+      ...prev,
+      [partnerId]: {
+        ...prev[partnerId],
+        ...productCounts
+      }
+    }));
+  };
 
   useEffect(() => {
     if (userProfile?.user_type !== 'admin') {
@@ -453,7 +481,10 @@ export default function AdminUsers() {
       }
 
       if (partnerProfile) {
-        // Update local state with database values
+        // Fetch real product counts from partner_products table
+        const productCounts = await fetchPartnerProductCounts(user.id);
+        
+        // Update local state with database values and real product counts
         setPartnerMetrics(prev => ({
           ...prev,
           [user.id]: {
@@ -465,8 +496,8 @@ export default function AdminUsers() {
             },
             storeCreditScore: partnerProfile.store_credit_score || 750,
             storeRating: partnerProfile.store_rating || 0,
-            totalProducts: partnerProfile.total_products || 0,
-            activeProducts: partnerProfile.active_products || 0,
+            totalProducts: productCounts.totalProducts, // Real count from inventory
+            activeProducts: productCounts.activeProducts, // Real count from inventory
             commissionRate: partnerProfile.commission_rate || 0.10,
             isVerified: partnerProfile.is_verified || false,
             isActive: partnerProfile.is_active !== false // default to true
@@ -1404,6 +1435,14 @@ export default function AdminUsers() {
                           <Package className="w-5 h-5" />
                           Products
                         </h3>
+                        <button
+                          onClick={() => updatePartnerMetricsWithProducts(selectedUser.id)}
+                          className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors flex items-center gap-1"
+                          title="Refresh product counts from inventory"
+                        >
+                          <RefreshCw className="w-3 h-3" />
+                          Refresh
+                        </button>
                       </div>
                       <div className="space-y-3">
                         {[
@@ -1415,7 +1454,7 @@ export default function AdminUsers() {
                               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                                 {label}
                               </label>
-                              <span className="text-xs text-gray-500">Fetched from database</span>
+                              <span className="text-xs text-gray-500">From partner inventory</span>
                             </div>
                             <div className="relative">
                               <input
@@ -1429,6 +1468,9 @@ export default function AdminUsers() {
                             </div>
                           </div>
                         ))}
+                        <div className="text-xs text-gray-500 dark:text-gray-400 bg-blue-50 dark:bg-blue-900/20 p-2 rounded border border-blue-200 dark:border-blue-800">
+                          💡 Product counts are fetched from the partner's actual inventory at https://www.athub.store/partner/dashboard/inventory
+                        </div>
                       </div>
                     </div>
 
