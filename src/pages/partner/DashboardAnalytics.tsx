@@ -81,6 +81,13 @@ export default function DashboardAnalytics() {
   const loadAnalytics = async () => {
     if (!userProfile?.id) return;
     
+    console.log('=== DEBUGGING USER PROFILE ===');
+    console.log('userProfile:', userProfile);
+    console.log('userProfile.id:', userProfile.id);
+    console.log('userProfile.email:', userProfile.email);
+    console.log('userProfile.user_type:', userProfile.user_type);
+    console.log('=== END USER PROFILE DEBUG ===');
+    
     setLoading(true);
     setError(null);
     
@@ -142,14 +149,39 @@ export default function DashboardAnalytics() {
       }
 
       // 5.5. Get real store visits from store_visits table
+      console.log('=== DEBUGGING STORE VISITS ===');
       console.log('Fetching store visits for partner:', userProfile.id);
+      console.log('User profile type:', userProfile.user_type);
+      console.log('User profile email:', userProfile.email);
+      
       const { data: visitsData, error: visitsError } = await supabase
         .from('store_visits')
-        .select('*')
-        .eq('partner_id', userProfile.id);
+        .select('id, partner_id, created_at')
+        .eq('partner_id', userProfile.id)
+        .order('created_at', { ascending: false });
 
       console.log('Store visits data:', visitsData);
       console.log('Store visits error:', visitsError);
+      console.log('Store visits data length:', visitsData?.length || 0);
+      
+      // Additional debugging: Check if there are any visits at all
+      const { data: allVisits, error: allVisitsError } = await supabase
+        .from('store_visits')
+        .select('partner_id, COUNT(*) as count')
+        .eq('partner_id', userProfile.id);
+
+      console.log('All visits query result:', allVisits);
+      console.log('All visits query error:', allVisitsError);
+      
+      // Check if there are visits for different partner_id
+      const { data: anyVisits, error: anyVisitsError } = await supabase
+        .from('store_visits')
+        .select('partner_id, COUNT(*) as count')
+        .limit(5);
+
+      console.log('Any visits in database:', anyVisits);
+      console.log('Any visits error:', anyVisitsError);
+      console.log('=== END DEBUGGING ===');
 
       if (visitsError && visitsError.code !== 'PGRST116') {
         console.warn('Could not load store visits:', visitsError);
