@@ -1492,7 +1492,7 @@ export default function AdminUsers() {
                                 min="0"
                                 max={max}
                                 step={step}
-                                value={partnerMetrics[selectedUser.id]?.[key] || 0}
+                                value={String(partnerMetrics[selectedUser.id]?.[key] || 0)}
                                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900/50 text-gray-700 dark:text-gray-300 cursor-not-allowed"
                               />
                               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent dark:via-gray-800/5 rounded-lg pointer-events-none" />
@@ -1515,7 +1515,7 @@ export default function AdminUsers() {
                               min="0"
                               max="100"
                               step="0.01"
-                              value={((partnerMetrics[selectedUser.id]?.commissionRate || 0) * 100).toFixed(2)}
+                              value={String(((partnerMetrics[selectedUser.id]?.commissionRate || 0) * 100).toFixed(2))}
                               onChange={(e) => {
                                 const value = parseFloat(e.target.value) || 0;
                                 setPartnerMetrics(prev => ({
@@ -1569,7 +1569,7 @@ export default function AdminUsers() {
                                 type="number"
                                 readOnly
                                 min="0"
-                                value={partnerMetrics[selectedUser.id]?.[key] || 0}
+                                value={String(partnerMetrics[selectedUser.id]?.[key] || 0)}
                                 className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900/50 text-gray-700 dark:text-gray-300 cursor-not-allowed"
                               />
                               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent dark:via-gray-800/5 rounded-lg pointer-events-none" />
