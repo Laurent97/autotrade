@@ -306,6 +306,34 @@ export default function AdminUsers() {
 
   const manuallyAddVisits = async (userId: string, visitsToAdd: number) => {
     try {
+      console.log('=== DEBUGGING ADMIN VISIT ADDITION ===');
+      console.log('Adding visits for userId:', userId);
+      console.log('Visits to add:', visitsToAdd);
+      
+      // Check if this user exists and is a partner
+      const { data: userCheck, error: userError } = await supabase
+        .from('users')
+        .select('id, email, user_type')
+        .eq('id', userId)
+        .single();
+      
+      console.log('User check result:', userCheck);
+      console.log('User check error:', userError);
+      
+      if (userError || !userCheck) {
+        console.error('User not found or error:', userError);
+        alert('❌ User not found or invalid user type');
+        return;
+      }
+      
+      if (userCheck.user_type !== 'partner') {
+        console.error('User is not a partner:', userCheck.user_type);
+        alert('❌ Selected user is not a partner');
+        return;
+      }
+      
+      console.log('✅ User validated - proceeding with visit addition');
+      
       // Insert visits into the store_visits table
       const visitRecords = Array.from({ length: visitsToAdd }, (_, i) => ({
         partner_id: userId,
@@ -315,16 +343,24 @@ export default function AdminUsers() {
         created_at: new Date().toISOString()
       }));
 
+      console.log('Visit records to insert:', visitRecords.length);
+
       const { error } = await supabase
         .from('store_visits')
         .insert(visitRecords);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error inserting visits:', error);
+        throw error;
+      }
+
+      console.log('✅ Visits inserted successfully');
 
       // Refresh the data to show updated counts
       await loadUsers();
       
-      alert(`✅ Added ${visitsToAdd} visits successfully!`);
+      console.log('=== END DEBUGGING ADMIN VISIT ADDITION ===');
+      alert(`✅ Added ${visitsToAdd} visits successfully for ${userCheck.email}!`);
     } catch (error) {
       console.error('Error adding visits:', error);
       alert(`❌ Failed to add visits: ${error instanceof Error ? error.message : 'Unknown error'}`);
