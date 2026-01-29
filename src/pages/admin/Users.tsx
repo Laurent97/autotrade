@@ -444,6 +444,7 @@ export default function AdminUsers() {
   const updatePartnerMetrics = async (userId: string, metrics: any) => {
     try {
       console.log('Updating partner metrics for user:', userId);
+      console.log('Metrics data:', metrics);
       
       const { error: updateError } = await supabase
         .from('partner_profiles')
@@ -460,7 +461,10 @@ export default function AdminUsers() {
         })
         .eq('user_id', userId);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('Database update error:', updateError);
+        throw updateError;
+      }
 
       // Update local state
       setPartnerMetrics(prev => ({
@@ -472,9 +476,21 @@ export default function AdminUsers() {
       }));
 
       setShowPartnerMetricsModal(false);
-      alert('Partner metrics updated successfully!');
+      alert('✅ Partner metrics updated successfully!');
     } catch (error) {
-  }
+      console.error('Error updating partner metrics:', error);
+      alert(`❌ Failed to update partner metrics: ${error.message || 'Unknown error'}`);
+    }
+  };
+
+const calculateVisitsPerUnit = (totalVisits: number, timePeriod: 'hour' | 'minute' | 'second') => {
+  const totalUnits = 24; // 24 hours
+  const unitsPerPeriod = timePeriod === 'hour' ? 1 : 
+                        timePeriod === 'minute' ? 60 : 
+                        3600; // seconds per hour
+  
+  const totalPeriods = totalUnits * unitsPerPeriod;
+  return Math.floor(totalVisits / totalPeriods);
 };
 
 const startVisitDistribution = async (userId: string, totalVisits: number, timePeriod: 'hour' | 'minute' | 'second') => {
@@ -877,6 +893,14 @@ return (
                             >
                               💰 Adjust Balance
                             </button>
+                            {user.user_type === 'partner' && (
+                              <button
+                                onClick={() => openPartnerMetricsModal(user)}
+                                className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-left font-medium flex items-center gap-1 transition-colors"
+                              >
+                                📊 Partner Metrics
+                              </button>
+                            )}
                             <button
                               onClick={() => deleteUser(user.id)}
                               className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 text-left font-medium flex items-center gap-1 transition-colors"
@@ -1094,6 +1118,301 @@ return (
           </div>
         </div>
       )}
+
+      {/* Partner Metrics Modal */}
+      {showPartnerMetricsModal && selectedUser && (
+        <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  Partner Metrics: {selectedUser.email}
+                </h2>
+                <button
+                  onClick={() => setShowPartnerMetricsModal(false)}
+                  className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 text-2xl"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Store Visits */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Store Visits</h3>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Today</label>
+                      <input
+                        type="number"
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                        placeholder="0"
+                        onChange={(e) => {
+                          const value = parseInt(e.target.value) || 0;
+                          setPartnerMetrics(prev => ({
+                            ...prev,
+                            [selectedUser.id]: {
+                              ...prev[selectedUser.id],
+                              storeVisits: {
+                                ...prev[selectedUser.id]?.storeVisits,
+                                today: value
+                              }
+                            }
+                          }));
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">This Week</label>
+                      <input
+                        type="number"
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                        placeholder="0"
+                        onChange={(e) => {
+                          const value = parseInt(e.target.value) || 0;
+                          setPartnerMetrics(prev => ({
+                            ...prev,
+                            [selectedUser.id]: {
+                              ...prev[selectedUser.id],
+                              storeVisits: {
+                                ...prev[selectedUser.id]?.storeVisits,
+                                thisWeek: value
+                              }
+                            }
+                          }));
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">This Month</label>
+                      <input
+                        type="number"
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                        placeholder="0"
+                        onChange={(e) => {
+                          const value = parseInt(e.target.value) || 0;
+                          setPartnerMetrics(prev => ({
+                            ...prev,
+                            [selectedUser.id]: {
+                              ...prev[selectedUser.id],
+                              storeVisits: {
+                                ...prev[selectedUser.id]?.storeVisits,
+                                thisMonth: value
+                              }
+                            }
+                          }));
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">All Time</label>
+                      <input
+                        type="number"
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                        placeholder="0"
+                        onChange={(e) => {
+                          const value = parseInt(e.target.value) || 0;
+                          setPartnerMetrics(prev => ({
+                            ...prev,
+                            [selectedUser.id]: {
+                              ...prev[selectedUser.id],
+                              storeVisits: {
+                                ...prev[selectedUser.id]?.storeVisits,
+                                allTime: value
+                              }
+                            }
+                          }));
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Store Performance */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Store Performance</h3>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Credit Score</label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="1000"
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                        placeholder="750"
+                        onChange={(e) => {
+                          const value = parseInt(e.target.value) || 0;
+                          setPartnerMetrics(prev => ({
+                            ...prev,
+                            [selectedUser.id]: {
+                              ...prev[selectedUser.id],
+                              storeCreditScore: value
+                            }
+                          }));
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Store Rating</label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="5"
+                        step="0.1"
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                        placeholder="4.5"
+                        onChange={(e) => {
+                          const value = parseFloat(e.target.value) || 0;
+                          setPartnerMetrics(prev => ({
+                            ...prev,
+                            [selectedUser.id]: {
+                              ...prev[selectedUser.id],
+                              storeRating: value
+                            }
+                          }));
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Commission Rate (%)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="0.01"
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                        placeholder="10.00"
+                        onChange={(e) => {
+                          const value = parseFloat(e.target.value) || 0;
+                          setPartnerMetrics(prev => ({
+                            ...prev,
+                            [selectedUser.id]: {
+                              ...prev[selectedUser.id],
+                              commissionRate: value / 100
+                            }
+                          }));
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Products */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Products</h3>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Total Products</label>
+                      <input
+                        type="number"
+                        min="0"
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                        placeholder="0"
+                        onChange={(e) => {
+                          const value = parseInt(e.target.value) || 0;
+                          setPartnerMetrics(prev => ({
+                            ...prev,
+                            [selectedUser.id]: {
+                              ...prev[selectedUser.id],
+                              totalProducts: value
+                            }
+                          }));
+                        }}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Active Products</label>
+                      <input
+                        type="number"
+                        min="0"
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
+                        placeholder="0"
+                        onChange={(e) => {
+                          const value = parseInt(e.target.value) || 0;
+                          setPartnerMetrics(prev => ({
+                            ...prev,
+                            [selectedUser.id]: {
+                              ...prev[selectedUser.id],
+                              activeProducts: value
+                            }
+                          }));
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Status */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Status</h3>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                          defaultChecked={selectedUser.partner_status === 'approved'}
+                          onChange={(e) => {
+                            setPartnerMetrics(prev => ({
+                              ...prev,
+                              [selectedUser.id]: {
+                                ...prev[selectedUser.id],
+                                isVerified: e.target.checked
+                              }
+                            }));
+                          }}
+                        />
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Verified Partner</span>
+                      </label>
+                    </div>
+                    <div>
+                      <label className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                          defaultChecked={true}
+                          onChange={(e) => {
+                            setPartnerMetrics(prev => ({
+                              ...prev,
+                              [selectedUser.id]: {
+                                ...prev[selectedUser.id],
+                                isActive: e.target.checked
+                              }
+                            }));
+                          }}
+                        />
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Active Partner</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-3 pt-6">
+                <button
+                  onClick={() => setShowPartnerMetricsModal(false)}
+                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    const metrics = partnerMetrics[selectedUser.id];
+                    if (metrics) {
+                      updatePartnerMetrics(selectedUser.id, metrics);
+                    } else {
+                      alert('Please make some changes before saving');
+                    }
+                  }}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+                >
+                  Update Metrics
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </AdminLayout>
   );
-}
+};
