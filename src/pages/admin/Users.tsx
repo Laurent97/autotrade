@@ -446,19 +446,42 @@ export default function AdminUsers() {
       console.log('Updating partner metrics for user:', userId);
       console.log('Metrics data:', metrics);
       
+      // Build update object dynamically to handle missing columns
+      const updateData: any = {
+        updated_at: new Date().toISOString()
+      };
+      
+      // Only include fields that exist in the database
+      if (metrics.storeVisits) {
+        updateData.store_visits = metrics.storeVisits;
+      }
+      if (metrics.storeCreditScore !== undefined) {
+        updateData.store_credit_score = metrics.storeCreditScore;
+      }
+      if (metrics.storeRating !== undefined) {
+        updateData.store_rating = metrics.storeRating;
+      }
+      if (metrics.totalProducts !== undefined) {
+        updateData.total_products = metrics.totalProducts;
+      }
+      if (metrics.activeProducts !== undefined) {
+        updateData.active_products = metrics.activeProducts;
+      }
+      if (metrics.commissionRate !== undefined) {
+        updateData.commission_rate = metrics.commissionRate;
+      }
+      if (metrics.isVerified !== undefined) {
+        updateData.is_verified = metrics.isVerified;
+      }
+      if (metrics.isActive !== undefined) {
+        updateData.is_active = metrics.isActive;
+      }
+      
+      console.log('Final update data:', updateData);
+      
       const { error: updateError } = await supabase
         .from('partner_profiles')
-        .update({
-          store_visits: metrics.storeVisits,
-          store_credit_score: metrics.storeCreditScore,
-          store_rating: metrics.storeRating,
-          total_products: metrics.totalProducts,
-          active_products: metrics.activeProducts,
-          commission_rate: metrics.commissionRate,
-          is_verified: metrics.isVerified,
-          is_active: metrics.isActive,
-          updated_at: new Date().toISOString()
-        })
+        .update(updateData)
         .eq('user_id', userId);
 
       if (updateError) {
@@ -476,10 +499,10 @@ export default function AdminUsers() {
       }));
 
       setShowPartnerMetricsModal(false);
-      alert('✅ Partner metrics updated successfully!');
+      alert(' Partner metrics updated successfully!');
     } catch (error) {
       console.error('Error updating partner metrics:', error);
-      alert(`❌ Failed to update partner metrics: ${error.message || 'Unknown error'}`);
+      alert(` Failed to update partner metrics: ${error.message || 'Unknown error'}`);
     }
   };
 
