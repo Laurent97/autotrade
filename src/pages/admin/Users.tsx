@@ -99,6 +99,7 @@ export default function AdminUsers() {
     isActive: boolean;
     lastDistribution: string;
   }>>({});
+  const [savingMetrics, setSavingMetrics] = useState<string | null>(null);
 
   useEffect(() => {
     if (userProfile?.user_type !== 'admin') {
@@ -161,16 +162,16 @@ export default function AdminUsers() {
             partnersData?.forEach((partner: any) => {
               metricsMap[partner.user_id] = {
                 storeVisits: {
-                  today: Math.floor(Math.random() * 100) + 50,
-                  thisWeek: Math.floor(Math.random() * 500) + 200,
-                  thisMonth: Math.floor(Math.random() * 2000) + 800,
-                  lastMonth: Math.floor(Math.random() * 1800) + 700,
-                  allTime: Math.floor(Math.random() * 10000) + 5000
+                  today: partner.store_visits?.today || Math.floor(Math.random() * 100) + 50,
+                  thisWeek: partner.store_visits?.thisWeek || Math.floor(Math.random() * 500) + 200,
+                  thisMonth: partner.store_visits?.thisMonth || Math.floor(Math.random() * 2000) + 800,
+                  lastMonth: partner.store_visits?.lastMonth || Math.floor(Math.random() * 1800) + 700,
+                  allTime: partner.store_visits?.allTime || Math.floor(Math.random() * 10000) + 5000
                 },
-                storeCreditScore: Math.floor(Math.random() * 200) + 600,
-                storeRating: parseFloat((Math.random() * 2 + 3).toFixed(1)),
-                totalProducts: Math.floor(Math.random() * 50) + 10,
-                activeProducts: Math.floor(Math.random() * 40) + 5,
+                storeCreditScore: partner.store_credit_score || Math.floor(Math.random() * 200) + 600,
+                storeRating: partner.store_rating || parseFloat((Math.random() * 2 + 3).toFixed(1)),
+                totalProducts: partner.total_products || Math.floor(Math.random() * 50) + 10,
+                activeProducts: partner.active_products || Math.floor(Math.random() * 40) + 5,
                 commissionRate: partner.commission_rate || 0.10,
                 totalEarnings: partner.total_earnings || 0,
                 pendingBalance: partner.pending_balance || 0,
@@ -481,41 +482,28 @@ export default function AdminUsers() {
 
   const updatePartnerMetrics = async (userId: string, metrics: any) => {
     try {
+      setSavingMetrics(userId);
       console.log('Updating partner metrics for user:', userId);
-      console.log('Metrics data:', metrics);
       
-      // Build update object dynamically to handle missing columns
+      // Build update object
       const updateData: any = {
+        store_visits: metrics.storeVisits || {
+          today: 0,
+          thisWeek: 0,
+          thisMonth: 0,
+          allTime: 0
+        },
+        store_credit_score: metrics.storeCreditScore || 750,
+        store_rating: metrics.storeRating || 0,
+        total_products: metrics.totalProducts || 0,
+        active_products: metrics.activeProducts || 0,
+        commission_rate: metrics.commissionRate || 0.10,
+        is_verified: metrics.isVerified || false,
+        is_active: metrics.isActive !== false,
         updated_at: new Date().toISOString()
       };
       
-      // Only include fields that exist in the database
-      if (metrics.storeVisits) {
-        updateData.store_visits = metrics.storeVisits;
-      }
-      if (metrics.storeCreditScore !== undefined) {
-        updateData.store_credit_score = metrics.storeCreditScore;
-      }
-      if (metrics.storeRating !== undefined) {
-        updateData.store_rating = metrics.storeRating;
-      }
-      if (metrics.totalProducts !== undefined) {
-        updateData.total_products = metrics.totalProducts;
-      }
-      if (metrics.activeProducts !== undefined) {
-        updateData.active_products = metrics.activeProducts;
-      }
-      if (metrics.commissionRate !== undefined) {
-        updateData.commission_rate = metrics.commissionRate;
-      }
-      if (metrics.isVerified !== undefined) {
-        updateData.is_verified = metrics.isVerified;
-      }
-      if (metrics.isActive !== undefined) {
-        updateData.is_active = metrics.isActive;
-      }
-      
-      console.log('Final update data:', updateData);
+      console.log('Updating partner metrics with data:', updateData);
       
       const { error: updateError } = await supabase
         .from('partner_profiles')
@@ -527,7 +515,7 @@ export default function AdminUsers() {
         throw updateError;
       }
 
-      // Update local state
+      // Update local state immediately
       setPartnerMetrics(prev => ({
         ...prev,
         [userId]: {
@@ -536,248 +524,252 @@ export default function AdminUsers() {
         }
       }));
 
-      setShowPartnerMetricsModal(false);
-      alert(' Partner metrics updated successfully!');
-    } catch (error) {
+      setTimeout(() => {
+        setSavingMetrics(null);
+        setShowPartnerMetricsModal(false);
+        alert('✅ Partner metrics updated successfully!');
+      }, 500);
+    } catch (error: any) {
       console.error('Error updating partner metrics:', error);
-      alert(` Failed to update partner metrics: ${error.message || 'Unknown error'}`);
+      setSavingMetrics(null);
+      alert(`❌ Failed to update partner metrics: ${error.message || 'Unknown error'}`);
     }
   };
 
-const calculateVisitsPerUnit = (totalVisits: number, timePeriod: 'hour' | 'minute' | 'second') => {
-  const totalUnits = 24; // 24 hours
-  const unitsPerPeriod = timePeriod === 'hour' ? 1 : 
-                        timePeriod === 'minute' ? 60 : 
-                        3600; // seconds per hour
-  
-  const totalPeriods = totalUnits * unitsPerPeriod;
-  const visitsPerUnit = totalVisits / totalPeriods;
-  
-  // Return the exact value for precise distribution, not rounded down
-  return visitsPerUnit;
-};
-
-const startVisitDistribution = async (userId: string, totalVisits: number, timePeriod: 'hour' | 'minute' | 'second') => {
-  const visitsPerUnit = calculateVisitsPerUnit(totalVisits, timePeriod);
-  
-  if (visitsPerUnit <= 0) {
-    alert('Invalid configuration: Visits per unit must be greater than 0');
-    return;
-  }
-
-  // Calculate end time (24 hours from now)
-  const startTime = new Date();
-  const endTime = new Date(startTime.getTime() + (24 * 60 * 60 * 1000)); // 24 hours from now
-
-  // Create distribution record in database
-  try {
-    const { data: distributionData, error } = await supabase
-      .from('visit_distribution')
-      .insert({
-        partner_id: userId,
-        total_visits: totalVisits,
-        time_period: timePeriod,
-        visits_per_unit: visitsPerUnit,
-        is_active: true,
-        start_time: startTime.toISOString(),
-        end_time: endTime.toISOString(),
-        total_distributed: 0,
-        last_distribution: startTime.toISOString(),
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      })
-      .select()
-      .single();
-
-    if (error) throw error;
-
-    // Update local state
-    const newDistribution = {
-      totalVisits,
-      timePeriod,
-      visitsPerUnit,
-      isActive: true,
-      lastDistribution: startTime.toISOString(),
-      totalDistributed: 0,
-      startTime: startTime.toISOString(),
-      endTime: endTime.toISOString()
-    };
+  const calculateVisitsPerUnit = (totalVisits: number, timePeriod: 'hour' | 'minute' | 'second') => {
+    const totalUnits = 24; // 24 hours
+    const unitsPerPeriod = timePeriod === 'hour' ? 1 : 
+                          timePeriod === 'minute' ? 60 : 
+                          3600; // seconds per hour
     
-    setVisitDistribution(prev => ({
-      ...prev,
-      [userId]: newDistribution
-    }));
-
-    // Start the distribution process
-    startDistributionTimer(userId, newDistribution);
+    const totalPeriods = totalUnits * unitsPerPeriod;
+    const visitsPerUnit = totalVisits / totalPeriods;
     
-    alert(`Automatic visit distribution started: ${totalVisits} visits over 24 hours (${visitsPerUnit} visits per ${timePeriod})`);
-  } catch (error) {
-    console.error('Error starting visit distribution:', error);
-    alert('Failed to start visit distribution');
-  }
-};
+    // Return the exact value for precise distribution, not rounded down
+    return visitsPerUnit;
+  };
 
-const stopVisitDistribution = async (userId: string) => {
-  try {
-    // Update database to stop distribution
-    const { error } = await supabase
-      .from('visit_distribution')
-      .update({
-        is_active: false,
-        end_time: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      })
-      .eq('partner_id', userId)
-      .eq('is_active', true);
-
-    if (error) throw error;
-
-    // Update local state
-    setVisitDistribution(prev => ({
-      ...prev,
-      [userId]: {
-        ...prev[userId],
-        isActive: false,
-        endTime: new Date().toISOString()
-      }
-    }));
-
-    // Stop the timer
-    if ((window as any).visitDistributionTimers && (window as any).visitDistributionTimers[userId]) {
-      clearInterval((window as any).visitDistributionTimers[userId]);
-      delete (window as any).visitDistributionTimers[userId];
+  const startVisitDistribution = async (userId: string, totalVisits: number, timePeriod: 'hour' | 'minute' | 'second') => {
+    const visitsPerUnit = calculateVisitsPerUnit(totalVisits, timePeriod);
+    
+    if (visitsPerUnit <= 0) {
+      alert('Invalid configuration: Visits per unit must be greater than 0');
+      return;
     }
-    
-    alert('Automatic visit distribution stopped');
-  } catch (error) {
-    console.error('Error stopping visit distribution:', error);
-    alert('Failed to stop visit distribution');
-  }
-};
 
-const startDistributionTimer = (userId: string, config: any) => {
-  const intervalMs = config.timePeriod === 'hour' ? 60 * 60 * 1000 : 
-                     config.timePeriod === 'minute' ? 60 * 1000 : 
-                     1000; // seconds
+    // Calculate end time (24 hours from now)
+    const startTime = new Date();
+    const endTime = new Date(startTime.getTime() + (24 * 60 * 60 * 1000)); // 24 hours from now
 
-  // Track accumulated fractional visits
-  let accumulatedVisits = 0;
-
-  const timer = setInterval(async () => {
+    // Create distribution record in database
     try {
-      // Add fractional visits to accumulator
-      accumulatedVisits += config.visitsPerUnit;
+      const { data: distributionData, error } = await supabase
+        .from('visit_distribution')
+        .insert({
+          partner_id: userId,
+          total_visits: totalVisits,
+          time_period: timePeriod,
+          visits_per_unit: visitsPerUnit,
+          is_active: true,
+          start_time: startTime.toISOString(),
+          end_time: endTime.toISOString(),
+          total_distributed: 0,
+          last_distribution: startTime.toISOString(),
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Update local state
+      const newDistribution = {
+        totalVisits,
+        timePeriod,
+        visitsPerUnit,
+        isActive: true,
+        lastDistribution: startTime.toISOString(),
+        totalDistributed: 0,
+        startTime: startTime.toISOString(),
+        endTime: endTime.toISOString()
+      };
       
-      // Only add whole visits to the store
-      const wholeVisitsToAdd = Math.floor(accumulatedVisits);
+      setVisitDistribution(prev => ({
+        ...prev,
+        [userId]: newDistribution
+      }));
+
+      // Start the distribution process
+      startDistributionTimer(userId, newDistribution);
       
-      if (wholeVisitsToAdd > 0) {
-        // Subtract the whole visits from accumulator
-        accumulatedVisits -= wholeVisitsToAdd;
-        
-        // Add visits to partner store
-        const currentMetrics = partnerMetrics[userId];
-        if (currentMetrics) {
-          const updatedVisits = {
-            ...currentMetrics.storeVisits,
-            today: (currentMetrics.storeVisits.today || 0) + wholeVisitsToAdd,
-            thisWeek: (currentMetrics.storeVisits.thisWeek || 0) + wholeVisitsToAdd,
-            thisMonth: (currentMetrics.storeVisits.thisMonth || 0) + wholeVisitsToAdd,
-            allTime: (currentMetrics.storeVisits.allTime || 0) + wholeVisitsToAdd
-          };
-
-          // Update local state
-          setPartnerMetrics(prev => ({
-            ...prev,
-            [userId]: {
-              ...prev[userId],
-              storeVisits: updatedVisits
-            }
-          }));
-
-          // Update database
-          await supabase
-            .from('partner_profiles')
-            .update({
-              store_visits: updatedVisits,
-              updated_at: new Date().toISOString()
-            })
-            .eq('user_id', userId);
-
-          console.log(`Added ${wholeVisitsToAdd} visits to partner ${userId} (accumulated: ${accumulatedVisits.toFixed(4)})`);
-        }
-      }
+      alert(`✅ Automatic visit distribution started: ${totalVisits} visits over 24 hours (${visitsPerUnit.toFixed(4)} visits per ${timePeriod})`);
     } catch (error) {
-      console.error('Error in distribution timer:', error);
+      console.error('Error starting visit distribution:', error);
+      alert('❌ Failed to start visit distribution');
     }
-  }, intervalMs);
+  };
 
-  // Store timer reference for cleanup
-  (window as any).visitDistributionTimers = (window as any).visitDistributionTimers || {};
-  (window as any).visitDistributionTimers[userId] = timer;
-};
+  const stopVisitDistribution = async (userId: string) => {
+    try {
+      // Update database to stop distribution
+      const { error } = await supabase
+        .from('visit_distribution')
+        .update({
+          is_active: false,
+          end_time: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('partner_id', userId)
+        .eq('is_active', true);
 
-const openBalanceModal = (user: UserType) => {
-  setSelectedUser(user);
-  setBalanceUpdate({
-    userId: user.id,
-    amount: 0,
-    type: 'add',
-    reason: ''
+      if (error) throw error;
+
+      // Update local state
+      setVisitDistribution(prev => ({
+        ...prev,
+        [userId]: {
+          ...prev[userId],
+          isActive: false,
+          endTime: new Date().toISOString()
+        }
+      }));
+
+      // Stop the timer
+      if ((window as any).visitDistributionTimers && (window as any).visitDistributionTimers[userId]) {
+        clearInterval((window as any).visitDistributionTimers[userId]);
+        delete (window as any).visitDistributionTimers[userId];
+      }
+      
+      alert('✅ Automatic visit distribution stopped');
+    } catch (error) {
+      console.error('Error stopping visit distribution:', error);
+      alert('❌ Failed to stop visit distribution');
+    }
+  };
+
+  const startDistributionTimer = (userId: string, config: any) => {
+    const intervalMs = config.timePeriod === 'hour' ? 60 * 60 * 1000 : 
+                       config.timePeriod === 'minute' ? 60 * 1000 : 
+                       1000; // seconds
+
+    // Track accumulated fractional visits
+    let accumulatedVisits = 0;
+
+    const timer = setInterval(async () => {
+      try {
+        // Add fractional visits to accumulator
+        accumulatedVisits += config.visitsPerUnit;
+        
+        // Only add whole visits to the store
+        const wholeVisitsToAdd = Math.floor(accumulatedVisits);
+        
+        if (wholeVisitsToAdd > 0) {
+          // Subtract the whole visits from accumulator
+          accumulatedVisits -= wholeVisitsToAdd;
+          
+          // Add visits to partner store
+          const currentMetrics = partnerMetrics[userId];
+          if (currentMetrics) {
+            const updatedVisits = {
+              ...currentMetrics.storeVisits,
+              today: (currentMetrics.storeVisits.today || 0) + wholeVisitsToAdd,
+              thisWeek: (currentMetrics.storeVisits.thisWeek || 0) + wholeVisitsToAdd,
+              thisMonth: (currentMetrics.storeVisits.thisMonth || 0) + wholeVisitsToAdd,
+              allTime: (currentMetrics.storeVisits.allTime || 0) + wholeVisitsToAdd
+            };
+
+            // Update local state
+            setPartnerMetrics(prev => ({
+              ...prev,
+              [userId]: {
+                ...prev[userId],
+                storeVisits: updatedVisits
+              }
+            }));
+
+            // Update database
+            await supabase
+              .from('partner_profiles')
+              .update({
+                store_visits: updatedVisits,
+                updated_at: new Date().toISOString()
+              })
+              .eq('user_id', userId);
+
+            console.log(`Added ${wholeVisitsToAdd} visits to partner ${userId} (accumulated: ${accumulatedVisits.toFixed(4)})`);
+          }
+        }
+      } catch (error) {
+        console.error('Error in distribution timer:', error);
+      }
+    }, intervalMs);
+
+    // Store timer reference for cleanup
+    (window as any).visitDistributionTimers = (window as any).visitDistributionTimers || {};
+    (window as any).visitDistributionTimers[userId] = timer;
+  };
+
+  const openBalanceModal = (user: UserType) => {
+    setSelectedUser(user);
+    setBalanceUpdate({
+      userId: user.id,
+      amount: 0,
+      type: 'add',
+      reason: ''
+    });
+    setShowBalanceModal(true);
+  };
+
+  const filteredUsers = users.filter(user => {
+    const matchesSearch = 
+      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.phone?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesType = filterType === 'all' || user.user_type === filterType;
+    
+    return matchesSearch && matchesType;
   });
-  setShowBalanceModal(true);
-};
 
-const filteredUsers = users.filter(user => {
-  const matchesSearch = 
-    user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.phone?.toLowerCase().includes(searchTerm.toLowerCase());
-  
-  const matchesType = filterType === 'all' || user.user_type === filterType;
-  
-  return matchesSearch && matchesType;
-});
-
-// Color helper function for consistent styling
-const getBadgeColor = (type: string, status?: string) => {
-  if (type === 'user_type') {
-    switch (status) {
-      case 'admin':
-        return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
-      case 'partner':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
-      default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200';
+  // Color helper function for consistent styling
+  const getBadgeColor = (type: string, status?: string) => {
+    if (type === 'user_type') {
+      switch (status) {
+        case 'admin':
+          return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
+        case 'partner':
+          return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+        default:
+          return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200';
+      }
+    } else if (type === 'partner_status') {
+      switch (status) {
+        case 'approved':
+          return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+        case 'pending':
+          return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
+        case 'rejected':
+        case 'suspended':
+          return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+        default:
+          return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200';
+      }
     }
-  } else if (type === 'partner_status') {
-    switch (status) {
-      case 'approved':
-        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200';
-      case 'rejected':
-      case 'suspended':
-        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
-      default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200';
-    }
-  }
-  return '';
-};
+    return '';
+  };
 
-return (
-  <AdminLayout>
-    <div className="container mx-auto px-4 py-8">
-      {/* Welcome Header */}
-      <div className="mb-10 animate-fade-in">
-        <div className="bg-gradient-to-r from-amber-600 to-amber-700 rounded-2xl p-8 text-white shadow-lg">
-          <h1 className="text-4xl font-bold mb-2">User Management</h1>
-          <p className="text-amber-100/90 text-lg">Manage all users and their balances</p>
-          <p className="text-amber-100/70 mt-1 text-sm">View, edit, and manage customer accounts, partner profiles, and admin access</p>
+  return (
+    <AdminLayout>
+      <div className="container mx-auto px-4 py-8">
+        {/* Welcome Header */}
+        <div className="mb-10 animate-fade-in">
+          <div className="bg-gradient-to-r from-amber-600 to-amber-700 rounded-2xl p-8 text-white shadow-lg">
+            <h1 className="text-4xl font-bold mb-2">User Management</h1>
+            <p className="text-amber-100/90 text-lg">Manage all users and their balances</p>
+            <p className="text-amber-100/70 mt-1 text-sm">View, edit, and manage customer accounts, partner profiles, and admin access</p>
+          </div>
         </div>
-      </div>
 
         {/* Filters */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-md border border-gray-200 dark:border-gray-700 p-6 mb-6 animate-fade-in hover:shadow-lg transition-shadow">
@@ -1203,9 +1195,14 @@ return (
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                  Partner Metrics: {selectedUser.email}
-                </h2>
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                    Partner Metrics: {selectedUser.full_name || selectedUser.email}
+                  </h2>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    Manage partner performance metrics and analytics
+                  </p>
+                </div>
                 <button
                   onClick={() => setShowPartnerMetricsModal(false)}
                   className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 text-2xl"
@@ -1214,283 +1211,346 @@ return (
                 </button>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Store Visits */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Store Visits</h3>
-                  <div className="space-y-3">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Today (Manual Input)</label>
-                      <input
-                        type="number"
-                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
-                        placeholder="0"
-                        onChange={(e) => {
-                          const value = parseInt(e.target.value) || 0;
-                          setPartnerMetrics(prev => ({
-                            ...prev,
-                            [selectedUser.id]: {
-                              ...prev[selectedUser.id],
-                              storeVisits: {
-                                ...prev[selectedUser.id]?.storeVisits,
-                                today: value
-                              }
-                            }
-                          }));
-                        }}
-                      />
+              {/* Loading State */}
+              {loading && (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+                  <p className="mt-4 text-gray-600 dark:text-gray-400">Loading partner metrics...</p>
+                </div>
+              )}
+
+              {/* Error State */}
+              {!loading && !partnerMetrics[selectedUser.id] && (
+                <div className="text-center py-8">
+                  <AlertTriangle className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
+                  <p className="text-gray-600 dark:text-gray-400 mb-4">Unable to load partner metrics</p>
+                  <button
+                    onClick={loadUsers}
+                    className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 flex items-center gap-2 mx-auto"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    Retry
+                  </button>
+                </div>
+              )}
+
+              {/* Main Content */}
+              {!loading && partnerMetrics[selectedUser.id] && (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Store Visits Section */}
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                          <BarChart3 className="w-5 h-5" />
+                          Store Visits
+                        </h3>
+                        <span className="text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 px-2 py-1 rounded">
+                          Auto-calculated
+                        </span>
+                      </div>
+                      <div className="space-y-3">
+                        {/* Today's Visits - Manual Input */}
+                        <div>
+                          <div className="flex items-center justify-between mb-1">
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                              Today's Visits
+                            </label>
+                            <span className="text-xs text-gray-500">Manual Input</span>
+                          </div>
+                          <input
+                            type="number"
+                            min="0"
+                            value={partnerMetrics[selectedUser.id]?.storeVisits?.today || 0}
+                            onChange={(e) => {
+                              const value = parseInt(e.target.value) || 0;
+                              const currentMetrics = partnerMetrics[selectedUser.id];
+                              
+                              // Calculate week/month based on today's change
+                              const todayChange = value - (currentMetrics.storeVisits?.today || 0);
+                              
+                              setPartnerMetrics(prev => ({
+                                ...prev,
+                                [selectedUser.id]: {
+                                  ...prev[selectedUser.id],
+                                  storeVisits: {
+                                    today: value,
+                                    thisWeek: (prev[selectedUser.id]?.storeVisits?.thisWeek || 0) + todayChange,
+                                    thisMonth: (prev[selectedUser.id]?.storeVisits?.thisMonth || 0) + todayChange,
+                                    allTime: (prev[selectedUser.id]?.storeVisits?.allTime || 0) + todayChange
+                                  }
+                                }
+                              }));
+                            }}
+                            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                          />
+                        </div>
+
+                        {/* Auto-calculated Periods */}
+                        <div className="space-y-2">
+                          {[
+                            { label: 'This Week', key: 'thisWeek' },
+                            { label: 'This Month', key: 'thisMonth' },
+                            { label: 'All Time', key: 'allTime' }
+                          ].map(({ label, key }) => (
+                            <div key={key} className="relative">
+                              <div className="flex items-center justify-between mb-1">
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                  {label}
+                                </label>
+                                <span className="text-xs text-gray-500">Auto-calculated</span>
+                              </div>
+                              <input
+                                type="number"
+                                readOnly
+                                value={partnerMetrics[selectedUser.id]?.storeVisits?.[key] || 0}
+                                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900/50 text-gray-700 dark:text-gray-300 cursor-not-allowed"
+                              />
+                              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent dark:via-gray-800/5 rounded-lg pointer-events-none" />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">This Week</label>
-                      <input
-                        type="number"
-                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
-                        placeholder="0"
-                        onChange={(e) => {
-                          const value = parseInt(e.target.value) || 0;
-                          setPartnerMetrics(prev => ({
-                            ...prev,
-                            [selectedUser.id]: {
-                              ...prev[selectedUser.id],
-                              storeVisits: {
-                                ...prev[selectedUser.id]?.storeVisits,
-                                thisWeek: value
-                              }
-                            }
-                          }));
-                        }}
-                      />
+
+                    {/* Store Performance Section */}
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                          <TrendingUp className="w-5 h-5" />
+                          Store Performance
+                        </h3>
+                      </div>
+                      <div className="space-y-3">
+                        {/* Database-fetched Fields */}
+                        {[
+                          { 
+                            label: 'Store Credit Score', 
+                            key: 'storeCreditScore', 
+                            icon: <Award className="w-4 h-4" />,
+                            max: 1000 
+                          },
+                          { 
+                            label: 'Store Rating', 
+                            key: 'storeRating', 
+                            icon: <Star className="w-4 h-4" />,
+                            max: 5,
+                            step: 0.1 
+                          }
+                        ].map(({ label, key, icon, max, step = 1 }) => (
+                          <div key={key}>
+                            <div className="flex items-center justify-between mb-1">
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                                {icon}
+                                {label}
+                              </label>
+                              <span className="text-xs text-gray-500">Fetched from database</span>
+                            </div>
+                            <div className="relative">
+                              <input
+                                type="number"
+                                readOnly
+                                min="0"
+                                max={max}
+                                step={step}
+                                value={partnerMetrics[selectedUser.id]?.[key] || 0}
+                                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900/50 text-gray-700 dark:text-gray-300 cursor-not-allowed"
+                              />
+                              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent dark:via-gray-800/5 rounded-lg pointer-events-none" />
+                            </div>
+                          </div>
+                        ))}
+
+                        {/* Commission Rate - Manual Input */}
+                        <div>
+                          <div className="flex items-center justify-between mb-1">
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                              <DollarSign className="w-4 h-4" />
+                              Commission Rate
+                            </label>
+                            <span className="text-xs text-gray-500">Manual Input</span>
+                          </div>
+                          <div className="relative">
+                            <input
+                              type="number"
+                              min="0"
+                              max="100"
+                              step="0.01"
+                              value={((partnerMetrics[selectedUser.id]?.commissionRate || 0) * 100).toFixed(2)}
+                              onChange={(e) => {
+                                const value = parseFloat(e.target.value) || 0;
+                                setPartnerMetrics(prev => ({
+                                  ...prev,
+                                  [selectedUser.id]: {
+                                    ...prev[selectedUser.id],
+                                    commissionRate: value / 100
+                                  }
+                                }));
+                              }}
+                              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all pr-10"
+                            />
+                            <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400">
+                              %
+                            </span>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">This Month</label>
-                      <input
-                        type="number"
-                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
-                        placeholder="0"
-                        onChange={(e) => {
-                          const value = parseInt(e.target.value) || 0;
-                          setPartnerMetrics(prev => ({
-                            ...prev,
-                            [selectedUser.id]: {
-                              ...prev[selectedUser.id],
-                              storeVisits: {
-                                ...prev[selectedUser.id]?.storeVisits,
-                                thisMonth: value
-                              }
-                            }
-                          }));
-                        }}
-                      />
+
+                    {/* Products Section */}
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                          <Package className="w-5 h-5" />
+                          Products
+                        </h3>
+                      </div>
+                      <div className="space-y-3">
+                        {[
+                          { label: 'Total Products', key: 'totalProducts' },
+                          { label: 'Active Products', key: 'activeProducts' }
+                        ].map(({ label, key }) => (
+                          <div key={key}>
+                            <div className="flex items-center justify-between mb-1">
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                {label}
+                              </label>
+                              <span className="text-xs text-gray-500">Fetched from database</span>
+                            </div>
+                            <div className="relative">
+                              <input
+                                type="number"
+                                readOnly
+                                min="0"
+                                value={partnerMetrics[selectedUser.id]?.[key] || 0}
+                                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-900/50 text-gray-700 dark:text-gray-300 cursor-not-allowed"
+                              />
+                              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent dark:via-gray-800/5 rounded-lg pointer-events-none" />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">All Time</label>
-                      <input
-                        type="number"
-                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
-                        placeholder="0"
-                        onChange={(e) => {
-                          const value = parseInt(e.target.value) || 0;
-                          setPartnerMetrics(prev => ({
-                            ...prev,
-                            [selectedUser.id]: {
-                              ...prev[selectedUser.id],
-                              storeVisits: {
-                                ...prev[selectedUser.id]?.storeVisits,
-                                allTime: value
-                              }
-                            }
-                          }));
-                        }}
-                      />
+
+                    {/* Status Section */}
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                          <Settings className="w-5 h-5" />
+                          Status & Settings
+                        </h3>
+                      </div>
+                      <div className="space-y-3">
+                        {/* Status Toggles */}
+                        <div className="bg-gray-50 dark:bg-gray-900/30 rounded-lg p-4 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                                <UserCheck className="w-4 h-4 text-green-600 dark:text-green-400" />
+                              </div>
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                  Verified Partner
+                                </label>
+                                <p className="text-xs text-gray-500">Manual toggle</p>
+                              </div>
+                            </div>
+                            <Switch
+                              checked={partnerMetrics[selectedUser.id]?.isVerified || false}
+                              onCheckedChange={(checked) => {
+                                setPartnerMetrics(prev => ({
+                                  ...prev,
+                                  [selectedUser.id]: {
+                                    ...prev[selectedUser.id],
+                                    isVerified: checked
+                                  }
+                                }));
+                              }}
+                            />
+                          </div>
+
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                                <Activity className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                              </div>
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                                  Active Partner
+                                </label>
+                                <p className="text-xs text-gray-500">Manual toggle</p>
+                              </div>
+                            </div>
+                            <Switch
+                              checked={partnerMetrics[selectedUser.id]?.isActive !== false}
+                              onCheckedChange={(checked) => {
+                                setPartnerMetrics(prev => ({
+                                  ...prev,
+                                  [selectedUser.id]: {
+                                    ...prev[selectedUser.id],
+                                    isActive: checked
+                                  }
+                                }));
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                {/* Store Performance */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Store Performance</h3>
-                  <div className="space-y-3">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Credit Score</label>
-                      <input
-                        type="number"
-                        min="0"
-                        max="1000"
-                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
-                        placeholder="750"
-                        onChange={(e) => {
-                          const value = parseInt(e.target.value) || 0;
-                          setPartnerMetrics(prev => ({
-                            ...prev,
-                            [selectedUser.id]: {
-                              ...prev[selectedUser.id],
-                              storeCreditScore: value
-                            }
-                          }));
-                        }}
-                      />
+                  {/* Auto-save indicator */}
+                  {savingMetrics === selectedUser.id && (
+                    <div className="mt-6 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <RefreshCw className="w-4 h-4 text-blue-600 dark:text-blue-400 animate-spin" />
+                        <span className="text-sm text-blue-700 dark:text-blue-300">
+                          Saving changes to database...
+                        </span>
+                      </div>
+                      <span className="text-xs text-blue-600 dark:text-blue-400 px-2 py-1 bg-blue-100 dark:bg-blue-900 rounded">
+                        Real-time
+                      </span>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Store Rating</label>
-                      <input
-                        type="number"
-                        min="0"
-                        max="5"
-                        step="0.1"
-                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
-                        placeholder="4.5"
-                        onChange={(e) => {
-                          const value = parseFloat(e.target.value) || 0;
-                          setPartnerMetrics(prev => ({
-                            ...prev,
-                            [selectedUser.id]: {
-                              ...prev[selectedUser.id],
-                              storeRating: value
-                            }
-                          }));
-                        }}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Commission Rate (%)</label>
-                      <input
-                        type="number"
-                        min="0"
-                        max="100"
-                        step="0.01"
-                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
-                        placeholder="10.00"
-                        onChange={(e) => {
-                          const value = parseFloat(e.target.value) || 0;
-                          setPartnerMetrics(prev => ({
-                            ...prev,
-                            [selectedUser.id]: {
-                              ...prev[selectedUser.id],
-                              commissionRate: value / 100
-                            }
-                          }));
-                        }}
-                      />
-                    </div>
+                  )}
+
+                  {/* Action Buttons */}
+                  <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200 dark:border-gray-700">
+                    <button
+                      onClick={() => setShowPartnerMetricsModal(false)}
+                      className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                    >
+                      Close
+                    </button>
+                    <button
+                      onClick={() => {
+                        const metrics = partnerMetrics[selectedUser.id];
+                        if (metrics) {
+                          updatePartnerMetrics(selectedUser.id, metrics);
+                        }
+                      }}
+                      disabled={savingMetrics === selectedUser.id}
+                      className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition-all shadow-md hover:shadow-lg flex items-center gap-2"
+                    >
+                      {savingMetrics === selectedUser.id ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle className="w-4 h-4" />
+                          Update All Changes
+                        </>
+                      )}
+                    </button>
                   </div>
-                </div>
-
-                {/* Products */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Products</h3>
-                  <div className="space-y-3">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Total Products</label>
-                      <input
-                        type="number"
-                        min="0"
-                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
-                        placeholder="0"
-                        onChange={(e) => {
-                          const value = parseInt(e.target.value) || 0;
-                          setPartnerMetrics(prev => ({
-                            ...prev,
-                            [selectedUser.id]: {
-                              ...prev[selectedUser.id],
-                              totalProducts: value
-                            }
-                          }));
-                        }}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Active Products</label>
-                      <input
-                        type="number"
-                        min="0"
-                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100"
-                        placeholder="0"
-                        onChange={(e) => {
-                          const value = parseInt(e.target.value) || 0;
-                          setPartnerMetrics(prev => ({
-                            ...prev,
-                            [selectedUser.id]: {
-                              ...prev[selectedUser.id],
-                              activeProducts: value
-                            }
-                          }));
-                        }}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Status */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Status</h3>
-                  <div className="space-y-3">
-                    <div>
-                      <label className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                          defaultChecked={selectedUser.partner_status === 'approved'}
-                          onChange={(e) => {
-                            setPartnerMetrics(prev => ({
-                              ...prev,
-                              [selectedUser.id]: {
-                                ...prev[selectedUser.id],
-                                isVerified: e.target.checked
-                              }
-                            }));
-                          }}
-                        />
-                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Verified Partner</span>
-                      </label>
-                    </div>
-                    <div>
-                      <label className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                          defaultChecked={true}
-                          onChange={(e) => {
-                            setPartnerMetrics(prev => ({
-                              ...prev,
-                              [selectedUser.id]: {
-                                ...prev[selectedUser.id],
-                                isActive: e.target.checked
-                              }
-                            }));
-                          }}
-                        />
-                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Active Partner</span>
-                      </label>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex justify-end space-x-3 pt-6">
-                <button
-                  onClick={() => setShowPartnerMetricsModal(false)}
-                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => {
-                    const metrics = partnerMetrics[selectedUser.id];
-                    if (metrics) {
-                      updatePartnerMetrics(selectedUser.id, metrics);
-                    } else {
-                      alert('Please make some changes before saving');
-                    }
-                  }}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
-                >
-                  Update Metrics
-                </button>
-              </div>
+                </>
+              )}
             </div>
           </div>
         </div>
       )}
     </AdminLayout>
   );
-};
+}
