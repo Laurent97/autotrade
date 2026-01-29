@@ -587,6 +587,12 @@ export default function DashboardAnalytics() {
                 <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">
                   ${metrics.pendingBalance?.toFixed(2) || '0.00'}
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Total Revenue */}
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
                 <TrendingUp className="w-4 h-4 text-emerald-600" />
               </CardHeader>
