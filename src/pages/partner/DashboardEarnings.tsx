@@ -124,7 +124,7 @@ export default function DashboardEarnings() {
       // 1. Get partner profile first
       const { data: partnerProfile, error: profileError } = await supabase
         .from('partner_profiles')
-        .select('*, users(full_name, email)')
+        .select('*')
         .eq('user_id', userProfile.id)
         .single();
 

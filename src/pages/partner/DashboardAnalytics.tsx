@@ -87,7 +87,7 @@ export default function DashboardAnalytics() {
       // 1. Get partner profile first to get commission rate and store info
       const { data: partnerProfile, error: profileError } = await supabase
         .from('partner_profiles')
-        .select('*, users(full_name, email)')
+        .select('*')
         .eq('user_id', userProfile.id)
         .single();
 
