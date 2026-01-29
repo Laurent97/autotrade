@@ -484,6 +484,14 @@ export default function AdminUsers() {
         // Fetch real product counts from partner_products table
         const productCounts = await fetchPartnerProductCounts(user.id);
         
+        // Check for active distribution
+        const { data: activeDistribution, error: distError } = await supabase
+          .from('visit_distribution')
+          .select('*')
+          .eq('partner_id', user.id)
+          .eq('is_active', true)
+          .single();
+
         // Update local state with database values and real product counts
         setPartnerMetrics(prev => ({
           ...prev,
@@ -503,6 +511,29 @@ export default function AdminUsers() {
             isActive: partnerProfile.is_active !== false // default to true
           }
         }));
+
+        // If there's an active distribution, restart the timer
+        if (activeDistribution && !distError) {
+          const distributionConfig = {
+            totalVisits: activeDistribution.total_visits,
+            timePeriod: activeDistribution.time_period,
+            visitsPerUnit: activeDistribution.visits_per_unit,
+            isActive: true,
+            lastDistribution: activeDistribution.last_distribution,
+            totalDistributed: activeDistribution.total_distributed || 0,
+            startTime: activeDistribution.start_time,
+            endTime: activeDistribution.end_time
+          };
+          
+          // Update local state
+          setVisitDistribution(prev => ({
+            ...prev,
+            [user.id]: distributionConfig
+          }));
+
+          // Restart the timer
+          startDistributionTimer(user.id, distributionConfig);
+        }
       }
     } catch (error) {
       console.error('Error loading partner metrics:', error);
@@ -686,6 +717,7 @@ export default function AdminUsers() {
 
     // Track accumulated fractional visits
     let accumulatedVisits = 0;
+    let totalDistributed = config.totalDistributed || 0;
 
     const timer = setInterval(async () => {
       try {
@@ -698,10 +730,12 @@ export default function AdminUsers() {
         if (wholeVisitsToAdd > 0) {
           // Subtract the whole visits from accumulator
           accumulatedVisits -= wholeVisitsToAdd;
+          totalDistributed += wholeVisitsToAdd;
           
-          // Add visits to partner store
+          // Get current metrics
           const currentMetrics = partnerMetrics[userId];
           if (currentMetrics) {
+            // Calculate updated visits with cascade
             const updatedVisits = {
               ...currentMetrics.storeVisits,
               today: (currentMetrics.storeVisits.today || 0) + wholeVisitsToAdd,
@@ -710,7 +744,7 @@ export default function AdminUsers() {
               allTime: (currentMetrics.storeVisits.allTime || 0) + wholeVisitsToAdd
             };
 
-            // Update local state
+            // Update local state with cascade
             setPartnerMetrics(prev => ({
               ...prev,
               [userId]: {
@@ -719,7 +753,7 @@ export default function AdminUsers() {
               }
             }));
 
-            // Update database
+            // Update database with cascade
             await supabase
               .from('partner_profiles')
               .update({
@@ -728,8 +762,55 @@ export default function AdminUsers() {
               })
               .eq('user_id', userId);
 
-            console.log(`Added ${wholeVisitsToAdd} visits to partner ${userId} (accumulated: ${accumulatedVisits.toFixed(4)})`);
+            // Update distribution tracking
+            await supabase
+              .from('visit_distribution')
+              .update({
+                total_distributed: totalDistributed,
+                last_distribution: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              })
+              .eq('partner_id', userId)
+              .eq('is_active', true);
+
+            // Update local distribution state
+            setVisitDistribution(prev => ({
+              ...prev,
+              [userId]: {
+                ...prev[userId],
+                totalDistributed: totalDistributed,
+                lastDistribution: new Date().toISOString()
+              }
+            }));
+
+            console.log(`Added ${wholeVisitsToAdd} visits to partner ${userId} (Total distributed: ${totalDistributed})`);
           }
+        }
+        
+        // Check if we've distributed all visits
+        if (totalDistributed >= config.totalVisits) {
+          clearInterval(timer);
+          // Stop distribution in database
+          await supabase
+            .from('visit_distribution')
+            .update({
+              is_active: false,
+              end_time: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            })
+            .eq('partner_id', userId);
+          
+          // Update local state
+          setVisitDistribution(prev => ({
+            ...prev,
+            [userId]: {
+              ...prev[userId],
+              isActive: false,
+              endTime: new Date().toISOString()
+            }
+          }));
+          
+          console.log(`Distribution completed for partner ${userId}. Total: ${totalDistributed}`);
         }
       } catch (error) {
         console.error('Error in distribution timer:', error);
@@ -739,6 +820,44 @@ export default function AdminUsers() {
     // Store timer reference for cleanup
     (window as any).visitDistributionTimers = (window as any).visitDistributionTimers || {};
     (window as any).visitDistributionTimers[userId] = timer;
+  };
+
+  const manuallyAddVisits = async (userId: string, visitsToAdd: number) => {
+    try {
+      const currentMetrics = partnerMetrics[userId];
+      if (!currentMetrics) return;
+
+      const updatedVisits = {
+        ...currentMetrics.storeVisits,
+        today: (currentMetrics.storeVisits.today || 0) + visitsToAdd,
+        thisWeek: (currentMetrics.storeVisits.thisWeek || 0) + visitsToAdd,
+        thisMonth: (currentMetrics.storeVisits.thisMonth || 0) + visitsToAdd,
+        allTime: (currentMetrics.storeVisits.allTime || 0) + visitsToAdd
+      };
+
+      // Update local state
+      setPartnerMetrics(prev => ({
+        ...prev,
+        [userId]: {
+          ...prev[userId],
+          storeVisits: updatedVisits
+        }
+      }));
+
+      // Update database
+      await supabase
+        .from('partner_profiles')
+        .update({
+          store_visits: updatedVisits,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', userId);
+
+      alert(`✅ Added ${visitsToAdd} visits successfully!`);
+    } catch (error) {
+      console.error('Error adding visits:', error);
+      alert('❌ Failed to add visits');
+    }
   };
 
   const openBalanceModal = (user: UserType) => {
@@ -1536,9 +1655,6 @@ export default function AdminUsers() {
                               }}
                             />
                           </div>
-                        </div>
-                      </div>
-                    </div>
                   </div>
 
                   {/* Auto-save indicator */}
@@ -1556,43 +1672,74 @@ export default function AdminUsers() {
                     </div>
                   )}
 
-                  {/* Action Buttons */}
-                  <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200 dark:border-gray-700">
-                    <button
-                      onClick={() => setShowPartnerMetricsModal(false)}
-                      className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                    >
-                      Close
-                    </button>
-                    <button
-                      onClick={() => {
-                        const metrics = partnerMetrics[selectedUser.id];
-                        if (metrics) {
-                          updatePartnerMetrics(selectedUser.id, metrics);
-                        }
-                      }}
-                      disabled={savingMetrics === selectedUser.id}
-                      className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg transition-all shadow-md hover:shadow-lg flex items-center gap-2"
-                    >
-                      {savingMetrics === selectedUser.id ? (
-                        <>
-                          <RefreshCw className="w-4 h-4 animate-spin" />
-                          Saving...
-                        </>
+                  {/* Visit Distribution Controls */}
+                  <div className="mt-6 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="text-sm font-semibold text-amber-800 dark:text-amber-200 flex items-center gap-2">
+                        <Activity className="w-4 h-4" />
+                        Automatic Visit Distribution
+                      </h4>
+                      {visitDistribution[selectedUser.id]?.isActive ? (
+                        <span className="text-xs bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-2 py-1 rounded">
+                          Active
+                        </span>
                       ) : (
-                        <>
-                          <CheckCircle className="w-4 h-4" />
-                          Update All Changes
-                        </>
+                        <span className="text-xs bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 px-2 py-1 rounded">
+                          Inactive
+                        </span>
                       )}
-                    </button>
+                    </div>
+                    
+                    {visitDistribution[selectedUser.id]?.isActive ? (
+                      <div className="space-y-2">
+                        <p className="text-xs text-amber-700 dark:text-amber-300">
+                          🔄 Currently distributing {visitDistribution[selectedUser.id].totalVisits} visits over 24 hours
+                        </p>
+                        <p className="text-xs text-amber-600 dark:text-amber-400">
+                          Rate: {visitDistribution[selectedUser.id].visitsPerUnit.toFixed(4)} visits per {visitDistribution[selectedUser.id].timePeriod}
+                        </p>
+                        <button
+                          onClick={() => stopVisitDistribution(selectedUser.id)}
+                          className="w-full px-3 py-2 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg transition-colors flex items-center justify-center gap-2"
+                        >
+                          <Activity className="w-4 h-4" />
+                          Stop Distribution
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <p className="text-xs text-amber-700 dark:text-amber-300">
+                          📊 Distribute today's visits ({partnerMetrics[selectedUser.id]?.storeVisits?.today || 0}) automatically over 24 hours
+                        </p>
+                        <div className="grid grid-cols-3 gap-2">
+                          <button
+                            onClick={() => startVisitDistribution(selectedUser.id, partnerMetrics[selectedUser.id]?.storeVisits?.today || 0, 'hour')}
+                            className="px-2 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs rounded-lg transition-colors"
+                          >
+                            Per Hour
+                          </button>
+                          <button
+                            onClick={() => startVisitDistribution(selectedUser.id, partnerMetrics[selectedUser.id]?.storeVisits?.today || 0, 'minute')}
+                            className="px-2 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs rounded-lg transition-colors"
+                          >
+                            Per Minute
+                          </button>
+                          <button
+                            onClick={() => startVisitDistribution(selectedUser.id, partnerMetrics[selectedUser.id]?.storeVisits?.today || 0, 'second')}
+                            className="px-2 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs rounded-lg transition-colors"
+                          >
+                            Per Second
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </>
-              )}
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      )}
-    </AdminLayout>
+      </AdminLayout>
   );
 }
+</>
