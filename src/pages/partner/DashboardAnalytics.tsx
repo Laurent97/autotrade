@@ -273,7 +273,15 @@ export default function DashboardAnalytics() {
           storeCreditScore: partnerProfile?.store_credit_score || 0,
           totalProducts: partnerProfile?.total_products || 0,
           activeProducts: partnerProfile?.active_products || 0,
-          commissionRate: partnerProfile?.commission_rate || 0.10
+          commissionRate: partnerProfile?.commission_rate || 0.10,
+          commissionEarned: earningsData?.allTime ? (earningsData.allTime * 0.10) : 0,
+          availableBalance: earningsData?.allTime || 0,
+          pendingBalance: 0,
+          thisYearEarnings: earningsData?.thisMonth || 0,
+          paidOrders: stats.paidOrders || 0,
+          pendingOrders: stats.pendingOrders || 0,
+          completedOrders: stats.completedOrders || 0,
+          cancelledOrders: stats.cancelledOrders || 0
         },
         performance: {
           topProducts: [], // TODO: Implement top products query
