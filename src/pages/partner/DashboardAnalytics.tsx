@@ -56,9 +56,23 @@ export default function DashboardAnalytics() {
     loadAnalytics();
     
     // Set up real-time updates for visit distribution
-    const interval = setInterval(() => {
-      loadRealtimeVisits();
-      checkVisitDistribution();
+    const interval = setInterval(async () => {
+      await loadRealtimeVisits();
+      await checkVisitDistribution();
+      
+      // Recalculate analytics with new visit data
+      if (analytics && visitDistribution) {
+        const calculatedVisits = calculateRealtimeVisits(visitDistribution, analytics.metrics.storeVisits);
+        setAnalytics(prev => ({
+          ...prev,
+          metrics: {
+            ...prev.metrics,
+            storeVisits: calculatedVisits,
+            totalViews: calculatedVisits.allTime || 0,
+            conversionRate: calculatedVisits.thisMonth > 0 ? ((prev.metrics.totalSales || 0) / calculatedVisits.thisMonth) * 100 : 0
+          }
+        }));
+      }
     }, 5000); // Update every 5 seconds
 
     return () => clearInterval(interval);
@@ -235,29 +249,26 @@ export default function DashboardAnalytics() {
         allTime: 0
       };
       
+      // Check for active visit distribution first
+      await checkVisitDistribution();
+      
+      // Use real-time visit calculation if distribution is active
+      const calculatedVisits = calculateRealtimeVisits(visitDistribution, realStoreVisits);
+      
       // Set comprehensive analytics data with real values
       setAnalytics({
         metrics: {
-          totalViews: realStoreVisits.allTime || 0,
+          totalViews: calculatedVisits.allTime || 0,
           totalSales: stats.totalOrders || 0,
           totalRevenue: earningsData?.allTime || 0,
-          conversionRate: realStoreVisits.thisMonth > 0 ? ((stats.totalOrders || 0) / realStoreVisits.thisMonth) * 100 : 0,
+          conversionRate: calculatedVisits.thisMonth > 0 ? ((stats.totalOrders || 0) / calculatedVisits.thisMonth) * 100 : 0,
           avgOrderValue: earningsData?.averageOrderValue || 0,
           thisMonthEarnings: earningsData?.thisMonth || 0,
           lastMonthEarnings: earningsData?.lastMonth || 0,
-          thisYearEarnings: earningsData?.thisYear || 0,
-          availableBalance: walletData?.balance || 0,
-          pendingBalance: earningsData?.pendingBalance || 0,
-          commissionEarned: earningsData?.commissionEarned || 0,
-          totalOrders: stats.totalOrders || 0,
-          paidOrders: stats.paidOrders || 0,
-          pendingOrders: stats.pendingOrders || 0,
-          completedOrders: stats.completedOrders || 0,
-          cancelledOrders: stats.cancelledOrders || 0,
           todayEarnings: realDailyEarnings.length > 0 ? realDailyEarnings[realDailyEarnings.length - 1]?.earnings || 0 : 0,
           last7DaysEarnings: realDailyEarnings.slice(-7).reduce((sum, day) => sum + (day.earnings || 0), 0),
           last30DaysEarnings: realDailyEarnings.reduce((sum, day) => sum + (day.earnings || 0), 0),
-          storeVisits: realStoreVisits,
+          storeVisits: calculatedVisits,
           storeRating: partnerProfile?.store_rating || 0,
           storeCreditScore: partnerProfile?.store_credit_score || 0,
           totalProducts: partnerProfile?.total_products || 0,
@@ -310,6 +321,51 @@ export default function DashboardAnalytics() {
     } catch (err) {
       console.error('Error loading realtime visits:', err);
     }
+  };
+
+  // Calculate real-time visits based on distribution settings
+  const calculateRealtimeVisits = (distribution: any, baseVisits: any) => {
+    if (!distribution || !distribution.is_active) {
+      return baseVisits;
+    }
+
+    const now = new Date();
+    const startTime = new Date(distribution.start_time);
+    const endTime = new Date(distribution.end_time);
+    
+    // If distribution hasn't started yet, return 0
+    if (now < startTime) {
+      return {
+        today: 0,
+        thisWeek: 0,
+        thisMonth: 0,
+        allTime: baseVisits?.allTime || 0
+      };
+    }
+    
+    // If distribution has ended, return total target
+    if (now >= endTime) {
+      return {
+        today: distribution.total_visits,
+        thisWeek: distribution.total_visits,
+        thisMonth: distribution.total_visits,
+        allTime: (baseVisits?.allTime || 0) + distribution.total_visits
+      };
+    }
+    
+    // Calculate elapsed time and proportionate visits
+    const totalDuration = endTime.getTime() - startTime.getTime();
+    const elapsedDuration = now.getTime() - startTime.getTime();
+    const progressRatio = Math.min(elapsedDuration / totalDuration, 1);
+    
+    const accumulatedVisits = Math.floor(distribution.total_visits * progressRatio);
+    
+    return {
+      today: accumulatedVisits,
+      thisWeek: accumulatedVisits,
+      thisMonth: accumulatedVisits,
+      allTime: (baseVisits?.allTime || 0) + accumulatedVisits
+    };
   };
 
   // Check for active visit distribution
@@ -784,44 +840,54 @@ export default function DashboardAnalytics() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="text-center p-4 relative">
                     <div className="text-2xl font-bold text-orange-600">
-                      {realtimeVisits?.visits?.today || metrics.storeVisits?.today || 0}
+                      {metrics.storeVisits?.today || 0}
                     </div>
                     <p className="text-sm text-muted-foreground">Today</p>
-                    {visitDistribution && (
-                      <div className="absolute top-2 right-2">
-                        <Zap className="w-3 h-3 text-emerald-500 animate-pulse" />
+                    {visitDistribution && visitDistribution.is_active && (
+                      <div className="absolute -top-2 -right-2">
+                        <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse" title="Live visit distribution active" />
                       </div>
                     )}
                   </div>
                   <div className="text-center p-4">
                     <div className="text-2xl font-bold text-blue-600">
-                      {realtimeVisits?.visits?.thisWeek || metrics.storeVisits?.thisWeek || 0}
+                      {metrics.storeVisits?.thisWeek || 0}
                     </div>
                     <p className="text-sm text-muted-foreground">This Week</p>
                   </div>
                   <div className="text-center p-4">
                     <div className="text-2xl font-bold text-purple-600">
-                      {realtimeVisits?.visits?.thisMonth || metrics.storeVisits?.thisMonth || 0}
+                      {metrics.storeVisits?.thisMonth || 0}
                     </div>
                     <p className="text-sm text-muted-foreground">This Month</p>
                   </div>
                   <div className="text-center p-4">
                     <div className="text-2xl font-bold text-green-600">
-                      {realtimeVisits?.visits?.allTime || metrics.storeVisits?.allTime || 0}
+                      {metrics.storeVisits?.allTime || 0}
                     </div>
                     <p className="text-sm text-muted-foreground">All Time</p>
                   </div>
                 </div>
                 
-                {visitDistribution && (
+                {visitDistribution && visitDistribution.is_active && (
                   <div className="mt-4 p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg">
-                    <div className="flex items-center justify-between text-sm">
+                    <div className="flex items-center justify-between text-sm mb-2">
                       <span className="text-emerald-700 dark:text-emerald-300">
                         🚀 Auto-distribution active
                       </span>
                       <span className="text-xs text-emerald-600 dark:text-emerald-400">
-                        +{visitDistribution.visits_per_unit.toFixed(4)}/{visitDistribution.time_period}
+                        Target: {visitDistribution.total_visits} visitors in 24h
                       </span>
+                    </div>
+                    <div className="w-full bg-emerald-200 dark:bg-emerald-800 rounded-full h-2">
+                      <div 
+                        className="bg-emerald-500 h-2 rounded-full transition-all duration-1000"
+                        style={{ width: `${Math.min((metrics.storeVisits?.today || 0) / visitDistribution.total_visits * 100, 100)}%` }}
+                      />
+                    </div>
+                    <div className="flex justify-between text-xs text-emerald-600 dark:text-emerald-400 mt-1">
+                      <span>{metrics.storeVisits?.today || 0} visitors</span>
+                      <span>{Math.round((metrics.storeVisits?.today || 0) / visitDistribution.total_visits * 100)}% complete</span>
                     </div>
                   </div>
                 )}
