@@ -7,9 +7,9 @@ DROP POLICY IF EXISTS "Partners can view own visit distributions" ON visit_distr
 DROP POLICY IF EXISTS "Service role can insert visit distribution" ON visit_distribution;
 DROP POLICY IF EXISTS "Service role can update visit distribution" ON visit_distribution;
 
--- Update table structure if needed
+-- Update table structure if needed (using NUMERIC instead of DECIMAL)
 ALTER TABLE visit_distribution 
-ALTER COLUMN visits_per_unit TYPE DECIMAL(10,2) USING visits_per_unit::DECIMAL(10,2);
+ALTER COLUMN visits_per_unit TYPE NUMERIC(10,2) USING visits_per_unit::NUMERIC(10,2);
 
 -- Recreate RLS policies
 -- Policy for admins to manage all visit distributions
