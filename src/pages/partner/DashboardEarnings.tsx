@@ -362,7 +362,14 @@ export default function DashboardEarnings() {
             </div>
             
             <div className="flex gap-2">
-              <Button variant="outline" size="sm">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => {
+                  // TODO: Implement export functionality
+                  console.log('Export earnings data');
+                }}
+              >
                 <Download className="w-4 h-4 mr-2" />
                 Export
               </Button>
@@ -461,7 +468,14 @@ export default function DashboardEarnings() {
                 </div>
                 <p className="text-xs text-muted-foreground">Ready for withdrawal</p>
                 <div className="mt-2">
-                  <Button size="sm" className="w-full">
+                  <Button 
+                    size="sm" 
+                    className="w-full"
+                    onClick={() => {
+                      // TODO: Implement withdrawal functionality
+                      console.log('Withdraw funds:', earnings.availableBalance);
+                    }}
+                  >
                     <CreditCard className="w-4 h-4 mr-2" />
                     Withdraw
                   </Button>
@@ -557,7 +571,14 @@ export default function DashboardEarnings() {
                   <CardTitle>Earnings Trend</CardTitle>
                   <CardDescription>Monthly earnings overview for the selected period</CardDescription>
                 </div>
-                <Button variant="outline" size="sm">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => {
+                    // TODO: Implement detailed earnings view
+                    console.log('View earnings details');
+                  }}
+                >
                   <Eye className="w-4 h-4 mr-2" />
                   View Details
                 </Button>

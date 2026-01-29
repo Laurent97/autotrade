@@ -566,14 +566,20 @@ export default function AdminUsers() {
                               ✏️ Edit Info
                             </button>
                             <button
-                              onClick={() => setShowBalanceModal(true)}
+                              onClick={() => {
+  setSelectedUser(user);
+  setShowBalanceModal(true);
+}}
                               className="text-green-600 dark:text-green-400 hover:text-green-800 dark:hover:text-green-300 text-left font-medium flex items-center gap-1 transition-colors"
                             >
                               💰 Adjust Balance
                             </button>
                             {user.user_type === 'partner' && (
                               <button
-                                onClick={() => setShowPartnerMetricsModal(true)}
+                                onClick={() => {
+  setSelectedUser(user);
+  setShowPartnerMetricsModal(true);
+}}
                                 className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-left font-medium flex items-center gap-1 transition-colors"
                               >
                                 📊 Partner Metrics
