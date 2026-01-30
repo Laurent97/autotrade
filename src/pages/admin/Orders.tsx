@@ -800,7 +800,7 @@ export default function AdminOrders() {
       const { error } = await supabase
         .from('order_tracking')
         .upsert({
-          order_id: selectedOrder.id,
+          order_id: selectedOrder.order_number, // Use order_number (text) instead of id (UUID)
           partner_id: selectedOrder.partner_id, // Add partner_id so partners can see tracking
           carrier: logisticsForm.carrier,
           tracking_number: logisticsForm.tracking_number,
