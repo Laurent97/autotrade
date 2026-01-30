@@ -906,7 +906,6 @@ export default function AdminOrders() {
         .from('order_tracking')
         .upsert({
           order_id: selectedOrder.id, // Use UUID
-          order_number: selectedOrder.order_number,
           partner_id: selectedOrder.partner_id,
           carrier: logisticsForm.carrier,
           tracking_number: logisticsForm.tracking_number,
@@ -935,7 +934,6 @@ export default function AdminOrders() {
           shipping_status: logisticsForm.current_status, // Store detailed status
           tracking_number: logisticsForm.tracking_number,
           carrier: logisticsForm.carrier,
-          shipping_estimated_delivery: logisticsForm.estimated_delivery,
           updated_at: new Date().toISOString()
         })
         .eq('id', selectedOrder.id);
