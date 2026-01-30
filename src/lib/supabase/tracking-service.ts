@@ -123,12 +123,42 @@ export class TrackingService {
 
       // If we have current_status field, add it as an update
       if (tracking.current_status && updates.length === 0) {
+        // Create a meaningful update based on the current status
+        let description = `Current status: ${tracking.current_status}`;
+        let location = 'Current Location';
+        
+        // Provide better descriptions based on status
+        switch (tracking.current_status) {
+          case 'PROCESSING':
+            description = 'Order is being processed and prepared for shipment';
+            location = 'Processing Center';
+            break;
+          case 'SHIPPED':
+            description = `Package shipped via ${tracking.carrier || 'carrier'}`;
+            location = 'Distribution Center';
+            break;
+          case 'IN_TRANSIT':
+            description = 'Package is currently in transit to destination';
+            location = 'In Transit';
+            break;
+          case 'OUT_FOR_DELIVERY':
+            description = 'Package is out for delivery today';
+            location = 'Local Delivery Facility';
+            break;
+          case 'DELIVERED':
+            description = 'Package has been successfully delivered';
+            location = 'Destination';
+            break;
+          default:
+            description = `Status updated to: ${tracking.current_status}`;
+        }
+        
         updates = [{
           id: tracking.id,
           tracking_id: tracking.id,
           status: tracking.current_status,
-          description: `Current status: ${tracking.current_status}`,
-          location: 'Current Location',
+          description,
+          location,
           timestamp: tracking.updated_at || tracking.created_at
         }];
       }

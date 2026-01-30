@@ -99,6 +99,16 @@ export default function Track() {
     const statusOrder = ['processing', 'shipped', 'in_transit', 'out_for_delivery', 'delivered'];
     const currentStatusIndex = statusOrder.indexOf(trackingData.status);
     
+    // Start with actual tracking updates
+    const actualUpdates = trackingData.updates || [];
+    
+    // Create a map of status to actual update
+    const updateMap = new Map();
+    actualUpdates.forEach((update: any) => {
+      updateMap.set(update.status, update);
+    });
+    
+    // Build timeline combining actual updates and milestones
     return statusOrder.map((status, index) => {
       const statusConfig = TRACKING_STATUSES[status as keyof typeof TRACKING_STATUSES];
       const isCompleted = index < currentStatusIndex;
@@ -108,28 +118,26 @@ export default function Track() {
       let description = statusConfig.label;
       let location = null;
       
-      // Find actual update if available
-      if (trackingData.updates) {
-        const update = trackingData.updates.find((u: any) => u.status === status);
-        if (update) {
-          timestamp = update.timestamp;
-          description = update.description || statusConfig.label;
-          location = update.location;
+      // Use actual update if available
+      const actualUpdate = updateMap.get(status);
+      if (actualUpdate) {
+        timestamp = actualUpdate.timestamp;
+        description = actualUpdate.description || statusConfig.label;
+        location = actualUpdate.location;
+      } else if (isCompleted || isCurrent) {
+        // For completed/current status without update, use tracking timestamps
+        if (status === 'processing' && trackingData.created_at) {
+          timestamp = trackingData.created_at;
+          description = 'Order processed and ready for shipment';
+        } else if (status === 'delivered' && trackingData.actual_delivery) {
+          timestamp = trackingData.actual_delivery;
+          description = 'Package delivered successfully';
+        } else if (trackingData.updated_at && (isCompleted || isCurrent)) {
+          timestamp = trackingData.updated_at;
         }
       }
       
-      // Use created_at for first status if no update found
-      if (!timestamp && index === 0) {
-        timestamp = trackingData.created_at;
-      }
-      
-      // Use actual_delivery for delivered status
-      if (status === 'delivered' && trackingData.actual_delivery) {
-        timestamp = trackingData.actual_delivery;
-        description = 'Package delivered successfully';
-      }
-      
-      // Generate estimated text for future milestones
+      // Only show estimated text for future milestones
       let estimatedText = null;
       if (!isCompleted && !isCurrent) {
         if (trackingData.estimated_delivery) {
@@ -147,7 +155,8 @@ export default function Track() {
         timestamp,
         estimatedText,
         completed: isCompleted,
-        current: isCurrent
+        current: isCurrent,
+        hasActualUpdate: !!actualUpdate
       };
     });
   };
