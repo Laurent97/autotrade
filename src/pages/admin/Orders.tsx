@@ -78,6 +78,7 @@ const orderStatusMapping = {
   // Shipping
   'carrier_pickup_scheduled': 'shipped',
   'picked_up': 'shipped',
+  'in_transit': 'in_transit',
   'arrived_at_origin': 'in_transit',
   'departed_origin': 'in_transit',
   'arrived_at_sort': 'in_transit',
@@ -86,20 +87,20 @@ const orderStatusMapping = {
   'arrived_at_destination': 'in_transit',
   
   // Delivery
-  'out_for_delivery': 'shipped',
-  'delivery_attempted': 'shipped',
+  'out_for_delivery': 'out_for_delivery',
+  'delivery_attempted': 'out_for_delivery',
   'delivered': 'delivered',
   
   // Exceptions
-  'delayed': 'shipped',
-  'weather_delay': 'shipped',
-  'mechanical_delay': 'shipped',
-  'address_issue': 'shipped',
-  'customer_unavailable': 'shipped',
-  'security_delay': 'shipped',
-  'customs_hold': 'processing',
-  'damaged': 'shipped',
-  'lost': 'processing'
+  'delayed': 'in_transit',
+  'weather_delay': 'in_transit',
+  'mechanical_delay': 'in_transit',
+  'address_issue': 'issue',
+  'customer_unavailable': 'issue',
+  'security_delay': 'in_transit',
+  'customs_hold': 'hold',
+  'damaged': 'issue',
+  'lost': 'lost'
 };
 
 // Function to map detailed logistics status to main order status
@@ -851,7 +852,7 @@ export default function AdminOrders() {
     if (!selectedOrder) return;
 
     try {
-      // Map detailed logistics status to allowed database status
+      // Map detailed logistics status to database status
       const mapToDatabaseStatus = (detailedStatus: string) => {
         const statusMapping = {
           'PROCESSING': 'processing',
@@ -867,6 +868,7 @@ export default function AdminOrders() {
           
           'CARRIER_PICKUP_SCHEDULED': 'shipped',
           'PICKED_UP': 'shipped',
+          'IN_TRANSIT': 'in_transit',
           'ARRIVED_AT_ORIGIN': 'in_transit',
           'DEPARTED_ORIGIN': 'in_transit',
           'ARRIVED_AT_SORT': 'in_transit',
@@ -874,8 +876,8 @@ export default function AdminOrders() {
           'DEPARTED_SORT': 'in_transit',
           'ARRIVED_AT_DESTINATION': 'in_transit',
           
-          'OUT_FOR_DELIVERY': 'shipped', // Keep as 'shipped' since 'out_for_delivery' is not allowed in orders.status
-          'DELIVERY_ATTEMPTED': 'shipped', // Keep as 'shipped' since 'delivery_attempted' is not allowed in orders.status
+          'OUT_FOR_DELIVERY': 'out_for_delivery',
+          'DELIVERY_ATTEMPTED': 'out_for_delivery',
           
           'DELIVERED': 'delivered',
           'DELAYED': 'in_transit',
@@ -885,8 +887,8 @@ export default function AdminOrders() {
           'CUSTOMS_HOLD': 'in_transit',
           'DAMAGED': 'in_transit',
           'LOST': 'in_transit',
-          'ADDRESS_ISSUE': 'shipped', // Keep as 'shipped' since 'out_for_delivery' is not allowed in orders.status
-          'CUSTOMER_UNAVAILABLE': 'shipped' // Keep as 'shipped' since 'out_for_delivery' is not allowed in orders.status
+          'ADDRESS_ISSUE': 'out_for_delivery',
+          'CUSTOMER_UNAVAILABLE': 'out_for_delivery'
         };
         
         return statusMapping[detailedStatus as keyof typeof statusMapping] || 'processing';
@@ -903,13 +905,17 @@ export default function AdminOrders() {
       const { error: trackingError } = await supabase
         .from('order_tracking')
         .upsert({
-          order_id: selectedOrder.order_number, // Use order_number (text) instead of id (UUID)
-          partner_id: selectedOrder.partner_id, // Add partner_id so partners can see tracking
+          order_id: selectedOrder.id, // Use UUID
+          order_number: selectedOrder.order_number,
+          partner_id: selectedOrder.partner_id,
           carrier: logisticsForm.carrier,
           tracking_number: logisticsForm.tracking_number,
           estimated_delivery: logisticsForm.estimated_delivery,
-          status: databaseStatus, // Use mapped status that complies with database constraint
+          current_status: logisticsForm.current_status, // Store detailed status
+          status: databaseStatus, // Use mapped status for database constraint
           updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'order_id'
         });
 
       if (trackingError) {
@@ -917,61 +923,50 @@ export default function AdminOrders() {
         throw trackingError;
       }
 
-      // Debug logging
       console.log('🔍 Debug - logisticsForm.current_status:', logisticsForm.current_status);
       console.log('🔍 Debug - databaseStatus:', databaseStatus);
-      console.log('🔍 Debug - selectedOrder.status (before update):', selectedOrder.status);
-      console.log('🔍 Debug - selectedOrder.id:', selectedOrder.id);
-      // Map detailed logistics status to main order status
-      const mappedOrderStatus = mapToOrderStatus(logisticsForm.current_status);
-      console.log('🔍 Debug - Mapped order status:', mappedOrderStatus);
-
-      // Update orders table with both main status and shipping status
-      const { error: orderError, data: orderUpdateData } = await supabase
+      console.log('🔍 Debug - selectedOrder.status:', selectedOrder.status);
+      
+      // Update orders table with the database status
+      const { error: orderError } = await supabase
         .from('orders')
         .update({
-          status: mappedOrderStatus,
-          shipping_status: logisticsForm.current_status, // Store detailed shipping status for partner dashboard
-          tracking_number: logisticsForm.tracking_number, // Update tracking number
-          carrier: logisticsForm.carrier, // Update carrier
+          status: databaseStatus, // Use the mapped database status
+          shipping_status: logisticsForm.current_status, // Store detailed status
+          tracking_number: logisticsForm.tracking_number,
+          carrier: logisticsForm.carrier,
+          shipping_estimated_delivery: logisticsForm.estimated_delivery,
           updated_at: new Date().toISOString()
         })
-        .eq('id', selectedOrder.id)
-        .select(); // Return the updated data
+        .eq('id', selectedOrder.id);
 
       if (orderError) {
         console.error('❌ Error updating orders table:', orderError);
         throw orderError;
       }
 
-      console.log('✅ Order update successful:', orderUpdateData);
-      console.log('🔍 Debug - Updated order status:', orderUpdateData?.[0]?.status);
-
       // Also create a tracking update entry for history
       if (logisticsForm.tracking_number) {
         try {
-          // Find the tracking record for this specific order using both UUID and tracking number
           const { data: trackingRecords, error: fetchError } = await supabase
             .from('order_tracking')
             .select('id, order_id, created_at')
-            .eq('order_id', selectedOrder.id) // Use UUID order_id to find the correct tracking record
-            .eq('tracking_number', logisticsForm.tracking_number) // Also match tracking number
-            .order('created_at', { ascending: false }); // Get the most recent first
+            .eq('order_id', selectedOrder.id)
+            .eq('tracking_number', logisticsForm.tracking_number)
+            .order('created_at', { ascending: false });
 
           if (fetchError) {
             console.warn('⚠️ Could not fetch tracking records for updates:', fetchError);
-            // Don't fail the entire operation if we can't create tracking updates
           } else if (trackingRecords && trackingRecords.length > 0) {
-            // Use the most recent tracking record
             const mostRecentRecord = trackingRecords[0];
             
-            console.log(`📊 Found ${trackingRecords.length} tracking records for ${logisticsForm.tracking_number}, using most recent: ${mostRecentRecord.id}`);
+            console.log(`📊 Found ${trackingRecords.length} tracking records for order ${selectedOrder.order_number}, using most recent: ${mostRecentRecord.id}`);
             
             await supabase
               .from('tracking_updates')
               .insert({
                 tracking_id: mostRecentRecord.id,
-                status: logisticsForm.current_status, // Store detailed status in updates
+                status: logisticsForm.current_status,
                 description: `Status updated to ${logisticsForm.current_status}`,
                 location: 'Distribution Center',
                 updated_by: userProfile?.id,
@@ -980,11 +975,10 @@ export default function AdminOrders() {
             
             console.log('✅ Tracking update created successfully');
           } else {
-            console.warn('⚠️ No tracking records found for tracking number:', logisticsForm.tracking_number);
+            console.warn('⚠️ No tracking records found for order:', selectedOrder.order_number);
           }
         } catch (updateError) {
           console.warn('⚠️ Failed to create tracking update:', updateError);
-          // Don't fail the entire operation if tracking updates fail
         }
       }
 
@@ -997,13 +991,12 @@ export default function AdminOrders() {
       }
     } catch (error) {
       console.error('Error saving logistics info:', error);
-
+      
       // Extract meaningful error message
       let errorMessage = 'Failed to save shipping information';
       if (error instanceof Error) {
         errorMessage = error.message;
       } else if (typeof error === 'object' && error !== null) {
-        // Handle Supabase errors or other object errors
         if ('message' in error) {
           errorMessage = String(error.message);
         } else if ('error' in error) {
@@ -1077,6 +1070,8 @@ export default function AdminOrders() {
                       <option value="confirmed">Confirmed</option>
                       <option value="processing">Processing</option>
                       <option value="shipped">Shipped</option>
+                      <option value="in_transit">In Transit</option>
+                      <option value="out_for_delivery">Out for Delivery</option>
                       <option value="delivered">Delivered</option>
                       <option value="completed">Completed</option>
                       <option value="cancelled">Cancelled</option>
@@ -1148,7 +1143,7 @@ export default function AdminOrders() {
                   </div>
                   <div className="text-sm text-muted-foreground mb-1">Awaiting Shipment</div>
                   <div className="text-3xl font-bold text-foreground">
-                    {orders.filter(o => o.status === 'confirmed' || o.status === 'processing').length}
+                    {orders.filter(o => ['confirmed', 'processing', 'shipped', 'in_transit'].includes(o.status)).length}
                   </div>
                 </div>
 
@@ -1206,7 +1201,7 @@ export default function AdminOrders() {
                             💰 Payout
                           </th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                            � Date
+                            📅 Date
                           </th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                             ⚡ Actions
@@ -1306,7 +1301,7 @@ export default function AdminOrders() {
                                     🚚 Mark as Shipped
                                   </button>
                                 )}
-                                {order.status === 'shipped' && (
+                                {['shipped', 'in_transit', 'out_for_delivery'].includes(order.status) && (
                                   <button
                                     onClick={() => handleCompleteOrder(order)}
                                     className="text-green-600 hover:text-green-800 text-left font-medium flex items-center gap-1 transition-colors"
