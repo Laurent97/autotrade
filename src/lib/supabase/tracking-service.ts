@@ -27,6 +27,35 @@ export class TrackingService {
         throw new Error(`Database error: ${error.message}`);
       }
       
+      // Create initial tracking updates
+      const updates = [
+        {
+          tracking_id: tracking.id,
+          status: 'processing',
+          description: 'Order processed and ready for shipment',
+          location: 'Warehouse',
+          updated_by: data.adminId,
+          timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString() // 2 days ago
+        },
+        {
+          tracking_id: tracking.id,
+          status: 'shipped',
+          description: `Package shipped via ${data.carrier}`,
+          location: 'Distribution Center',
+          updated_by: data.adminId,
+          timestamp: new Date().toISOString() // Now
+        }
+      ];
+
+      const { error: updatesError } = await supabase
+        .from('tracking_updates')
+        .insert(updates);
+
+      if (updatesError) {
+        console.error('❌ Error creating tracking updates:', updatesError);
+        // Don't throw - tracking was created successfully
+      }
+      
       console.log('✅ Tracking created successfully:', tracking);
       return tracking;
     } catch (error) {

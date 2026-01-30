@@ -81,6 +81,63 @@ export default function Track() {
     );
   };
 
+  const getTrackingTimeline = (trackingData: any) => {
+    const statusOrder = ['processing', 'shipped', 'in_transit', 'out_for_delivery', 'delivered'];
+    const currentStatusIndex = statusOrder.indexOf(trackingData.status);
+    
+    return statusOrder.map((status, index) => {
+      const statusConfig = TRACKING_STATUSES[status as keyof typeof TRACKING_STATUSES];
+      const isCompleted = index < currentStatusIndex;
+      const isCurrent = index === currentStatusIndex;
+      
+      let timestamp = null;
+      let description = statusConfig.label;
+      let location = null;
+      
+      // Find actual update if available
+      if (trackingData.updates) {
+        const update = trackingData.updates.find((u: any) => u.status === status);
+        if (update) {
+          timestamp = update.timestamp;
+          description = update.description || statusConfig.label;
+          location = update.location;
+        }
+      }
+      
+      // Use created_at for first status if no update found
+      if (!timestamp && index === 0) {
+        timestamp = trackingData.created_at;
+      }
+      
+      // Use actual_delivery for delivered status
+      if (status === 'delivered' && trackingData.actual_delivery) {
+        timestamp = trackingData.actual_delivery;
+        description = 'Package delivered successfully';
+      }
+      
+      // Generate estimated text for future milestones
+      let estimatedText = null;
+      if (!isCompleted && !isCurrent) {
+        if (trackingData.estimated_delivery) {
+          estimatedText = `Estimated by ${format(new Date(trackingData.estimated_delivery), 'MMMM dd, yyyy')}`;
+        } else {
+          estimatedText = 'Pending';
+        }
+      }
+      
+      return {
+        status,
+        label: statusConfig.label,
+        description,
+        location,
+        timestamp,
+        estimatedText,
+        completed: isCompleted,
+        current: isCurrent
+      };
+    });
+  };
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Navbar />
@@ -221,43 +278,93 @@ export default function Track() {
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-6">
-                        {trackingData.updates?.map((update: any, index: number) => (
-                          <div key={update.id} className="flex gap-6">
+                        {/* Show automatic tracking milestones based on current status */}
+                        {getTrackingTimeline(trackingData).map((milestone, index) => (
+                          <div key={milestone.status} className="flex gap-6">
                             <div className="flex flex-col items-center">
                               <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-2 ${
-                                update.status === 'delivered' 
+                                milestone.completed 
                                   ? 'bg-green-100 text-green-600' 
-                                  : 'bg-primary/10 text-primary'
+                                  : milestone.current 
+                                  ? 'bg-blue-100 text-blue-600'
+                                  : 'bg-gray-100 text-gray-400'
                               }`}>
-                                {update.status === 'delivered' ? (
+                                {milestone.completed ? (
                                   <CheckCircle className="w-6 h-6" />
-                                ) : (
+                                ) : milestone.current ? (
                                   <Truck className="w-6 h-6" />
+                                ) : (
+                                  <Clock className="w-6 h-6" />
                                 )}
                               </div>
-                              {index < (trackingData.updates?.length || 0) - 1 && (
-                                <div className="w-0.5 h-16 bg-border" />
+                              {index < getTrackingTimeline(trackingData).length - 1 && (
+                                <div className={`w-0.5 h-16 ${
+                                  milestone.completed ? 'bg-green-200' : 'bg-gray-200'
+                                }`} />
                               )}
                             </div>
                             <div className="pb-6 flex-1">
                               <div className="flex items-center gap-2 mb-1">
-                                <h4 className="font-bold text-lg">{update.status}</h4>
-                                {update.location && (
+                                <h4 className={`font-bold text-lg ${
+                                  milestone.completed ? 'text-green-600' : 
+                                  milestone.current ? 'text-blue-600' : 'text-gray-400'
+                                }`}>
+                                  {milestone.label}
+                                </h4>
+                                {milestone.location && (
                                   <span className="text-sm text-muted-foreground flex items-center gap-1">
                                     <MapPin className="w-3 h-3" />
-                                    {update.location}
+                                    {milestone.location}
                                   </span>
                                 )}
                               </div>
-                              {update.description && (
-                                <p className="text-muted-foreground mb-2">{update.description}</p>
-                              )}
+                              <p className="text-muted-foreground mb-2">{milestone.description}</p>
                               <p className="text-xs text-muted-foreground">
-                                {format(new Date(update.timestamp), 'MMMM dd, yyyy at h:mm a')}
+                                {milestone.timestamp 
+                                  ? format(new Date(milestone.timestamp), 'MMMM dd, yyyy at h:mm a')
+                                  : milestone.estimatedText
+                                }
                               </p>
                             </div>
                           </div>
                         ))}
+                        
+                        {/* Show actual tracking updates if they exist */}
+                        {trackingData.updates && trackingData.updates.length > 0 && (
+                          <>
+                            <Separator className="my-6" />
+                            <h4 className="font-semibold text-lg mb-4">Detailed Updates</h4>
+                            {trackingData.updates.map((update: any, index: number) => (
+                              <div key={update.id} className="flex gap-6">
+                                <div className="flex flex-col items-center">
+                                  <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mb-2">
+                                    <Package className="w-4 h-4" />
+                                  </div>
+                                  {index < (trackingData.updates?.length || 0) - 1 && (
+                                    <div className="w-0.5 h-12 bg-border" />
+                                  )}
+                                </div>
+                                <div className="pb-4 flex-1">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <h5 className="font-semibold">{update.status}</h5>
+                                    {update.location && (
+                                      <span className="text-sm text-muted-foreground flex items-center gap-1">
+                                        <MapPin className="w-3 h-3" />
+                                        {update.location}
+                                      </span>
+                                    )}
+                                  </div>
+                                  {update.description && (
+                                    <p className="text-sm text-muted-foreground mb-1">{update.description}</p>
+                                  )}
+                                  <p className="text-xs text-muted-foreground">
+                                    {format(new Date(update.timestamp), 'MMMM dd, yyyy at h:mm a')}
+                                  </p>
+                                </div>
+                              </div>
+                            ))}
+                          </>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
