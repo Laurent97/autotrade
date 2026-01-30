@@ -81,6 +81,20 @@ export default function Track() {
     );
   };
 
+  const getStatusDescription = (status: string) => {
+    const descriptions = {
+      processing: 'Order is being prepared for shipment',
+      shipped: 'Package has been shipped and is in transit',
+      in_transit: 'Package is currently in transit to destination',
+      out_for_delivery: 'Package is out for delivery today',
+      delivered: 'Package has been successfully delivered',
+      pending: 'Order is pending processing',
+      completed: 'Order has been completed'
+    };
+    
+    return descriptions[status as keyof typeof descriptions] || 'Status update';
+  };
+
   const getTrackingTimeline = (trackingData: any) => {
     const statusOrder = ['processing', 'shipped', 'in_transit', 'out_for_delivery', 'delivered'];
     const currentStatusIndex = statusOrder.indexOf(trackingData.status);
@@ -241,6 +255,17 @@ export default function Track() {
                         </div>
                         <div className="space-y-4">
                           <div>
+                            <p className="text-sm text-muted-foreground mb-1">Current Status</p>
+                            <div className="flex items-center gap-2">
+                              {getStatusBadge(trackingData.status)}
+                              {trackingData.status && (
+                                <span className="text-sm text-muted-foreground">
+                                  {getStatusDescription(trackingData.status)}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <div>
                             <p className="text-sm text-muted-foreground mb-1">Estimated Delivery</p>
                             <p className="font-semibold">
                               {trackingData.estimated_delivery 
@@ -265,6 +290,15 @@ export default function Track() {
                           </div>
                         </div>
                       </div>
+                      
+                      {/* Show if this is basic order tracking */}
+                      {!trackingData.id || trackingData.id === trackingData.order_id ? (
+                        <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800/30">
+                          <p className="text-sm text-blue-800 dark:text-blue-300">
+                            <strong>Note:</strong> This is basic tracking information. Detailed tracking updates will appear as the package progresses through the shipping system.
+                          </p>
+                        </div>
+                      ) : null}
                     </CardContent>
                   </Card>
 

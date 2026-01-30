@@ -67,25 +67,63 @@ export class TrackingService {
   // Get tracking by tracking number (public)
   static async getTrackingByNumber(trackingNumber: string): Promise<TrackingWithUpdates | null> {
     try {
-      const { data: tracking, error: trackingError } = await supabase
+      let tracking = null;
+      
+      // First try to find in order_tracking table
+      const { data: trackingData, error: trackingError } = await supabase
         .from('order_tracking')
         .select('*')
         .eq('tracking_number', trackingNumber)
         .single();
 
-      if (trackingError || !tracking) return null;
+      if (!trackingError && trackingData) {
+        tracking = trackingData;
+      } else {
+        // If not found in order_tracking, check orders table
+        const { data: orderData, error: orderError } = await supabase
+          .from('orders')
+          .select('id, order_number, shipping_tracking_number, shipping_provider, shipping_status, shipping_address, created_at, updated_at')
+          .eq('shipping_tracking_number', trackingNumber)
+          .single();
 
-      const { data: updates, error: updatesError } = await supabase
-        .from('tracking_updates')
-        .select('*')
-        .eq('tracking_id', tracking.id)
-        .order('timestamp', { ascending: false });
+        if (!orderError && orderData) {
+          // Create a tracking-like object from order data
+          tracking = {
+            id: orderData.id,
+            order_id: orderData.order_number,
+            tracking_number: orderData.shipping_tracking_number,
+            carrier: orderData.shipping_provider,
+            status: orderData.shipping_status || 'processing',
+            shipping_method: 'standard',
+            estimated_delivery: null,
+            actual_delivery: null,
+            created_at: orderData.created_at,
+            updated_at: orderData.updated_at,
+            partner_id: null,
+            admin_id: null
+          };
+        }
+      }
 
-      if (updatesError) throw updatesError;
+      if (!tracking) return null;
+
+      // Get tracking updates if we have a proper tracking record
+      let updates = [];
+      if (tracking.id && tracking.id !== tracking.order_id) { // Only if it's a real tracking record
+        const { data: updatesData, error: updatesError } = await supabase
+          .from('tracking_updates')
+          .select('*')
+          .eq('tracking_id', tracking.id)
+          .order('timestamp', { ascending: false });
+
+        if (!updatesError) {
+          updates = updatesData || [];
+        }
+      }
 
       return {
         ...tracking,
-        updates: updates || []
+        updates
       };
     } catch (error) {
       console.error('Error fetching tracking:', error);
