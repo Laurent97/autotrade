@@ -125,9 +125,29 @@ export const payoutService = {
       };
     } catch (error) {
       console.error('❌ Error processing payout:', error);
+      
+      // Extract meaningful error message
+      let errorMessage = 'Failed to process payout';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === 'object' && error !== null) {
+        // Handle Supabase errors or other object errors
+        if ('message' in error) {
+          errorMessage = String(error.message);
+        } else if ('error' in error) {
+          errorMessage = String(error.error);
+        } else if ('details' in error) {
+          errorMessage = String(error.details);
+        } else {
+          errorMessage = JSON.stringify(error);
+        }
+      } else {
+        errorMessage = String(error);
+      }
+      
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Failed to process payout'
+        error: errorMessage
       };
     }
   }
