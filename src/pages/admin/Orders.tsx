@@ -649,53 +649,24 @@ export default function AdminOrders() {
         alert(`❌ Error: ${result.error}`);
       }
     } catch (error) {
-      console.error('Error completing order:', error);
-      alert('Failed to complete order');
-    }
-  };
-
-  const saveLogisticsInfo = async () => {
-    if (!selectedOrder) return;
-
-    if (!logisticsForm.carrier || !logisticsForm.tracking_number) {
-      alert('Please fill in all required fields');
-      return;
-    }
-
-    try {
-      // Update logistics information in order_tracking table
-      const { error } = await supabase
         .from('order_tracking')
-        .upsert({
-          order_id: selectedOrder.id, // Use UUID order_id as foreign key
-          carrier: logisticsForm.carrier,
-          tracking_number: logisticsForm.tracking_number,
-          estimated_delivery: logisticsForm.estimated_delivery, // Already in yyyy-MM-dd format from date input
-          status: logisticsForm.current_status, // Use status directly - database constraint now supports all logistics statuses
-          updated_at: new Date().toISOString()
-        }, {
+        .update(trackingData)
+        .eq('order_id', selectedOrder.id);
+    } else {
+      // Insert new tracking - use upsert to handle conflicts
+      result = await supabase
+        .from('order_tracking')
+        .upsert(trackingData, {
           onConflict: 'order_id'
         });
-
-      if (error) throw error;
-
-      // The order status will be managed separately through the status update buttons
-      
-      setShowLogisticsModal(false);
-      loadOrders();
-      if (orderDetails?.id === selectedOrder.id) {
-        loadOrderDetails(selectedOrder.id);
-      }
-      alert('✅ Tracking information saved successfully! You can update the order status separately using the status buttons.');
-    } catch (error) {
-      console.error('Error saving logistics:', error);
-      alert('Failed to save logistics information');
     }
-  };
 
-  const openOrderModal = async (order: Order) => {
-    const orderWithDetails = order as OrderWithDetails;
-    setSelectedOrder(orderWithDetails);
+    if (result.error) {
+      // Handle unique constraint violation (409 error)
+      if (result.error.code === '23505') {
+        throw new Error('Tracking information already exists for this order. Please update instead.');
+      }
+      throw result.error;
     await loadOrderDetails(order.id);
     setShowOrderModal(true);
   };
@@ -1459,8 +1430,14 @@ export default function AdminOrders() {
                     </label>
                     <input
                       type="date"
-                      value={logisticsForm.estimated_delivery}
-                      onChange={(e) => setLogisticsForm({...logisticsForm, estimated_delivery: e.target.value})}
+                      value={formatDateForInput(logisticsForm.estimated_delivery)}
+                      onChange={(e) => {
+                        const date = new Date(e.target.value);
+                        setLogisticsForm({
+                          ...logisticsForm, 
+                          estimated_delivery: e.target.value ? date.toISOString() : ''
+                        });
+                      }}
                       min={new Date().toISOString().split('T')[0]}
                       className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-gray-100"
                     />
