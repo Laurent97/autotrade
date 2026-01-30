@@ -913,8 +913,6 @@ export default function AdminOrders() {
           current_status: logisticsForm.current_status, // Store detailed status
           status: databaseStatus, // Use mapped status for database constraint
           updated_at: new Date().toISOString()
-        }, {
-          onConflict: 'order_id'
         });
 
       if (trackingError) {
