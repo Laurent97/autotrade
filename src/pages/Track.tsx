@@ -95,6 +95,7 @@ export default function Track() {
       
       // Pre-shipment statuses
       order_received: 'Order has been received and is being processed',
+      payment_authorized: 'Payment has been authorized and confirmed',
       order_verified: 'Order has been verified and confirmed',
       inventory_allocated: 'Inventory has been allocated for this order',
       order_processing: 'Order is currently being processed',
@@ -133,15 +134,27 @@ export default function Track() {
   };
 
   const getTrackingTimeline = (trackingData: any) => {
-    // Comprehensive status order for full logistics workflow
+    // Define all order status categories matching the logistics workflow
     const statusOrder = [
-      'pending', 'order_received', 'order_verified', 'inventory_allocated', 
+      // Pre-Shipment
+      'order_received', 'payment_authorized', 'order_verified', 'inventory_allocated',
+      
+      // Fulfillment
       'order_processing', 'picking_started', 'picking_completed', 
       'packing_started', 'packing_completed', 'ready_to_ship',
-      'carrier_pickup_scheduled', 'picked_up', 'shipped', 
+      
+      // Shipping
+      'carrier_pickup_scheduled', 'picked_up', 'shipped', 'in_transit',
       'arrived_at_origin', 'departed_origin', 'arrived_at_sort', 
       'processed_at_sort', 'departed_sort', 'arrived_at_destination',
-      'in_transit', 'out_for_delivery', 'delivery_attempted', 'delivered', 'completed'
+      
+      // Delivery
+      'out_for_delivery', 'delivery_attempted', 'delivered',
+      
+      // Exceptions (shown at the end if they occur)
+      'delayed', 'weather_delay', 'mechanical_delay', 'address_issue',
+      'customer_unavailable', 'security_delay', 'customs_hold',
+      'damaged', 'lost'
     ];
     
     const currentStatusIndex = statusOrder.indexOf(trackingData.status);
@@ -173,7 +186,7 @@ export default function Track() {
         location = actualUpdate.location;
       } else if (isCompleted || isCurrent) {
         // For completed/current status without update, use tracking timestamps
-        if (status === 'pending' && trackingData.created_at) {
+        if (status === 'order_received' && trackingData.created_at) {
           timestamp = trackingData.created_at;
           description = 'Order received and processing started';
         } else if (status === 'delivered' && trackingData.actual_delivery) {

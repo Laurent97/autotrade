@@ -12,6 +12,7 @@ export interface OrderTracking {
     | 'delivered'
     // Pre-shipment statuses
     | 'order_received'
+    | 'payment_authorized'
     | 'order_verified' 
     | 'inventory_allocated'
     | 'order_processing'
@@ -35,12 +36,12 @@ export interface OrderTracking {
     | 'delayed'
     | 'weather_delay'
     | 'mechanical_delay'
+    | 'address_issue'
+    | 'customer_unavailable'
     | 'security_delay'
     | 'customs_hold'
     | 'damaged'
-    | 'lost'
-    | 'address_issue'
-    | 'customer_unavailable';
+    | 'lost';
   admin_id?: string;
   partner_id?: string;
   estimated_delivery?: string;
@@ -123,6 +124,12 @@ export const TRACKING_STATUSES: Record<OrderTracking['status'], TrackingStatus> 
     label: 'Order Received',
     color: 'blue',
     icon: 'Package',
+    completed: true
+  },
+  payment_authorized: {
+    label: 'Payment Authorized',
+    color: 'green',
+    icon: 'CheckCircle',
     completed: true
   },
   order_verified: {
