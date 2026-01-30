@@ -18,7 +18,6 @@ WHERE partner_id IS NOT NULL;
 SELECT 
     ot.id,
     ot.order_id,
-    ot.order_number,
     ot.partner_id,
     ot.tracking_number,
     ot.carrier,
@@ -29,7 +28,7 @@ SELECT
     o.partner_id as order_partner_id
 FROM order_tracking ot
 LEFT JOIN partner_profiles pp ON ot.partner_id = pp.id
-LEFT JOIN orders o ON ot.order_id = o.id
+LEFT JOIN orders o ON ot.order_id::text = o.id::text  -- Cast both to text for comparison
 LIMIT 10;
 
 -- 4. Check specific partner's tracking (replace with actual partner ID)

@@ -61,7 +61,7 @@
                   placeholder="0"
                   value={partnerMetrics[selectedUser.id]?.storeVisits?.thisWeek || 0}
                   disabled
-                  readOnly
+                  readOnlythe
                 />
               </div>
               <div>

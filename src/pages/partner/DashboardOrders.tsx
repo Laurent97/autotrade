@@ -194,11 +194,29 @@ export default function DashboardOrders() {
         
         // Also fetch from orders table directly for shipping info
         if (orderNumbers && orderNumbers.length > 0) {
-          const { data: ordersWithTracking } = await supabase
+          // Filter out any invalid order numbers and log for debugging
+          const validOrderNumbers = orderNumbers.filter(num => num && typeof num === 'string' && num.trim() !== '');
+          
+          if (validOrderNumbers.length === 0) {
+            console.log('⚠️ No valid order numbers to query');
+            return;
+          }
+          
+          console.log('🔍 Querying orders with order numbers:', validOrderNumbers);
+          
+          const { data: ordersWithTracking, error: trackingError } = await supabase
             .from('orders')
             .select('id, order_number, shipping_tracking_number, shipping_provider, shipping_status')
-            .in('order_number', orderNumbers)
+            .in('order_number', validOrderNumbers)
             .eq('partner_id', partnerProfile.id);
+            
+          if (trackingError) {
+            console.error('❌ Error fetching orders with tracking:', trackingError);
+            // Don't throw - just continue without tracking data
+            return;
+          }
+          
+          console.log('📊 Found orders with tracking:', ordersWithTracking?.length || 0);
             
           if (ordersWithTracking) {
             ordersWithTracking.forEach(order => {

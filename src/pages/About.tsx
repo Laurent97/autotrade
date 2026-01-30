@@ -24,13 +24,13 @@ export default function About() {
           <div className="bg-card rounded-lg shadow-md p-8 border border-border">
             <h2 className="text-3xl font-bold mb-4">Our Mission</h2>
             <p className="text-lg text-muted-foreground leading-relaxed">
-              AutoVault is dedicated to revolutionizing the automotive marketplace by connecting buyers and sellers from around the world. We believe that everyone deserves access to quality vehicles, parts, and accessories at fair prices, delivered with excellence and integrity.
+              AutoTradehub is dedicated to revolutionizing the automotive marketplace by connecting buyers and sellers from around the world. We believe that everyone deserves access to quality vehicles, parts, and accessories at fair prices, delivered with excellence and integrity.
             </p>
           </div>
 
           {/* Why Choose Us */}
           <div>
-            <h2 className="text-3xl font-bold mb-8">Why Choose AutoVault?</h2>
+            <h2 className="text-3xl font-bold mb-8">Why Choose AutoTradeHub?</h2>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[
                 {
@@ -99,7 +99,7 @@ export default function About() {
             <h2 className="text-3xl font-bold mb-6">Our Story</h2>
             <div className="space-y-4 text-muted-foreground leading-relaxed">
               <p>
-                Founded in 2020, AutoVault started with a simple vision: to make automotive shopping accessible and affordable for everyone. What began as a small marketplace has grown into a thriving global platform serving customers across 150+ countries.
+                Founded in 2020, AutoTradeHub started with a simple vision: to make automotive shopping accessible and affordable for everyone. What began as a small marketplace has grown into a thriving global platform serving customers across 150+ countries.
               </p>
               <p>
                 Today, we're proud to offer the largest selection of vehicles, parts, and accessories online, with competitive prices and reliable shipping to your doorstep.
