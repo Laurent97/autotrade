@@ -816,7 +816,7 @@ export default function AdminOrders() {
         await supabase
           .from('orders')
           .update({
-            status: 'shipped',
+            status: logisticsForm.current_status || 'shipped',
             updated_at: new Date().toISOString()
           })
           .eq('id', selectedOrder.id);
