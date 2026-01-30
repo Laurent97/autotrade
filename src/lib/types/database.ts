@@ -4,7 +4,48 @@ export type UserType = 'user' | 'partner' | 'admin';
 export type PartnerStatus = 'pending' | 'approved' | 'rejected' | 'suspended';
 export type ProductCategory = 'car' | 'part' | 'accessory';
 export type Condition = 'new' | 'used' | 'reconditioned';
-export type OrderStatus = 'pending' | 'waiting_confirmation' | 'confirmed' | 'processing' | 'shipped' | 'in_transit' | 'out_for_delivery' | 'delivered' | 'completed' | 'cancelled';
+export type OrderStatus = 
+  | 'pending' 
+  | 'waiting_confirmation' 
+  | 'confirmed' 
+  | 'processing' 
+  | 'shipped' 
+  | 'in_transit' 
+  | 'out_for_delivery' 
+  | 'delivered' 
+  | 'completed' 
+  | 'cancelled'
+  // Pre-shipment statuses
+  | 'order_received'
+  | 'order_verified' 
+  | 'inventory_allocated'
+  | 'order_processing'
+  | 'picking_started'
+  | 'picking_completed'
+  | 'packing_started'
+  | 'packing_completed'
+  | 'ready_to_ship'
+  // Shipping statuses
+  | 'carrier_pickup_scheduled'
+  | 'picked_up'
+  | 'arrived_at_origin'
+  | 'departed_origin'
+  | 'arrived_at_sort'
+  | 'processed_at_sort'
+  | 'departed_sort'
+  | 'arrived_at_destination'
+  // Delivery statuses
+  | 'delivery_attempted'
+  // Exception statuses
+  | 'delayed'
+  | 'weather_delay'
+  | 'mechanical_delay'
+  | 'security_delay'
+  | 'customs_hold'
+  | 'damaged'
+  | 'lost'
+  | 'address_issue'
+  | 'customer_unavailable';
 export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'refunded';
 export type EarningsStatus = 'pending' | 'released' | 'hold';
 
