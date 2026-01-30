@@ -409,7 +409,12 @@ export default function DashboardAnalytics() {
       console.log('Completed orders:', completedOrders.length);
       console.log('=== END DEBUGGING ===');
 
+      console.log('=== DEBUGGING STATE SET ===');
+      console.log('About to call setAnalytics with:', finalAnalytics);
+      console.log('Current analytics state before set:', analytics);
       setAnalytics(finalAnalytics);
+      console.log('Called setAnalytics');
+      console.log('=== END STATE DEBUG ===');
 
       // Set monthly data for charts
       if (monthlyEarnings) {
