@@ -829,7 +829,27 @@ export default function AdminOrders() {
       }
     } catch (error) {
       console.error('Error saving logistics info:', error);
-      alert('Failed to save shipping information');
+
+      // Extract meaningful error message
+      let errorMessage = 'Failed to save shipping information';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === 'object' && error !== null) {
+        // Handle Supabase errors or other object errors
+        if ('message' in error) {
+          errorMessage = String(error.message);
+        } else if ('error' in error) {
+          errorMessage = String(error.error);
+        } else if ('details' in error) {
+          errorMessage = String(error.details);
+        } else {
+          errorMessage = JSON.stringify(error);
+        }
+      } else {
+        errorMessage = String(error);
+      }
+
+      alert(`❌ ${errorMessage}`);
     }
   };
 
