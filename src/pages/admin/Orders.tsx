@@ -59,6 +59,61 @@ interface PartnerProduct {
   };
 }
 
+// Define all order status categories
+const orderStatusMapping = {
+  // Pre-Shipment
+  'order_received': 'processing',
+  'payment_authorized': 'processing',
+  'order_verified': 'processing',
+  'inventory_allocated': 'processing',
+  
+  // Fulfillment
+  'order_processing': 'processing',
+  'picking_started': 'processing',
+  'picking_completed': 'processing',
+  'packing_started': 'processing',
+  'packing_completed': 'processing',
+  'ready_to_ship': 'processing',
+  
+  // Shipping
+  'carrier_pickup_scheduled': 'shipped',
+  'picked_up': 'shipped',
+  'in_transit': 'shipped',
+  'arrived_at_origin': 'shipped',
+  'departed_origin': 'shipped',
+  'arrived_at_sort': 'shipped',
+  'processed_at_sort': 'shipped',
+  'departed_sort': 'shipped',
+  'arrived_at_destination': 'shipped',
+  
+  // Delivery
+  'out_for_delivery': 'out_for_delivery',
+  'delivery_attempted': 'delivery_attempted',
+  'delivered': 'delivered',
+  
+  // Exceptions
+  'delayed': 'delayed',
+  'weather_delay': 'delayed',
+  'mechanical_delay': 'delayed',
+  'address_issue': 'issue',
+  'customer_unavailable': 'issue',
+  'security_delay': 'delayed',
+  'customs_hold': 'hold',
+  'damaged': 'issue',
+  'lost': 'lost'
+};
+
+// Function to map detailed logistics status to main order status
+function mapToOrderStatus(logisticsStatus: string) {
+  if (!logisticsStatus) return 'processing';
+  
+  // Convert to lowercase and replace spaces with underscores for matching
+  const normalizedStatus = logisticsStatus.toLowerCase().replace(/\s+/g, '_');
+  
+  // Return mapped status or default to 'processing' if not found
+  return orderStatusMapping[normalizedStatus] || 'processing';
+}
+
 export default function AdminOrders() {
   const navigate = useNavigate();
   const { user, userProfile } = useAuth();
@@ -814,14 +869,18 @@ export default function AdminOrders() {
       // Debug logging
       console.log('🔍 Debug - logisticsForm.current_status:', logisticsForm.current_status);
       console.log('🔍 Debug - selectedOrder.status:', selectedOrder.status);
-      console.log('🔍 Debug - About to update with status:', logisticsForm.current_status || 'shipped');
+      
+      // Map detailed logistics status to main order status
+      const mappedOrderStatus = mapToOrderStatus(logisticsForm.current_status);
+      console.log('🔍 Debug - Mapped order status:', mappedOrderStatus);
 
       // Update order status based on logistics form selection
-      if (selectedOrder.status !== 'shipped' && selectedOrder.status !== 'delivered' && selectedOrder.status !== 'completed') {
+      if (selectedOrder.status !== 'delivered' && selectedOrder.status !== 'completed') {
         await supabase
           .from('orders')
           .update({
-            status: logisticsForm.current_status || 'shipped',
+            status: mappedOrderStatus,
+            shipping_status: logisticsForm.current_status, // Store detailed shipping status
             updated_at: new Date().toISOString()
           })
           .eq('id', selectedOrder.id);
