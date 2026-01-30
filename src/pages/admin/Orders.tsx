@@ -78,7 +78,7 @@ const orderStatusMapping = {
   // Shipping
   'carrier_pickup_scheduled': 'shipped',
   'picked_up': 'shipped',
-  'arrived_at_origin': 'shipped',
+  'arrived_at_origin': 'in_transit',
   'departed_origin': 'in_transit',
   'arrived_at_sort': 'in_transit',
   'processed_at_sort': 'in_transit',
@@ -867,7 +867,7 @@ export default function AdminOrders() {
           
           'CARRIER_PICKUP_SCHEDULED': 'shipped',
           'PICKED_UP': 'shipped',
-          'ARRIVED_AT_ORIGIN': 'shipped',
+          'ARRIVED_AT_ORIGIN': 'in_transit',
           'DEPARTED_ORIGIN': 'in_transit',
           'ARRIVED_AT_SORT': 'in_transit',
           'PROCESSED_AT_SORT': 'in_transit',
@@ -920,13 +920,14 @@ export default function AdminOrders() {
       // Debug logging
       console.log('🔍 Debug - logisticsForm.current_status:', logisticsForm.current_status);
       console.log('🔍 Debug - databaseStatus:', databaseStatus);
-      console.log('🔍 Debug - selectedOrder.status:', selectedOrder.status);
+      console.log('🔍 Debug - selectedOrder.status (before update):', selectedOrder.status);
+      console.log('🔍 Debug - selectedOrder.id:', selectedOrder.id);
       // Map detailed logistics status to main order status
       const mappedOrderStatus = mapToOrderStatus(logisticsForm.current_status);
       console.log('🔍 Debug - Mapped order status:', mappedOrderStatus);
 
       // Update orders table with both main status and shipping status
-      const { error: orderError } = await supabase
+      const { error: orderError, data: orderUpdateData } = await supabase
         .from('orders')
         .update({
           status: mappedOrderStatus,
@@ -935,12 +936,16 @@ export default function AdminOrders() {
           carrier: logisticsForm.carrier, // Update carrier
           updated_at: new Date().toISOString()
         })
-        .eq('id', selectedOrder.id);
+        .eq('id', selectedOrder.id)
+        .select(); // Return the updated data
 
       if (orderError) {
         console.error('❌ Error updating orders table:', orderError);
         throw orderError;
       }
+
+      console.log('✅ Order update successful:', orderUpdateData);
+      console.log('🔍 Debug - Updated order status:', orderUpdateData?.[0]?.status);
 
       // Also create a tracking update entry for history
       if (logisticsForm.tracking_number) {
