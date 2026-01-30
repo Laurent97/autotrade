@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase/client';
 import { partnerService } from '../../lib/supabase/partner-service';
@@ -31,20 +31,80 @@ import {
   CheckCircle,
   Zap,
   Star,
-  TrendingUp as TrendingIcon,
   Play,
-  Pause
+  Pause,
+  LineChart,
+  Sparkles,
+  TargetIcon,
+  Award,
+  ChevronRight,
+  Shield,
+  Coins,
+  TrendingUp as TrendingIcon,
+  Store
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { Separator } from '@/components/ui/separator';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+
+interface AnalyticsData {
+  partnerInfo: {
+    name?: string;
+    rating?: number;
+    creditScore?: number;
+  };
+  metrics: {
+    totalViews: number;
+    totalSales: number;
+    totalRevenue: number;
+    conversionRate: number;
+    avgOrderValue: number;
+    thisMonthEarnings: number;
+    lastMonthEarnings: number;
+    todayEarnings: number;
+    last7DaysEarnings: number;
+    last30DaysEarnings: number;
+    availableBalance: number;
+    pendingBalance: number;
+    commissionEarned: number;
+    totalOrders: number;
+    paidOrders: number;
+    pendingOrders: number;
+    completedOrders: number;
+    cancelledOrders: number;
+    storeVisits: {
+      today: number;
+      thisWeek: number;
+      thisMonth: number;
+      allTime: number;
+    };
+    storeRating: number;
+    storeCreditScore: number;
+    totalProducts: number;
+    activeProducts: number;
+    commissionRate: number;
+  };
+  performance: {
+    topProducts: any[];
+    lowStockProducts: any[];
+    recentActivity: number;
+  };
+  charts: {
+    dailyEarnings: any[];
+    weeklyData: any[];
+    monthlyEarnings: any[];
+  };
+}
 
 export default function DashboardAnalytics() {
   const { userProfile } = useAuth();
-  const [analytics, setAnalytics] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
+  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d' | '1y' | 'all'>('30d');
   const [chartType, setChartType] = useState<'profit' | 'revenue' | 'orders'>('profit');
@@ -52,47 +112,49 @@ export default function DashboardAnalytics() {
   const [visitDistribution, setVisitDistribution] = useState<any>(null);
   const [realtimeVisits, setRealtimeVisits] = useState<any>(null);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
+  const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
-    loadAnalytics();
-    
-    // Set up real-time updates for visit distribution
+    if (userProfile?.id) {
+      loadAnalytics();
+    }
+  }, [userProfile?.id]);
+
+  // Set up real-time updates for visit distribution
+  useEffect(() => {
+    if (!userProfile?.id || !analytics) return;
+
     const interval = setInterval(async () => {
       await loadRealtimeVisits();
       
-      // Recalculate analytics with new visit data
       if (analytics && visitDistribution) {
         const calculatedVisits = calculateRealtimeVisits(visitDistribution, analytics.metrics.storeVisits);
-        setAnalytics(prev => ({
+        setAnalytics(prev => prev ? ({
           ...prev,
           metrics: {
             ...prev.metrics,
             storeVisits: calculatedVisits,
             totalViews: calculatedVisits.allTime || 0,
-            conversionRate: calculatedVisits.thisMonth > 0 ? ((prev.metrics.totalSales || 0) / calculatedVisits.thisMonth) * 100 : 0
+            conversionRate: calculatedVisits.thisMonth > 0 ? 
+              ((prev.metrics.totalSales || 0) / calculatedVisits.thisMonth) * 100 : 0
           }
-        }));
+        }) : null);
       }
-    }, 5000); // Update every 5 seconds
+    }, 30000); // Update every 30 seconds instead of 5
 
     return () => clearInterval(interval);
-  }, [userProfile]);
+  }, [userProfile?.id, analytics, visitDistribution]);
 
   const loadAnalytics = async () => {
     if (!userProfile?.id) return;
-    
-    console.log('=== DEBUGGING USER PROFILE ===');
-    console.log('userProfile:', userProfile);
-    console.log('userProfile.id:', userProfile.id);
-    console.log('userProfile.email:', userProfile.email);
-    console.log('userProfile.user_type:', userProfile.user_type);
-    console.log('=== END USER PROFILE DEBUG ===');
     
     setLoading(true);
     setError(null);
     
     try {
-      // 1. Get partner profile first to get commission rate and store info
+      console.log('=== DEBUG: Loading analytics for user:', userProfile.id);
+      
+      // 1. Load partner profile first
       const { data: partnerProfile, error: profileError } = await supabase
         .from('partner_profiles')
         .select('*')
@@ -100,231 +162,118 @@ export default function DashboardAnalytics() {
         .maybeSingle();
 
       if (profileError && profileError.code !== 'PGRST116') {
-        throw new Error(`Failed to load partner profile: ${profileError.message}`);
+        console.warn('Partner profile error:', profileError);
       }
 
-      // 2. Get wallet balance from wallet service
+      // 2. Load wallet balance concurrently
       let walletBalance = 0;
       let pendingBalance = 0;
-      try {
-        const balanceData = await walletService.getBalance(userProfile.id);
+      const walletPromise = walletService.getBalance(userProfile.id).then(balanceData => {
         if (balanceData) {
           walletBalance = balanceData.balance || 0;
           pendingBalance = balanceData.pending_balance || 0;
         }
-      } catch (err) {
-        console.warn('Could not load wallet balance:', err);
-      }
+      }).catch(err => {
+        console.warn('Wallet balance error:', err);
+      });
 
-      // 3. Get real orders data from the orders table
+      // 3. Load orders data
       const { data: ordersData, error: ordersError } = await supabase
         .from('orders')
         .select('*, order_items(*, products(*))')
         .eq('partner_id', userProfile.id)
         .order('created_at', { ascending: false });
 
-      console.log('=== DEBUGGING ORDERS DATA ===');
-      console.log('OrdersData from direct query:', ordersData);
-      console.log('OrdersData length:', ordersData?.length || 0);
-      console.log('OrdersData error:', ordersError);
-      console.log('=== END ORDERS DEBUG ===');
-
-      if (ordersError && ordersError.code !== 'PGRST116') {
-        throw new Error(`Failed to load orders: ${ordersError.message}`);
+      if (ordersError) {
+        console.warn('Orders error:', ordersError);
       }
 
-      // 4. Get earnings data using the earnings service
-      let earningsData = { allTime: 0, thisMonth: 0, lastMonth: 0, averageOrderValue: 0 };
-      try {
-        const partnerEarnings = await earningsService.getPartnerEarnings(userProfile.id);
-        if (partnerEarnings) {
-          earningsData = partnerEarnings;
-        }
-      } catch (err) {
-        console.warn('Could not load earnings data:', err);
-      }
-
-      // 5. Get partner products count
+      // 4. Load products count
       const { data: productsData, error: productsError } = await supabase
         .from('partner_products')
         .select('id, is_active')
         .eq('partner_id', userProfile.id);
 
-      if (productsError && productsError.code !== 'PGRST116') {
-        console.warn('Could not load partner products:', productsError);
+      if (productsError) {
+        console.warn('Products error:', productsError);
       }
 
-      // 5.5. Get real store visits from store_visits table
-      console.log('=== DEBUGGING STORE VISITS ===');
-      console.log('Fetching store visits for partner:', userProfile.id);
-      console.log('User profile type:', userProfile.user_type);
-      console.log('User profile email:', userProfile.email);
-      
+      // 5. Load store visits
       const { data: visitsData, error: visitsError } = await supabase
         .from('store_visits')
         .select('id, partner_id, created_at')
-        .eq('partner_id', userProfile.id)
-        .order('created_at', { ascending: false });
-
-      console.log('Store visits data:', visitsData);
-      console.log('Store visits error:', visitsError);
-      console.log('Store visits data length:', visitsData?.length || 0);
-      
-      // Additional debugging: Check if there are any visits at all
-      const { data: allVisitsCount, error: allVisitsError } = await supabase
-        .from('store_visits')
-        .select('partner_id')
         .eq('partner_id', userProfile.id);
 
-      console.log('All visits query result:', allVisitsCount);
-      console.log('All visits query error:', allVisitsError);
-      console.log('All visits count:', allVisitsCount?.length || 0);
-      
-      // Check if there are visits for different partner_id
-      const { data: anyVisits, error: anyVisitsError } = await supabase
-        .from('store_visits')
-        .select('partner_id')
-        .limit(5);
-
-      console.log('Any visits in database:', anyVisits);
-      console.log('Any visits error:', anyVisitsError);
-      console.log('=== END DEBUGGING ===');
-
-      if (visitsError && visitsError.code !== 'PGRST116') {
-        console.warn('Could not load store visits:', visitsError);
+      if (visitsError) {
+        console.warn('Store visits error:', visitsError);
       }
 
-      // Calculate store visits from actual data + active distribution
+      // 6. Wait for wallet data
+      await walletPromise;
+
+      // 7. Calculate metrics
       const now = new Date();
       const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       const weekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
       const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-      
+      const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+
+      // Calculate store visits
       const allVisits = visitsData || [];
       const todayVisits = allVisits.filter(visit => new Date(visit.created_at) >= todayStart).length;
       const weekVisits = allVisits.filter(visit => new Date(visit.created_at) >= weekStart).length;
       const monthVisits = allVisits.filter(visit => new Date(visit.created_at) >= monthStart).length;
       const totalVisits = allVisits.length;
 
-      // Get active visit distribution settings
-      const { data: activeDistribution, error: distributionError } = await supabase
-        .from('visit_distribution')
-        .select('*')
-        .eq('partner_id', userProfile.id)
-        .eq('is_active', true)
-        .maybeSingle();
-
-      let calculatedVisits = {
+      const storeVisits = {
         today: todayVisits,
         thisWeek: weekVisits,
         thisMonth: monthVisits,
         allTime: totalVisits
       };
 
-      // If there's an active distribution, add distributed visits
-      if (activeDistribution && !distributionError) {
-        const startTime = new Date(activeDistribution.start_time);
-        const endTime = new Date(activeDistribution.end_time);
-        
-        if (now >= startTime && now <= endTime) {
-          // Calculate elapsed time and proportionate visits
-          const totalDuration = endTime.getTime() - startTime.getTime();
-          const elapsedDuration = now.getTime() - startTime.getTime();
-          const progressRatio = Math.min(elapsedDuration / totalDuration, 1);
-          
-          const accumulatedVisits = Math.floor((activeDistribution.total_visits || 0) * progressRatio);
-          
-          // Add distributed visits to actual visits
-          calculatedVisits = {
-            today: todayVisits + accumulatedVisits,
-            thisWeek: weekVisits + accumulatedVisits,
-            thisMonth: monthVisits + accumulatedVisits,
-            allTime: totalVisits + accumulatedVisits
-          };
-        } else if (now > endTime) {
-          // Distribution has ended, add all target visits
-          calculatedVisits = {
-            today: todayVisits + (activeDistribution.total_visits || 0),
-            thisWeek: weekVisits + (activeDistribution.total_visits || 0),
-            thisMonth: monthVisits + (activeDistribution.total_visits || 0),
-            allTime: totalVisits + (activeDistribution.total_visits || 0)
-          };
-        }
-      }
-
-      const storeVisits = calculatedVisits;
-
-      // 6. Get partner stats
-      const partnerStats = await partnerService.getPartnerStats(userProfile.id);
-      
-      console.log('=== DEBUGGING PARTNER STATS ===');
-      console.log('PartnerStats from service:', partnerStats);
-      console.log('PartnerStats totalOrders:', partnerStats?.data?.totalOrders);
-      console.log('PartnerStats totalRevenue:', partnerStats?.data?.totalRevenue);
-      console.log('OrdersData length:', ordersData?.length);
-      console.log('OrdersData totalRevenue:', ordersData?.reduce((sum, order) => sum + (order.total_amount || 0), 0));
-      console.log('=== END PARTNER STATS DEBUG ===');
-      
-      // 7. Get monthly earnings
-      const monthlyEarnings = await earningsService.getMonthlyEarnings(userProfile.id);
-
-      // 8. Check for active visit distribution
-      await checkVisitDistribution();
-
-      // 9. Calculate metrics from real data
+      // Calculate order metrics
       const allOrders = ordersData || [];
+      const revenueOrders = allOrders.filter(order => 
+        ['completed', 'paid', 'processing', 'shipped'].includes(order.status) && 
+        (order.payment_status === 'paid' || order.payment_status === 'completed')
+      );
+      
       const completedOrders = allOrders.filter(order => order.status === 'completed');
       const pendingOrders = allOrders.filter(order => order.status === 'pending');
       const cancelledOrders = allOrders.filter(order => order.status === 'cancelled');
       const paidOrders = allOrders.filter(order => order.payment_status === 'paid');
-      
-      // Calculate total revenue from completed orders
-      const totalRevenue = completedOrders.reduce((sum, order) => sum + (order.total_amount || 0), 0);
-      
-      // Calculate commission earned (assuming 10% commission)
-      const commissionRate = partnerProfile?.commission_rate || 0.10;
-      const commissionEarned = totalRevenue * commissionRate;
-      
-      // Calculate average order value
-      const avgOrderValue = completedOrders.length > 0 ? totalRevenue / completedOrders.length : 0;
-      
-      // Get store visits from database - no mock data
-      const storeVisitsFromProfile = partnerProfile?.store_visits || null;
 
-      // Calculate conversion rate
-      const conversionRate = storeVisits.thisMonth > 0 ? 
-        (completedOrders.length / storeVisits.thisMonth) * 100 : 0;
+      // Calculate commission
+      const commissionRate = partnerProfile?.commission_rate || 0.10;
+      const totalRevenue = revenueOrders.reduce((sum, order) => sum + (order.total_amount || 0), 0);
+      const commissionEarned = totalRevenue * commissionRate;
+      const avgOrderValue = revenueOrders.length > 0 ? totalRevenue / revenueOrders.length : 0;
 
       // Calculate time-based earnings
-      const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-      const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-      const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
-      
-      const thisMonthEarnings = completedOrders
-        .filter(order => new Date(order.created_at) >= thisMonthStart)
-        .reduce((sum, order) => sum + ((order.total_amount || 0) * commissionRate), 0);
-      
-      const lastMonthEarnings = completedOrders
-        .filter(order => new Date(order.created_at) >= lastMonthStart && new Date(order.created_at) <= lastMonthEnd)
-        .reduce((sum, order) => sum + ((order.total_amount || 0) * commissionRate), 0);
-
-      // Calculate last 7 days earnings
-      const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-      const last7DaysEarnings = completedOrders
-        .filter(order => new Date(order.created_at) >= sevenDaysAgo)
-        .reduce((sum, order) => sum + ((order.total_amount || 0) * commissionRate), 0);
-
-      // Calculate today's earnings
-      const todayEarnings = completedOrders
+      const todayEarnings = revenueOrders
         .filter(order => new Date(order.created_at) >= todayStart)
         .reduce((sum, order) => sum + ((order.total_amount || 0) * commissionRate), 0);
 
-      // Generate daily earnings for charts (last 30 days)
+      const last7DaysEarnings = revenueOrders
+        .filter(order => new Date(order.created_at) >= weekStart)
+        .reduce((sum, order) => sum + ((order.total_amount || 0) * commissionRate), 0);
+
+      const thisMonthEarnings = revenueOrders
+        .filter(order => new Date(order.created_at) >= monthStart)
+        .reduce((sum, order) => sum + ((order.total_amount || 0) * commissionRate), 0);
+
+      const lastMonthEarnings = revenueOrders
+        .filter(order => new Date(order.created_at) >= lastMonthStart && new Date(order.created_at) <= lastMonthEnd)
+        .reduce((sum, order) => sum + ((order.total_amount || 0) * commissionRate), 0);
+
+      // Generate chart data
       const dailyEarnings = Array.from({ length: 30 }, (_, i) => {
         const date = new Date(now.getTime() - (29 - i) * 24 * 60 * 60 * 1000);
         const dateStr = date.toISOString().split('T')[0];
         
-        const dayOrders = completedOrders.filter(order => 
+        const dayOrders = revenueOrders.filter(order => 
           order.created_at.startsWith(dateStr)
         );
         
@@ -337,36 +286,41 @@ export default function DashboardAnalytics() {
         };
       });
 
-      // Generate weekly data for charts (last 12 weeks)
       const weeklyData = Array.from({ length: 12 }, (_, i) => {
         const weekStart = new Date(now.getTime() - (11 - i) * 7 * 24 * 60 * 60 * 1000);
         const weekEnd = new Date(weekStart.getTime() + 7 * 24 * 60 * 60 * 1000);
         
-        const weekOrders = completedOrders.filter(order => {
+        const weekOrders = revenueOrders.filter(order => {
           const orderDate = new Date(order.created_at);
           return orderDate >= weekStart && orderDate < weekEnd;
         });
         
         return {
-          week: `Week ${i + 1}`,
+          week: `W${i + 1}`,
           revenue: weekOrders.reduce((sum, order) => sum + (order.total_amount || 0), 0),
           profit: weekOrders.reduce((sum, order) => sum + ((order.total_amount || 0) * commissionRate), 0),
           orders: weekOrders.length
         };
       });
 
-      // Set comprehensive analytics data with real values
-      const finalAnalytics = {
+      // Load monthly earnings
+      const monthlyEarnings = await earningsService.getMonthlyEarnings(userProfile.id).catch(() => []);
+
+      // Check visit distribution
+      await checkVisitDistribution();
+
+      // Set final analytics data
+      const finalAnalytics: AnalyticsData = {
         partnerInfo: {
-          name: partnerProfile?.store_name,
-          rating: partnerProfile?.store_rating,
-          creditScore: partnerProfile?.store_credit_score
+          name: partnerProfile?.store_name || 'Partner',
+          rating: partnerProfile?.store_rating || 0,
+          creditScore: partnerProfile?.store_credit_score || 750
         },
         metrics: {
-          totalViews: calculatedVisits.allTime,
-          totalSales: completedOrders.length,
+          totalViews: storeVisits.allTime,
+          totalSales: revenueOrders.length,
           totalRevenue: totalRevenue,
-          conversionRate: conversionRate,
+          conversionRate: storeVisits.thisMonth > 0 ? (revenueOrders.length / storeVisits.thisMonth) * 100 : 0,
           avgOrderValue: avgOrderValue,
           thisMonthEarnings: thisMonthEarnings,
           lastMonthEarnings: lastMonthEarnings,
@@ -381,58 +335,37 @@ export default function DashboardAnalytics() {
           pendingOrders: pendingOrders.length,
           completedOrders: completedOrders.length,
           cancelledOrders: cancelledOrders.length,
-          storeVisits: calculatedVisits,
+          storeVisits: storeVisits,
           storeRating: partnerProfile?.store_rating || 0,
-          storeCreditScore: partnerProfile?.store_credit_score || 0,
+          storeCreditScore: partnerProfile?.store_credit_score || 750,
           totalProducts: productsData?.length || 0,
           activeProducts: productsData?.filter(p => p.is_active).length || 0,
           commissionRate: commissionRate
         },
         performance: {
-          topProducts: [], // TODO: Implement top products query
-          lowStockProducts: [], // TODO: Implement low stock query
+          topProducts: [],
+          lowStockProducts: [],
           recentActivity: allOrders.length
         },
         charts: {
           dailyEarnings: dailyEarnings,
           weeklyData: weeklyData,
-          monthlyEarnings: monthlyEarnings || []
+          monthlyEarnings: Array.isArray(monthlyEarnings) ? monthlyEarnings : []
         }
       };
 
-      console.log('=== DEBUGGING ANALYTICS DATA ===');
-      console.log('Final analytics metrics:', finalAnalytics.metrics);
-      console.log('Today earnings:', todayEarnings);
-      console.log('Last 7 days earnings:', last7DaysEarnings);
-      console.log('Wallet balance:', walletBalance);
-      console.log('Pending balance:', pendingBalance);
-      console.log('Total orders:', allOrders.length);
-      console.log('Completed orders:', completedOrders.length);
-      console.log('=== END DEBUGGING ===');
-
-      console.log('=== DEBUGGING STATE SET ===');
-      console.log('About to call setAnalytics with:', finalAnalytics);
-      console.log('Current analytics state before set:', analytics);
+      console.log('=== DEBUG: Final analytics:', finalAnalytics.metrics);
       setAnalytics(finalAnalytics);
-      console.log('Called setAnalytics');
-      console.log('=== END STATE DEBUG ===');
-
-      // Set monthly data for charts
-      if (monthlyEarnings) {
-        setMonthlyData(monthlyEarnings);
-      }
-      
       setLastUpdate(new Date());
       
     } catch (err) {
-      console.error('Error loading analytics:', err);
+      console.error('Failed to load analytics:', err);
       setError(err instanceof Error ? err.message : 'Failed to load analytics');
     } finally {
       setLoading(false);
     }
   };
 
-  // Load real-time visit data
   const loadRealtimeVisits = async () => {
     if (!userProfile?.id) return;
     
@@ -448,39 +381,25 @@ export default function DashboardAnalytics() {
           visits: partnerProfile.store_visits,
           lastUpdated: partnerProfile.updated_at
         });
-        setLastUpdate(new Date());
       }
     } catch (err) {
       console.warn('Error loading realtime visits:', err);
     }
   };
 
-  // Calculate real-time visits based on distribution settings
   const calculateRealtimeVisits = (distribution: any, baseVisits: any) => {
     if (!distribution || !distribution.is_active) {
-      return baseVisits || {
-        today: 0,
-        thisWeek: 0,
-        thisMonth: 0,
-        allTime: 0
-      };
+      return baseVisits;
     }
 
     const now = new Date();
     const startTime = new Date(distribution.start_time);
     const endTime = new Date(distribution.end_time);
     
-    // If distribution hasn't started yet, return 0
     if (now < startTime) {
-      return {
-        today: 0,
-        thisWeek: 0,
-        thisMonth: 0,
-        allTime: baseVisits?.allTime || 0
-      };
+      return baseVisits;
     }
     
-    // If distribution has ended, return total target
     if (now >= endTime) {
       return {
         today: distribution.total_visits || 0,
@@ -490,7 +409,6 @@ export default function DashboardAnalytics() {
       };
     }
     
-    // Calculate elapsed time and proportionate visits
     const totalDuration = endTime.getTime() - startTime.getTime();
     const elapsedDuration = now.getTime() - startTime.getTime();
     const progressRatio = Math.min(elapsedDuration / totalDuration, 1);
@@ -505,7 +423,6 @@ export default function DashboardAnalytics() {
     };
   };
 
-  // Check for active visit distribution
   const checkVisitDistribution = async () => {
     if (!userProfile?.id) return;
     
@@ -528,610 +445,807 @@ export default function DashboardAnalytics() {
     }
   };
 
-  // Format currency
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
-      minimumFractionDigits: 2
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2
     }).format(amount);
   };
 
+  const formatNumber = (num: number) => {
+    return new Intl.NumberFormat('en-US').format(num);
+  };
+
+  const calculateGrowthPercentage = (current: number, previous: number) => {
+    if (previous === 0) return current > 0 ? 100 : 0;
+    return ((current - previous) / previous) * 100;
+  };
+
+  // Memoized calculations for better performance
+  const growthPercentage = useMemo(() => {
+    if (!analytics) return 0;
+    return calculateGrowthPercentage(
+      analytics.metrics.thisMonthEarnings,
+      analytics.metrics.lastMonthEarnings
+    );
+  }, [analytics]);
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <LoadingSpinner />
+      <div className="flex flex-col items-center justify-center min-h-[400px]">
+        <LoadingSpinner size="lg" />
+        <p className="mt-4 text-muted-foreground">Loading analytics...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-8 max-w-md">
-          <h2 className="text-xl font-bold text-red-800 mb-2">Error Loading Analytics</h2>
-          <p className="text-red-600">{error}</p>
+      <Card className="border-red-200 dark:border-red-700/50 bg-gradient-to-r from-red-50 to-orange-50 dark:from-red-900/20 dark:to-orange-900/20">
+        <CardContent className="p-6">
+          <div className="flex items-center gap-3 text-red-700 dark:text-red-300">
+            <AlertCircle className="w-5 h-5" />
+            <span className="font-medium">{error}</span>
+          </div>
           <Button
             onClick={loadAnalytics}
-            className="mt-4"
             variant="outline"
+            className="mt-4"
           >
             <RefreshCw className="w-4 h-4 mr-2" />
             Try Again
           </Button>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     );
   }
 
   if (!analytics) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <h2 className="text-xl font-bold text-gray-600 mb-2">No Analytics Data</h2>
-          <p className="text-gray-500">Start by making your first sale to see analytics here.</p>
-          <Button
-            onClick={loadAnalytics}
-            className="mt-4"
-          >
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Load Analytics
-          </Button>
+      <div className="space-y-6">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-foreground mb-2">Analytics Dashboard</h1>
+            <p className="text-muted-foreground">Track your store performance and growth</p>
+          </div>
         </div>
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-16">
+            <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mb-6">
+              <LineChart className="w-10 h-10 text-muted-foreground" />
+            </div>
+            <h3 className="text-2xl font-semibold mb-2">No Analytics Data</h3>
+            <p className="text-muted-foreground mb-6 text-center max-w-md">
+              Start by making your first sale to see analytics here. Analytics will appear once you have customer activity.
+            </p>
+            <Button onClick={loadAnalytics}>
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Load Analytics
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
-  const metrics = analytics.metrics || {};
-  const partnerInfo = analytics.partnerInfo || {};
+  const { metrics, partnerInfo } = analytics;
 
   return (
     <div className="space-y-6">
-      {/* Professional Header */}
+      {/* Enhanced Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">Analytics Dashboard</h1>
-          <p className="text-muted-foreground">
-            Welcome back, {partnerInfo.name}! Here's your performance overview
-          </p>
-          <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
-            <Clock className="w-3 h-3" />
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg">
+              <LineChart className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Performance Analytics</h1>
+              <p className="text-muted-foreground">
+                Welcome back, {partnerInfo.name}! Here's your performance overview
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 text-sm text-muted-foreground">
+            <Clock className="w-4 h-4" />
             <span>Last updated: {lastUpdate.toLocaleTimeString()}</span>
+            <Badge variant="outline" className="text-xs">
+              Real-time
+            </Badge>
           </div>
         </div>
         
         <div className="flex items-center gap-3">
           <ThemeSwitcher />
           
-          <Button
-            onClick={loadAnalytics}
-            variant="outline"
-            disabled={loading}
-          >
-            <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-            Refresh Data
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  onClick={loadAnalytics}
+                  variant="outline"
+                  disabled={loading}
+                >
+                  <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                  Refresh
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Refresh analytics data</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </div>
 
-      {/* Error Display */}
-      {error && (
-        <Card className="border-red-200 dark:border-red-700/50 bg-red-50 dark:bg-red-900/20">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3 text-red-700 dark:text-red-300">
-              <AlertCircle className="w-5 h-5" />
-              <span>{error}</span>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      {/* Main Navigation Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid grid-cols-4">
+          <TabsTrigger value="overview" className="flex items-center gap-2">
+            <LineChart className="w-4 h-4" />
+            Overview
+          </TabsTrigger>
+          <TabsTrigger value="earnings" className="flex items-center gap-2">
+            <DollarSign className="w-4 h-4" />
+            Earnings
+          </TabsTrigger>
+          <TabsTrigger value="performance" className="flex items-center gap-2">
+            <Activity className="w-4 h-4" />
+            Performance
+          </TabsTrigger>
+          <TabsTrigger value="products" className="flex items-center gap-2">
+            <Package className="w-4 h-4" />
+            Products
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Time Range and Chart Type Filters */}
+        <TabsContent value="overview" className="space-y-6">
+          {/* Quick Stats Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* Today's Revenue */}
+            <Card className="bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-green-200 dark:border-green-700/30">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-xl">
+                    <DollarSign className="w-6 h-6 text-green-600 dark:text-green-400" />
+                  </div>
+                  <Badge variant="outline" className="text-green-600 border-green-200">
+                    Today
+                  </Badge>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">Today's Earnings</p>
+                  <h3 className="text-3xl font-bold text-green-700 dark:text-green-300">
+                    {formatCurrency(metrics.todayEarnings)}
+                  </h3>
+                  <div className="flex items-center text-sm">
+                    {metrics.todayEarnings > 0 ? (
+                      <>
+                        <ArrowUpRight className="w-4 h-4 text-green-600 mr-1" />
+                        <span className="text-green-600">Active</span>
+                      </>
+                    ) : (
+                      <span className="text-muted-foreground">No earnings yet</span>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* This Month */}
+            <Card className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 border-blue-200 dark:border-blue-700/30">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
+                    <Calendar className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <Badge variant="outline" className="text-blue-600 border-blue-200">
+                    This Month
+                  </Badge>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">Monthly Revenue</p>
+                  <h3 className="text-3xl font-bold text-blue-700 dark:text-blue-300">
+                    {formatCurrency(metrics.thisMonthEarnings)}
+                  </h3>
+                  <div className="flex items-center text-sm">
+                    {growthPercentage > 0 ? (
+                      <>
+                        <TrendingUp className="w-4 h-4 text-green-600 mr-1" />
+                        <span className="text-green-600">{growthPercentage.toFixed(1)}% growth</span>
+                      </>
+                    ) : growthPercentage < 0 ? (
+                      <>
+                        <TrendingDown className="w-4 h-4 text-red-600 mr-1" />
+                        <span className="text-red-600">{Math.abs(growthPercentage).toFixed(1)}% decline</span>
+                      </>
+                    ) : (
+                      <span className="text-muted-foreground">No change</span>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Total Orders */}
+            <Card className="bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-900/20 dark:to-violet-900/20 border-purple-200 dark:border-purple-700/30">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-xl">
+                    <ShoppingCart className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <Badge variant="outline" className="text-purple-600 border-purple-200">
+                    All Orders
+                  </Badge>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">Total Orders</p>
+                  <h3 className="text-3xl font-bold text-purple-700 dark:text-purple-300">
+                    {formatNumber(metrics.totalOrders)}
+                  </h3>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">{metrics.completedOrders} completed</span>
+                    <Badge variant="secondary" className="text-xs">
+                      {(metrics.completedOrders / metrics.totalOrders * 100).toFixed(0)}%
+                    </Badge>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Wallet Balance */}
+            <Card className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border-amber-200 dark:border-amber-700/30">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="p-3 bg-amber-100 dark:bg-amber-900/30 rounded-xl">
+                    <Wallet className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+                  </div>
+                  <Badge variant="outline" className="text-amber-600 border-amber-200">
+                    Balance
+                  </Badge>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">Available Balance</p>
+                  <h3 className="text-3xl font-bold text-amber-700 dark:text-amber-300">
+                    {formatCurrency(metrics.availableBalance)}
+                  </h3>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Ready to withdraw</span>
+                    <Badge variant="secondary" className="text-xs">
+                      Instant
+                    </Badge>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Performance Charts Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Revenue Trend Chart */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <TrendingUp className="w-5 h-5 text-green-600" />
+                      Revenue Trend
+                    </CardTitle>
+                    <CardDescription>Daily revenue over last 14 days</CardDescription>
+                  </div>
+                  <Select value={chartType} onValueChange={(value: any) => setChartType(value)}>
+                    <SelectTrigger className="w-32">
+                      <SelectValue placeholder="Metric" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="profit">Profit</SelectItem>
+                      <SelectItem value="revenue">Revenue</SelectItem>
+                      <SelectItem value="orders">Orders</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="h-64">
+                  {analytics.charts.dailyEarnings.length > 0 ? (
+                    <div className="flex items-end justify-between h-full gap-2">
+                      {analytics.charts.dailyEarnings.slice(-14).map((day: any, index: number) => {
+                        const maxValue = Math.max(
+                          ...analytics.charts.dailyEarnings.slice(-14).map((d: any) => 
+                            chartType === 'profit' ? d.profit : 
+                            chartType === 'revenue' ? d.revenue : d.orders
+                          )
+                        );
+                        const value = chartType === 'profit' ? day.profit : 
+                                     chartType === 'revenue' ? day.revenue : day.orders;
+                        const height = maxValue > 0 ? (value / maxValue) * 100 : 0;
+                        const color = chartType === 'profit' ? 'from-green-500 to-emerald-400' :
+                                     chartType === 'revenue' ? 'from-blue-500 to-cyan-400' :
+                                     'from-purple-500 to-violet-400';
+                        
+                        return (
+                          <TooltipProvider key={index}>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="flex-1 flex flex-col items-center group cursor-pointer">
+                                  <div className="w-full flex flex-col items-center">
+                                    <div className="text-xs font-medium mb-2 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
+                                      {chartType === 'orders' ? `${value} orders` : formatCurrency(value)}
+                                    </div>
+                                    <div 
+                                      className={`w-full rounded-t-lg bg-gradient-to-t ${color} hover:opacity-90 transition-all duration-300`}
+                                      style={{ height: `${Math.max(height, 2)}%` }}
+                                    />
+                                  </div>
+                                  <span className="text-xs text-muted-foreground mt-2">
+                                    {new Date(day.date).getDate()}
+                                  </span>
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>{new Date(day.date).toLocaleDateString()}</p>
+                                <p>Revenue: {formatCurrency(day.revenue)}</p>
+                                <p>Profit: {formatCurrency(day.profit)}</p>
+                                <p>Orders: {day.orders}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="h-full flex items-center justify-center">
+                      <div className="text-center text-muted-foreground">
+                        <BarChart3 className="w-12 h-12 mx-auto mb-3" />
+                        <p>No revenue data available</p>
+                        <p className="text-sm">Complete orders to see revenue trends</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Performance Metrics */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TargetIcon className="w-5 h-5 text-blue-600" />
+                  Performance Metrics
+                </CardTitle>
+                <CardDescription>Key performance indicators</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Target className="w-4 h-4 text-purple-600" />
+                        <span className="text-sm">Conversion Rate</span>
+                      </div>
+                      <Badge className="bg-gradient-to-r from-purple-600 to-pink-600">
+                        {metrics.conversionRate.toFixed(1)}%
+                      </Badge>
+                    </div>
+                    <Progress value={metrics.conversionRate} className="h-2" />
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <DollarSign className="w-4 h-4 text-green-600" />
+                        <span className="text-sm">Average Order Value</span>
+                      </div>
+                      <span className="font-semibold">{formatCurrency(metrics.avgOrderValue)}</span>
+                    </div>
+                    <Progress value={(metrics.avgOrderValue / 500) * 100} className="h-2" />
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Store className="w-4 h-4 text-orange-600" />
+                        <span className="text-sm">Store Rating</span>
+                      </div>
+                      <div className="flex items-center">
+                        {[...Array(5)].map((_, i) => (
+                          <Star
+                            key={i}
+                            className={`w-4 h-4 ${i < Math.floor(metrics.storeRating) ? 'text-yellow-500 fill-yellow-500' : 'text-gray-300'}`}
+                          />
+                        ))}
+                        <span className="ml-2 font-semibold">{metrics.storeRating.toFixed(1)}</span>
+                      </div>
+                    </div>
+                    <Progress value={(metrics.storeRating / 5) * 100} className="h-2" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Store Performance Section */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Store Visits */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="w-5 h-5 text-blue-600" />
+                  Store Visits
+                </CardTitle>
+                <CardDescription>Customer engagement metrics</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-lg">
+                    <div className="text-2xl font-bold text-blue-600">
+                      {formatNumber(metrics.storeVisits.today)}
+                    </div>
+                    <p className="text-sm text-muted-foreground">Today</p>
+                  </div>
+                  <div className="text-center p-4 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-lg">
+                    <div className="text-2xl font-bold text-green-600">
+                      {formatNumber(metrics.storeVisits.thisWeek)}
+                    </div>
+                    <p className="text-sm text-muted-foreground">This Week</p>
+                  </div>
+                  <div className="text-center p-4 bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-900/20 dark:to-violet-900/20 rounded-lg">
+                    <div className="text-2xl font-bold text-purple-600">
+                      {formatNumber(metrics.storeVisits.thisMonth)}
+                    </div>
+                    <p className="text-sm text-muted-foreground">This Month</p>
+                  </div>
+                  <div className="text-center p-4 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 rounded-lg">
+                    <div className="text-2xl font-bold text-amber-600">
+                      {formatNumber(metrics.storeVisits.allTime)}
+                    </div>
+                    <p className="text-sm text-muted-foreground">All Time</p>
+                  </div>
+                </div>
+                
+                {visitDistribution?.is_active && (
+                  <div className="mt-4 p-3 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
+                        <Zap className="w-4 h-4" />
+                        <span className="text-sm font-medium">Auto-visits active</span>
+                      </div>
+                      <Badge variant="outline" className="text-blue-600">
+                        {visitDistribution.total_visits} visits
+                      </Badge>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Order Status */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Package className="w-5 h-5 text-purple-600" />
+                  Order Status
+                </CardTitle>
+                <CardDescription>Current order distribution</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {[
+                    { label: 'Completed', value: metrics.completedOrders, color: 'green', icon: CheckCircle },
+                    { label: 'Pending', value: metrics.pendingOrders, color: 'amber', icon: Clock },
+                    { label: 'Paid', value: metrics.paidOrders, color: 'blue', icon: CreditCard },
+                    { label: 'Cancelled', value: metrics.cancelledOrders, color: 'red', icon: AlertCircle }
+                  ].map((status, index) => {
+                    const Icon = status.icon;
+                    const percentage = metrics.totalOrders > 0 ? (status.value / metrics.totalOrders) * 100 : 0;
+                    
+                    return (
+                      <div key={index} className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Icon className={`w-4 h-4 text-${status.color}-600`} />
+                            <span className="text-sm">{status.label}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold">{status.value}</span>
+                            <Badge variant="secondary" className="text-xs">
+                              {percentage.toFixed(0)}%
+                            </Badge>
+                          </div>
+                        </div>
+                        <Progress value={percentage} className={`h-1.5 bg-${status.color}-100`} />
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="earnings" className="space-y-6">
+          {/* Earnings Overview */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <DollarSign className="w-5 h-5 text-green-600" />
+                Earnings Overview
+              </CardTitle>
+              <CardDescription>Detailed earnings breakdown and commission analysis</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="text-center p-4">
+                  <div className="text-3xl font-bold text-green-600">
+                    {formatCurrency(metrics.commissionEarned)}
+                  </div>
+                  <p className="text-sm text-muted-foreground">Total Commission</p>
+                  <Badge variant="outline" className="mt-2">
+                    {(metrics.commissionRate * 100).toFixed(1)}% rate
+                  </Badge>
+                </div>
+                <div className="text-center p-4">
+                  <div className="text-3xl font-bold text-blue-600">
+                    {formatCurrency(metrics.totalRevenue)}
+                  </div>
+                  <p className="text-sm text-muted-foreground">Total Revenue</p>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    From {metrics.totalSales} sales
+                  </div>
+                </div>
+                <div className="text-center p-4">
+                  <div className="text-3xl font-bold text-purple-600">
+                    {formatCurrency(metrics.last30DaysEarnings)}
+                  </div>
+                  <p className="text-sm text-muted-foreground">Last 30 Days</p>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    Average: {formatCurrency(metrics.last30DaysEarnings / 30)}
+                  </div>
+                </div>
+                <div className="text-center p-4">
+                  <div className="text-3xl font-bold text-amber-600">
+                    {formatCurrency(metrics.availableBalance)}
+                  </div>
+                  <p className="text-sm text-muted-foreground">Available Balance</p>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    Ready for withdrawal
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Commission Breakdown */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Commission Breakdown</CardTitle>
+              <CardDescription>Commission earnings by period</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {[
+                  { period: 'Today', earnings: metrics.todayEarnings },
+                  { period: 'Last 7 Days', earnings: metrics.last7DaysEarnings },
+                  { period: 'This Month', earnings: metrics.thisMonthEarnings },
+                  { period: 'Last Month', earnings: metrics.lastMonthEarnings },
+                  { period: 'All Time', earnings: metrics.commissionEarned }
+                ].map((item, index) => (
+                  <div key={index} className="flex items-center justify-between p-3 hover:bg-muted/50 rounded-lg transition-colors">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-gradient-to-br from-green-100 to-emerald-100 dark:from-green-900/30 dark:to-emerald-900/30 rounded-lg">
+                        <DollarSign className="w-4 h-4 text-green-600 dark:text-green-400" />
+                      </div>
+                      <div>
+                        <p className="font-medium">{item.period}</p>
+                        <p className="text-xs text-muted-foreground">{(metrics.commissionRate * 100).toFixed(1)}% commission</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold text-lg text-green-600">
+                        {formatCurrency(item.earnings)}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="performance" className="space-y-6">
+          {/* Performance Metrics */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
+                    <Target className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <Badge variant="outline">Conversion</Badge>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">Conversion Rate</p>
+                  <h3 className="text-3xl font-bold text-blue-600">
+                    {metrics.conversionRate.toFixed(1)}%
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    {metrics.totalSales} sales / {metrics.storeVisits.thisMonth} visits
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-xl">
+                    <DollarSign className="w-6 h-6 text-green-600" />
+                  </div>
+                  <Badge variant="outline">Average</Badge>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">Avg Order Value</p>
+                  <h3 className="text-3xl font-bold text-green-600">
+                    {formatCurrency(metrics.avgOrderValue)}
+                  </h3>
+                  <p className="text-xs text-muted-foreground">Per completed order</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-xl">
+                    <Award className="w-6 h-6 text-purple-600" />
+                  </div>
+                  <Badge variant="outline">Rating</Badge>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">Store Rating</p>
+                  <h3 className="text-3xl font-bold text-purple-600">
+                    {metrics.storeRating.toFixed(1)}
+                  </h3>
+                  <div className="flex items-center">
+                    {[...Array(5)].map((_, i) => (
+                      <Star
+                        key={i}
+                        className={`w-4 h-4 ${i < Math.floor(metrics.storeRating) ? 'text-yellow-500 fill-yellow-500' : 'text-gray-300'}`}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Credit Score and Commission */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Store Credentials</CardTitle>
+              <CardDescription>Your store's credit score and commission details</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Shield className="w-5 h-5 text-green-600" />
+                      <span className="font-medium">Credit Score</span>
+                    </div>
+                    <Badge variant={metrics.storeCreditScore > 700 ? "default" : "secondary"} className="text-lg font-bold">
+                      {metrics.storeCreditScore}
+                    </Badge>
+                  </div>
+                  <Progress value={(metrics.storeCreditScore / 850) * 100} className="h-2" />
+                  <p className="text-sm text-muted-foreground">
+                    A higher credit score improves your commission rate and visibility
+                  </p>
+                </div>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Coins className="w-5 h-5 text-amber-600" />
+                      <span className="font-medium">Commission Rate</span>
+                    </div>
+                    <Badge className="bg-gradient-to-r from-amber-600 to-orange-600 text-lg font-bold">
+                      {(metrics.commissionRate * 100).toFixed(1)}%
+                    </Badge>
+                  </div>
+                  <Progress value={metrics.commissionRate * 100} className="h-2" />
+                  <p className="text-sm text-muted-foreground">
+                    Your current commission rate on all sales
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="products" className="space-y-6">
+          {/* Products Overview */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Package className="w-5 h-5 text-blue-600" />
+                Products Overview
+              </CardTitle>
+              <CardDescription>Your product catalog metrics</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-lg">
+                  <div className="text-2xl font-bold text-blue-600">
+                    {metrics.totalProducts}
+                  </div>
+                  <p className="text-sm text-muted-foreground">Total Products</p>
+                </div>
+                <div className="text-center p-4 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-lg">
+                  <div className="text-2xl font-bold text-green-600">
+                    {metrics.activeProducts}
+                  </div>
+                  <p className="text-sm text-muted-foreground">Active Products</p>
+                </div>
+                <div className="text-center p-4 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 rounded-lg">
+                  <div className="text-2xl font-bold text-amber-600">
+                    {metrics.totalProducts - metrics.activeProducts}
+                  </div>
+                  <p className="text-sm text-muted-foreground">Inactive Products</p>
+                </div>
+                <div className="text-center p-4 bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-900/20 dark:to-violet-900/20 rounded-lg">
+                  <div className="text-2xl font-bold text-purple-600">
+                    {metrics.totalProducts > 0 ? 
+                      ((metrics.activeProducts / metrics.totalProducts) * 100).toFixed(1) : 0}%
+                  </div>
+                  <p className="text-sm text-muted-foreground">Active Rate</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Product Performance */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Product Performance</CardTitle>
+              <CardDescription>Top performing products and metrics</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-8">
+                <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
+                  <BarChart3 className="w-8 h-8 text-muted-foreground" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">Product Analytics</h3>
+                <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                  Product performance analytics will appear here once you have more sales data.
+                </p>
+                <Button variant="outline">
+                  <Package className="w-4 h-4 mr-2" />
+                  View All Products
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+
+      {/* Quick Actions Footer */}
       <Card>
-        <CardHeader>
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <div className="flex flex-col sm:flex-row gap-3">
-              {/* Time Range Filter */}
-              <Select value={timeRange} onValueChange={(value: any) => setTimeRange(value)}>
-                <SelectTrigger className="w-full sm:w-40">
-                  <SelectValue placeholder="Time range" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="7d">Last 7 days</SelectItem>
-                  <SelectItem value="30d">Last 30 days</SelectItem>
-                  <SelectItem value="90d">Last 90 days</SelectItem>
-                  <SelectItem value="1y">Last year</SelectItem>
-                  <SelectItem value="all">All time</SelectItem>
-                </SelectContent>
-              </Select>
-              
-              {/* Chart Type Filter */}
-              <Select value={chartType} onValueChange={(value: any) => setChartType(value)}>
-                <SelectTrigger className="w-full sm:w-40">
-                  <SelectValue placeholder="Chart type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="profit">Profit Analysis</SelectItem>
-                  <SelectItem value="revenue">Revenue Trends</SelectItem>
-                  <SelectItem value="orders">Order Analytics</SelectItem>
-                </SelectContent>
-              </Select>
+        <CardContent className="p-4">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div className="text-sm text-muted-foreground">
+              <span className="font-medium">Data updated:</span> {lastUpdate.toLocaleTimeString()}
             </div>
-            
             <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={loadAnalytics}>
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Refresh
+              </Button>
               <Button variant="outline" size="sm">
                 <Download className="w-4 h-4 mr-2" />
                 Export Report
               </Button>
-            </div>
-          </div>
-        </CardHeader>
-      </Card>
-
-      {/* Store Performance Badges */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Store Rating</p>
-                <div className="flex items-center gap-1 mt-1">
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      className={`w-4 h-4 ${i < Math.floor(metrics.storeRating || 0) ? 'text-yellow-500 fill-yellow-500' : 'text-gray-300'}`}
-                    />
-                  ))}
-                  <span className="ml-2 text-sm font-semibold">
-                    {metrics.storeRating?.toFixed(1) || '0.0'}
-                  </span>
-                </div>
-              </div>
-              <Star className="w-6 h-6 text-yellow-500" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Credit Score</p>
-                <p className="text-2xl font-bold mt-1">{metrics.storeCreditScore || 0}</p>
-              </div>
-              <TrendingUp className="w-6 h-6 text-green-500" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Commission Rate</p>
-                <p className="text-2xl font-bold mt-1">{(metrics.commissionRate * 100).toFixed(1)}%</p>
-              </div>
-              <DollarSign className="w-6 h-6 text-blue-500" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Top Metrics Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* Today's Earnings */}
-        <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/10 border-green-200 dark:border-green-700/30">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Today's Earnings</CardTitle>
-            <DollarSign className="w-4 h-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-              {formatCurrency(metrics.todayEarnings || 0)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              From {metrics.completedOrders || 0} orders today
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Last 7 Days */}
-        <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/10 border-blue-200 dark:border-blue-700/30">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Last 7 Days</CardTitle>
-            <Calendar className="w-4 h-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-              {formatCurrency(metrics.last7DaysEarnings || 0)}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Avg: {formatCurrency((metrics.last7DaysEarnings || 0) / 7)} per day
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Wallet Balance */}
-        <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/10 border-purple-200 dark:border-purple-700/30">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Wallet Balance</CardTitle>
-            <Wallet className="w-4 h-4 text-purple-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
-              {formatCurrency(metrics.availableBalance || 0)}
-            </div>
-            <p className="text-xs text-muted-foreground">Available for withdrawal</p>
-          </CardContent>
-        </Card>
-
-        {/* Pending Balance */}
-        <Card className="bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-900/20 dark:to-amber-800/10 border-amber-200 dark:border-amber-700/30">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Balance</CardTitle>
-            <Clock className="w-4 h-4 text-amber-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">
-              {formatCurrency(metrics.pendingBalance || 0)}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Total Revenue */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-            <TrendingUp className="w-4 h-4 text-emerald-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {formatCurrency(metrics.totalRevenue || 0)}
-            </div>
-            <p className="text-xs text-muted-foreground">All time earnings</p>
-          </CardContent>
-        </Card>
-
-        {/* Total Orders */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
-            <ShoppingCart className="w-4 h-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {metrics.totalOrders || 0}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {metrics.completedOrders || 0} completed
-            </p>
-          </CardContent>
-        </Card>
-
-        {/* Average Order Value */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg Order Value</CardTitle>
-            <Package className="w-4 h-4 text-orange-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {formatCurrency(metrics.avgOrderValue || 0)}
-            </div>
-            <p className="text-xs text-muted-foreground">Per transaction</p>
-          </CardContent>
-        </Card>
-
-        {/* Conversion Rate */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Conversion Rate</CardTitle>
-            <Target className="w-4 h-4 text-purple-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {metrics.conversionRate?.toFixed(1) || '0.0'}%
-            </div>
-            <p className="text-xs text-muted-foreground">Visits to orders</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Profit Chart */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Profit Analysis</CardTitle>
-            <CardDescription>Daily profit trends over the selected period</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-64">
-              {analytics?.charts?.dailyEarnings?.length > 0 ? (
-                <div className="flex items-end justify-between h-full gap-1">
-                  {analytics.charts.dailyEarnings.slice(-14).map((day: any, index: number) => {
-                    const maxProfit = Math.max(...analytics.charts.dailyEarnings.slice(-14).map((d: any) => d.profit || 0));
-                    const height = maxProfit > 0 ? ((day.profit || 0) / maxProfit) * 100 : 0;
-                    
-                    return (
-                      <div key={index} className="flex-1 flex flex-col items-center">
-                        <div 
-                          className="w-full bg-green-500 hover:bg-green-600 transition-all duration-300 rounded-t"
-                          style={{ height: `${Math.max(height, 2)}%` }}
-                          title={`${day.date}: ${formatCurrency(day.profit || 0)} (${day.orders || 0} orders)`}
-                        />
-                        <span className="text-xs text-muted-foreground mt-1">
-                          {new Date(day.date).toLocaleDateString('en-US', { day: 'numeric', month: 'short' })}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="h-full flex items-center justify-center text-muted-foreground">
-                  <div className="text-center">
-                    <BarChart3 className="w-12 h-12 mx-auto mb-2" />
-                    <p>No profit data available</p>
-                    <p className="text-sm">Make your first sale to see profit charts</p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Revenue Chart */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Revenue Trends</CardTitle>
-            <CardDescription>Weekly revenue performance</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-64">
-              {analytics?.charts?.weeklyData?.length > 0 ? (
-                <div className="flex items-end justify-between h-full gap-1">
-                  {analytics.charts.weeklyData.slice(-8).map((week: any, index: number) => {
-                    const maxRevenue = Math.max(...analytics.charts.weeklyData.slice(-8).map((w: any) => w.revenue || 0));
-                    const height = maxRevenue > 0 ? ((week.revenue || 0) / maxRevenue) * 100 : 0;
-                    
-                    return (
-                      <div key={index} className="flex-1 flex flex-col items-center">
-                        <div 
-                          className="w-full bg-blue-500 hover:bg-blue-600 transition-all duration-300 rounded-t"
-                          style={{ height: `${Math.max(height, 2)}%` }}
-                          title={`${week.week}: ${formatCurrency(week.revenue || 0)} (${week.orders || 0} orders)`}
-                        />
-                        <span className="text-xs text-muted-foreground mt-1">
-                          {week.week}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="h-full flex items-center justify-center text-muted-foreground">
-                  <div className="text-center">
-                    <BarChart3 className="w-12 h-12 mx-auto mb-2" />
-                    <p>No revenue data available</p>
-                    <p className="text-sm">Complete orders to see revenue trends</p>
-                  </div>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Store Visits and Order Status */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Store Visits */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>Store Visits</CardTitle>
-                <CardDescription>Customer engagement metrics</CardDescription>
-              </div>
-              <div className="flex items-center gap-2">
-                {realtimeVisits && (
-                  <div className="flex items-center gap-1 text-xs text-green-600">
-                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                    <span>Live</span>
-                  </div>
-                )}
-                <Button
-                  onClick={loadRealtimeVisits}
-                  variant="outline"
-                  size="sm"
-                >
-                  <RefreshCw className="w-3 h-3" />
-                </Button>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="text-center p-4">
-                <div className="text-2xl font-bold text-orange-600">
-                  {metrics.storeVisits?.today || 0}
-                </div>
-                <p className="text-sm text-muted-foreground">Today</p>
-              </div>
-              <div className="text-center p-4">
-                <div className="text-2xl font-bold text-blue-600">
-                  {metrics.storeVisits?.thisWeek || 0}
-                </div>
-                <p className="text-sm text-muted-foreground">This Week</p>
-              </div>
-              <div className="text-center p-4">
-                <div className="text-2xl font-bold text-purple-600">
-                  {metrics.storeVisits?.thisMonth || 0}
-                </div>
-                <p className="text-sm text-muted-foreground">This Month</p>
-              </div>
-              <div className="text-center p-4">
-                <div className="text-2xl font-bold text-green-600">
-                  {metrics.storeVisits?.allTime || 0}
-                </div>
-                <p className="text-sm text-muted-foreground">All Time</p>
-              </div>
-            </div>
-            
-            {visitDistribution?.is_active && (
-              <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-blue-700 dark:text-blue-300">
-                    <Zap className="w-3 h-3 inline mr-1" />
-                    Auto-visits active: {visitDistribution.total_visits || 0} visits
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {visitDistribution.time_period === 'second' ? 'Per Second' :
-                     visitDistribution.time_period === 'minute' ? 'Per Minute' : 'Per Hour'}
-                  </span>
-                </div>
-              </div>
-            )}
-            
-            {realtimeVisits && (
-              <div className="mt-2 text-xs text-muted-foreground text-center">
-                Last updated: {lastUpdate.toLocaleTimeString()}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Order Status */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Order Status</CardTitle>
-            <CardDescription>Breakdown of order states</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-green-600" />
-                  <span className="text-sm">Completed</span>
-                </div>
-                <Badge variant="secondary" className="bg-green-100 text-green-800">
-                  {metrics.completedOrders || 0}
-                </Badge>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-amber-600" />
-                  <span className="text-sm">Pending</span>
-                </div>
-                <Badge variant="secondary" className="bg-amber-100 text-amber-800">
-                  {metrics.pendingOrders || 0}
-                </Badge>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <CreditCard className="w-4 h-4 text-blue-600" />
-                  <span className="text-sm">Paid</span>
-                </div>
-                <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-                  {metrics.paidOrders || 0}
-                </Badge>
-              </div>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 text-red-600" />
-                  <span className="text-sm">Cancelled</span>
-                </div>
-                <Badge variant="secondary" className="bg-red-100 text-red-800">
-                  {metrics.cancelledOrders || 0}
-                </Badge>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Commission and Performance */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Commission & Performance</CardTitle>
-          <CardDescription>Your earnings breakdown and performance metrics</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="text-center p-6">
-              <div className="text-3xl font-bold text-green-600">
-                {formatCurrency(metrics.commissionEarned || 0)}
-              </div>
-              <p className="text-sm text-muted-foreground">Commission Earned</p>
-              <Badge variant="secondary" className="mt-2">
-                {(metrics.commissionRate * 100).toFixed(1)}% Rate
-              </Badge>
-            </div>
-            <div className="text-center p-6">
-              <div className="text-3xl font-bold text-blue-600">
-                {formatCurrency(metrics.thisMonthEarnings || 0)}
-              </div>
-              <p className="text-sm text-muted-foreground">This Month</p>
-              <div className="flex items-center justify-center mt-2">
-                {metrics.thisMonthEarnings > metrics.lastMonthEarnings ? (
-                  <TrendingUp className="w-4 h-4 text-green-600" />
-                ) : (
-                  <TrendingDown className="w-4 h-4 text-red-600" />
-                )}
-                <span className={`text-xs ml-1 ${
-                  metrics.thisMonthEarnings > metrics.lastMonthEarnings ? 'text-green-600' : 'text-red-600'
-                }`}>
-                  {metrics.lastMonthEarnings > 0 
-                    ? `${(((metrics.thisMonthEarnings - metrics.lastMonthEarnings) / metrics.lastMonthEarnings) * 100).toFixed(1)}%`
-                    : metrics.thisMonthEarnings > 0 ? '+100%' : 'N/A'
-                  }
-                </span>
-              </div>
-            </div>
-            <div className="text-center p-6">
-              <div className="text-3xl font-bold text-purple-600">
-                {formatCurrency(metrics.totalRevenue || 0)}
-              </div>
-              <p className="text-sm text-muted-foreground">Total Revenue</p>
-              <div className="text-xs text-muted-foreground mt-2">
-                From {metrics.totalOrders || 0} orders
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Products Overview */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Products Overview</CardTitle>
-          <CardDescription>Your product catalog metrics</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="text-center p-4">
-              <div className="text-2xl font-bold text-blue-600">
-                {metrics.totalProducts || 0}
-              </div>
-              <p className="text-sm text-muted-foreground">Total Products</p>
-            </div>
-            <div className="text-center p-4">
-              <div className="text-2xl font-bold text-green-600">
-                {metrics.activeProducts || 0}
-              </div>
-              <p className="text-sm text-muted-foreground">Active Products</p>
-            </div>
-            <div className="text-center p-4">
-              <div className="text-2xl font-bold text-amber-600">
-                {metrics.totalProducts - metrics.activeProducts || 0}
-              </div>
-              <p className="text-sm text-muted-foreground">Inactive Products</p>
-            </div>
-            <div className="text-center p-4">
-              <div className="text-2xl font-bold text-purple-600">
-                {metrics.totalProducts > 0 ? 
-                  ((metrics.activeProducts / metrics.totalProducts) * 100).toFixed(1) : 0}%
-              </div>
-              <p className="text-sm text-muted-foreground">Active Rate</p>
             </div>
           </div>
         </CardContent>

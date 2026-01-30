@@ -173,7 +173,29 @@ export default function DashboardOrders() {
     
     setLoading(true);
     try {
+      console.log('=== ORDERS PAGE DEBUGGING ===');
+      console.log('Loading orders for partner:', partnerProfile.id);
+      
       const { data: ordersData } = await partnerService.getPartnerOrders(partnerProfile.id);
+      console.log('Orders data received:', ordersData?.length || 0, 'orders');
+      
+      // Debug order statuses
+      if (ordersData && ordersData.length > 0) {
+        const statusBreakdown = ordersData.reduce((acc, order) => {
+          acc[order.status] = (acc[order.status] || 0) + 1;
+          return acc;
+        }, {});
+        console.log('Order status breakdown:', statusBreakdown);
+        
+        const paymentStatusBreakdown = ordersData.reduce((acc, order) => {
+          acc[order.payment_status] = (acc[order.payment_status] || 0) + 1;
+          return acc;
+        }, {});
+        console.log('Payment status breakdown:', paymentStatusBreakdown);
+      }
+      
+      console.log('=== END ORDERS PAGE DEBUG ===');
+      
       setOrders(ordersData || []);
     } catch (err) {
       console.error('Failed to load orders:', err);
@@ -185,17 +207,27 @@ export default function DashboardOrders() {
 
   const handleStatusUpdate = async (orderId: string, newStatus: string) => {
     try {
+      console.log('Updating order status:', orderId, 'to:', newStatus);
+      
       const { error } = await partnerService.updateOrderStatus(
         orderId,
         newStatus as 'pending' | 'processing' | 'shipped' | 'completed' | 'cancelled'
       );
       
-      if (error) throw error;
+      if (error) {
+        console.error('Status update error:', error);
+        throw error;
+      }
       
+      console.log('Order status updated successfully');
       setOrders(orders.map(o => o.id === orderId ? { ...o, status: newStatus } : o));
+      
+      // Show success feedback
+      alert(`Order status updated to ${newStatus} successfully!`);
     } catch (err) {
       console.error('Failed to update order:', err);
       setError(err instanceof Error ? err.message : 'Failed to update order');
+      alert(`Failed to update order: ${err instanceof Error ? err.message : 'Unknown error'}`);
     }
   };
 
@@ -205,14 +237,28 @@ export default function DashboardOrders() {
       return;
     }
     
+    if (!order || !order.id) {
+      alert('Invalid order data. Please try again.');
+      return;
+    }
+    
+    const orderAmount = order.total_amount || 0;
+    if (orderAmount <= 0) {
+      alert('Invalid order amount. Cannot process payment.');
+      return;
+    }
+    
     const confirmPayment = window.confirm(
-      `Process payment for Order #${order.order_number || order.id}?\n\nAmount: $${order.total_amount?.toFixed(2) || '0.00'}\n\nThis will deduct the amount from your wallet balance.`
+      `Process payment for Order #${order.order_number || order.id}?\n\nAmount: $${orderAmount.toFixed(2)}\n\nThis will deduct the amount from your wallet balance.`
     );
     
     if (!confirmPayment) return;
     
     try {
       console.log('Processing payment for order:', order.id);
+      console.log('User ID:', user.id);
+      console.log('Order amount:', orderAmount);
+      
       const { success, error, message } = await partnerService.processOrderPayment(order.id, user.id);
       
       if (error) {
@@ -221,15 +267,57 @@ export default function DashboardOrders() {
         return;
       }
       
-      console.log('Payment processed successfully');
+      console.log('Payment processed successfully:', message);
       alert('✅ Payment processed successfully! Order status updated to "Waiting Confirmation".');
       
+      // Refresh data
       await loadOrders();
       await loadWalletBalance();
     } catch (err) {
       console.error('Unexpected error processing payment:', err);
       alert('❌ An unexpected error occurred. Please try again or contact support.');
     }
+  };
+
+  const handleViewOrderDetails = async (order: any) => {
+    if (!order || !order.id) {
+      alert('Invalid order data. Please try again.');
+      return;
+    }
+    
+    console.log('Viewing order details:', order);
+    
+    // Create a detailed order information modal/alert
+    const orderDetails = `
+ORDER DETAILS
+================
+Order ID: ${order.id}
+Order Number: ${order.order_number || 'N/A'}
+Status: ${order.status || 'N/A'}
+Payment Status: ${order.payment_status || 'N/A'}
+Total Amount: $${(order.total_amount || 0).toFixed(2)}
+Created: ${new Date(order.created_at).toLocaleString()}
+
+CUSTOMER INFORMATION
+================
+Name: ${order.user?.full_name || 'N/A'}
+Email: ${order.user?.email || 'N/A'}
+
+ORDER ITEMS
+================
+${order.order_items?.map((item: any, index: number) => 
+  `${index + 1}. ${item.product?.title || item.product?.make || 'Unknown Product'}
+     Quantity: ${item.quantity}
+     Unit Price: $${(item.unit_price || 0).toFixed(2)}
+     Subtotal: $${(item.subtotal || 0).toFixed(2)}`
+).join('\n') || 'No items found'}
+
+SHIPPING ADDRESS
+================
+${order.shipping_address ? JSON.stringify(order.shipping_address, null, 2) : 'Not specified'}
+    `;
+    
+    alert(orderDetails);
   };
 
   const getStatusColor = (status: string) => {
@@ -258,7 +346,7 @@ export default function DashboardOrders() {
         o.user?.email?.toLowerCase().includes(searchTerm.toLowerCase())
       ));
 
-  // Calculate statistics
+  // Calculate statistics - FIXED to include revenue-eligible orders
   const stats = {
     total: orders.length,
     pending: orders.filter(o => o.status === 'pending').length,
@@ -266,9 +354,23 @@ export default function DashboardOrders() {
     shipped: orders.filter(o => o.status === 'shipped').length,
     completed: orders.filter(o => o.status === 'completed').length,
     cancelled: orders.filter(o => o.status === 'cancelled').length,
-    totalRevenue: orders.reduce((sum, o) => sum + (o.total_amount || 0), 0),
+    
+    // Revenue calculations using revenue-eligible orders
+    revenueOrders: orders.filter(order => 
+      ['completed', 'paid', 'processing'].includes(order.status) && 
+      ['paid', 'completed'].includes(order.payment_status)
+    ).length,
+    
+    totalRevenue: orders.filter(order => 
+      ['completed', 'paid', 'processing'].includes(order.status) && 
+      ['paid', 'completed'].includes(order.payment_status)
+    ).reduce((sum, o) => sum + (o.total_amount || 0), 0),
+    
     pendingRevenue: orders.filter(o => o.status === 'pending').reduce((sum, o) => sum + (o.total_amount || 0), 0),
-    averageOrderValue: orders.length > 0 ? orders.reduce((sum, o) => sum + (o.total_amount || 0), 0) / orders.length : 0
+    
+    averageOrderValue: orders.length > 0 
+      ? orders.reduce((sum, o) => sum + (o.total_amount || 0), 0) / orders.length 
+      : 0
   };
 
   const getStatusIcon = (status: string) => {
@@ -699,9 +801,7 @@ export default function DashboardOrders() {
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  onClick={() => {
-                                    // TODO: Add order details modal
-                                  }}
+                                  onClick={() => handleViewOrderDetails(order)}
                                 >
                                   <Eye className="w-4 h-4" />
                                 </Button>
@@ -801,9 +901,7 @@ export default function DashboardOrders() {
                       variant="outline"
                       size="sm"
                       className="flex-1"
-                      onClick={() => {
-                        // TODO: Add order details modal
-                      }}
+                      onClick={() => handleViewOrderDetails(order)}
                     >
                       <Eye className="w-4 h-4 mr-2" />
                       View
