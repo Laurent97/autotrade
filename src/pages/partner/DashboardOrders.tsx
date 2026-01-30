@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { supabase } from '../../lib/supabase/client';
 import { partnerService } from '../../lib/supabase/partner-service';
 import { partnerTrackingAPI } from '../../services/tracking-api';
 import { walletService } from '../../lib/supabase/wallet-service';
@@ -75,6 +76,21 @@ export default function DashboardOrders() {
     }
   }, [partnerProfile]);
 
+  useEffect(() => {
+    if (partnerProfile && orders.length > 0) {
+      // Extract order numbers from current orders
+      const orderNumbers = orders.map(order => order.order_number).filter(Boolean);
+      loadTrackingData(orderNumbers);
+      
+      // Set up interval to refresh tracking data periodically
+      const trackingInterval = setInterval(() => {
+        loadTrackingData(orderNumbers);
+      }, 30000); // Refresh every 30 seconds
+      
+      return () => clearInterval(trackingInterval);
+    }
+  }, [partnerProfile, orders.length]);
+
   // Realtime subscription for order updates
   useOrderRealtime({
     enabled: !!partnerProfile,
@@ -88,9 +104,20 @@ export default function DashboardOrders() {
             : order
         ));
         
+        // Check if shipping info was updated
+        const shippingFields = ['shipping_tracking_number', 'shipping_provider', 'shipping_status'];
+        const shippingUpdated = shippingFields.some(field => 
+          payload.new[field] !== payload.old?.[field]
+        );
+        
+        if (shippingUpdated) {
+          console.log('Shipping info updated, refreshing tracking data');
+          loadTrackingData([payload.new.order_number]);
+        }
+        
         // Refresh tracking data when order status changes to shipped
         if (payload.new.status === 'shipped' && payload.old?.status !== 'shipped') {
-          loadTrackingData();
+          loadTrackingData([payload.new.order_number]);
         }
       } else {
         // If order was reassigned from this partner, remove it
@@ -101,7 +128,7 @@ export default function DashboardOrders() {
         if (payload.old?.partner_id !== partnerProfile?.id && payload.new.partner_id === partnerProfile?.id) {
           setOrders(prev => [payload.new, ...prev]);
           // Load tracking data for new order
-          loadTrackingData();
+          loadTrackingData([payload.new.order_number]);
         }
       }
     },
@@ -111,7 +138,7 @@ export default function DashboardOrders() {
         // Add new order to beginning of list
         setOrders(prev => [payload.new, ...prev]);
         // Load tracking data for new order
-        loadTrackingData();
+        loadTrackingData([payload.new.order_number]);
       }
     },
     onOrderDelete: (payload) => {
@@ -151,7 +178,7 @@ export default function DashboardOrders() {
     }
   };
 
-  const loadTrackingData = async () => {
+  const loadTrackingData = async (orderNumbers?: string[]) => {
     if (!partnerProfile?.id) return;
     
     try {
@@ -159,8 +186,36 @@ export default function DashboardOrders() {
       if (result.success && result.data) {
         const trackingMap: {[key: string]: any} = {};
         result.data.forEach((tracking: any) => {
-          trackingMap[tracking.order_id] = tracking;
+          // Try multiple possible identifiers
+          if (tracking.order_id) trackingMap[tracking.order_id] = tracking;
+          if (tracking.order_number) trackingMap[tracking.order_number] = tracking;
+          if (tracking.orderId) trackingMap[tracking.orderId] = tracking;
         });
+        
+        // Also fetch from orders table directly for shipping info
+        if (orderNumbers && orderNumbers.length > 0) {
+          const { data: ordersWithTracking } = await supabase
+            .from('orders')
+            .select('id, order_number, shipping_tracking_number, shipping_provider, shipping_status')
+            .in('order_number', orderNumbers)
+            .eq('partner_id', partnerProfile.id);
+            
+          if (ordersWithTracking) {
+            ordersWithTracking.forEach(order => {
+              if (order.shipping_tracking_number) {
+                trackingMap[order.order_number] = {
+                  ...trackingMap[order.order_number],
+                  tracking_number: order.shipping_tracking_number,
+                  provider: order.shipping_provider,
+                  status: order.shipping_status,
+                  order_id: order.id,
+                  order_number: order.order_number
+                };
+              }
+            });
+          }
+        }
+        
         setTrackingData(trackingMap);
       }
     } catch (err) {
@@ -650,6 +705,26 @@ ${order.shipping_address ? JSON.stringify(order.shipping_address, null, 2) : 'No
                     <TooltipContent>Refresh Data</TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
+                
+                {/* Manual Tracking Refresh Button */}
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const orderNumbers = orders.map(order => order.order_number).filter(Boolean);
+                          loadTrackingData(orderNumbers);
+                        }}
+                        title="Refresh tracking data"
+                      >
+                        <Truck className="w-4 h-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Refresh Tracking Data</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </div>
             </div>
           </div>
@@ -760,9 +835,9 @@ ${order.shipping_address ? JSON.stringify(order.shipping_address, null, 2) : 'No
                       </td>
                       <td className="p-4">
                         <OrderTrackingBadge 
-                          tracking={trackingData[order.order_number] || null} 
-                          orderId={order.order_number}
-                          showStatus
+                          tracking={trackingData[order.order_number] || trackingData[order.id] || null} 
+                          orderId={order.order_number || order.id}
+                          orderData={order} 
                         />
                       </td>
                       <td className="p-4">
@@ -879,8 +954,9 @@ ${order.shipping_address ? JSON.stringify(order.shipping_address, null, 2) : 'No
                   <div>
                     <div className="text-sm text-muted-foreground mb-2">Tracking Status</div>
                     <OrderTrackingBadge 
-                      tracking={trackingData[order.order_number] || null} 
-                      orderId={order.order_number}
+                      tracking={trackingData[order.order_number] || trackingData[order.id] || null} 
+                      orderId={order.order_number || order.id}
+                      orderData={order} 
                       compact
                     />
                   </div>

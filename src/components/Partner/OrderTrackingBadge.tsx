@@ -3,7 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Package, Truck, MapPin, CheckCircle, Clock, Copy, ExternalLink } from 'lucide-react';
+import { Package, Truck, MapPin, CheckCircle, Clock, Copy, ExternalLink, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { TrackingWithUpdates } from '@/lib/types/tracking';
 import { TRACKING_STATUSES } from '@/lib/types/tracking';
@@ -12,10 +12,20 @@ import { toast } from 'sonner';
 interface OrderTrackingBadgeProps {
   tracking: TrackingWithUpdates | null;
   orderId: string;
+  orderData?: any; // Add orderData prop for fallback
+  compact?: boolean; // Add compact prop for grid view
 }
 
-export default function OrderTrackingBadge({ tracking, orderId }: OrderTrackingBadgeProps) {
+export default function OrderTrackingBadge({ tracking, orderId, orderData, compact = false }: OrderTrackingBadgeProps) {
   const [showDetails, setShowDetails] = useState(false);
+
+  // Check for shipping info in orderData as fallback
+  const hasOrderShipping = orderData?.shipping_tracking_number || orderData?.shipping_provider;
+  
+  // Use tracking data first, then fall back to order shipping info
+  const trackingNumber = tracking?.tracking_number || orderData?.shipping_tracking_number;
+  const provider = tracking?.carrier || orderData?.shipping_provider;
+  const status = tracking?.status || orderData?.shipping_status;
 
   const copyTrackingNumber = async (trackingNumber: string) => {
     try {
@@ -46,20 +56,67 @@ export default function OrderTrackingBadge({ tracking, orderId }: OrderTrackingB
     );
   };
 
-  if (!tracking) {
+  const getStatusIcon = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case 'delivered':
+      case 'completed':
+        return <CheckCircle className="w-3 h-3" />;
+      case 'shipped':
+      case 'in_transit':
+        return <Truck className="w-3 h-3" />;
+      case 'pending':
+      case 'processing':
+        return <Clock className="w-3 h-3" />;
+      default:
+        return <Package className="w-3 h-3" />;
+    }
+  };
+
+  if (!trackingNumber && !hasOrderShipping) {
     return (
-      <Badge variant="outline" className="text-muted-foreground">
-        <Package className="w-3 h-3 mr-1" />
+      <Badge variant="outline" className="text-xs">
+        <AlertCircle className="w-3 h-3 mr-1" />
         No Tracking
       </Badge>
+    );
+  }
+
+  // Compact mode for grid view
+  if (compact) {
+    return (
+      <div className="flex items-center gap-1">
+        {trackingNumber && (
+          <Badge variant="outline" className="text-xs font-mono">
+            {trackingNumber}
+          </Badge>
+        )}
+        
+        {(provider || status) && (
+          <div className="flex items-center gap-2">
+            {status && (
+              <Badge className={`text-xs ${getStatusBadge(status).props.className}`}>
+                <span className="flex items-center gap-1">
+                  {getStatusIcon(status)}
+                  {status}
+                </span>
+              </Badge>
+            )}
+            {provider && (
+              <span className="text-xs text-muted-foreground">
+                via {provider}
+              </span>
+            )}
+          </div>
+        )}
+      </div>
     );
   }
 
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
-        {getStatusBadge(tracking.status)}
-        {tracking.tracking_number && (
+        {status && getStatusBadge(status)}
+        {trackingNumber && (
           <Dialog open={showDetails} onOpenChange={setShowDetails}>
             <DialogTrigger asChild>
               <Button variant="ghost" size="sm" className="h-6 px-2 text-xs">
@@ -71,7 +128,7 @@ export default function OrderTrackingBadge({ tracking, orderId }: OrderTrackingB
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2">
                   <Package className="w-5 h-5" />
-                  Tracking Details - {tracking.tracking_number}
+                  Tracking Details - {trackingNumber}
                 </DialogTitle>
               </DialogHeader>
               
@@ -86,11 +143,11 @@ export default function OrderTrackingBadge({ tracking, orderId }: OrderTrackingB
                       <div>
                         <p className="text-sm text-muted-foreground mb-1">Tracking Number</p>
                         <div className="flex items-center gap-2">
-                          <p className="font-mono font-semibold">{tracking.tracking_number}</p>
+                          <p className="font-mono font-semibold">{trackingNumber}</p>
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => copyTrackingNumber(tracking.tracking_number!)}
+                            onClick={() => copyTrackingNumber(trackingNumber!)}
                             className="h-6 w-6 p-0"
                           >
                             <Copy className="w-3 h-3" />
@@ -99,26 +156,26 @@ export default function OrderTrackingBadge({ tracking, orderId }: OrderTrackingB
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground mb-1">Carrier</p>
-                        <p className="font-semibold">{tracking.carrier || 'N/A'}</p>
+                        <p className="font-semibold">{provider || 'N/A'}</p>
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground mb-1">Shipping Method</p>
-                        <p className="font-semibold capitalize">{tracking.shipping_method || 'N/A'}</p>
+                        <p className="font-semibold capitalize">{tracking?.shipping_method || 'N/A'}</p>
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground mb-1">Current Status</p>
-                        {getStatusBadge(tracking.status)}
+                        {status && getStatusBadge(status)}
                       </div>
                       <div>
                         <p className="text-sm text-muted-foreground mb-1">Estimated Delivery</p>
                         <p className="font-semibold">
-                          {tracking.estimated_delivery 
+                          {tracking?.estimated_delivery 
                             ? format(new Date(tracking.estimated_delivery), 'MMM dd, yyyy')
                             : 'Not set'
                           }
                         </p>
                       </div>
-                      {tracking.actual_delivery && (
+                      {tracking?.actual_delivery && (
                         <div>
                           <p className="text-sm text-muted-foreground mb-1">Actual Delivery</p>
                           <p className="font-semibold">
@@ -140,7 +197,7 @@ export default function OrderTrackingBadge({ tracking, orderId }: OrderTrackingB
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      {tracking.updates?.map((update, index) => (
+                      {tracking?.updates?.map((update, index) => (
                         <div key={update.id} className="flex gap-4">
                           <div className="flex flex-col items-center">
                             <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
@@ -150,7 +207,7 @@ export default function OrderTrackingBadge({ tracking, orderId }: OrderTrackingB
                                 <Truck className="w-5 h-5 text-primary" />
                               )}
                             </div>
-                            {index < (tracking.updates?.length || 0) - 1 && (
+                            {index < (tracking?.updates?.length || 0) - 1 && (
                               <div className="w-0.5 h-16 bg-border mt-2" />
                             )}
                           </div>
@@ -186,7 +243,7 @@ export default function OrderTrackingBadge({ tracking, orderId }: OrderTrackingB
                 <div className="flex gap-3 pt-4 border-t">
                   <Button
                     variant="outline"
-                    onClick={() => copyTrackingNumber(tracking.tracking_number!)}
+                    onClick={() => copyTrackingNumber(trackingNumber!)}
                     className="flex-1"
                   >
                     <Copy className="w-4 h-4 mr-2" />
@@ -194,7 +251,7 @@ export default function OrderTrackingBadge({ tracking, orderId }: OrderTrackingB
                   </Button>
                   <Button
                     onClick={() => {
-                      const url = `/track?number=${tracking.tracking_number}`;
+                      const url = `/track?number=${trackingNumber}`;
                       window.open(url, '_blank');
                     }}
                     className="flex-1"
