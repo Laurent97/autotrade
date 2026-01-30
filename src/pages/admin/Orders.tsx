@@ -932,6 +932,8 @@ export default function AdminOrders() {
         .update({
           status: mappedOrderStatus,
           shipping_status: logisticsForm.current_status, // Store detailed shipping status for partner dashboard
+          tracking_number: logisticsForm.tracking_number, // Update tracking number
+          carrier: logisticsForm.carrier, // Update carrier
           updated_at: new Date().toISOString()
         })
         .eq('id', selectedOrder.id);

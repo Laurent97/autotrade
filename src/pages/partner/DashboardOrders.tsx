@@ -105,7 +105,7 @@ export default function DashboardOrders() {
         ));
         
         // Check if shipping info was updated
-        const shippingFields = ['shipping_tracking_number', 'shipping_provider', 'shipping_status'];
+        const shippingFields = ['tracking_number', 'carrier', 'shipping_status'];
         const shippingUpdated = shippingFields.some(field => 
           payload.new[field] !== payload.old?.[field]
         );
@@ -206,7 +206,7 @@ export default function DashboardOrders() {
           
           const { data: ordersWithTracking, error: trackingError } = await supabase
             .from('orders')
-            .select('id, order_number, shipping_tracking_number, shipping_provider, shipping_status')
+            .select('id, order_number, tracking_number, carrier, shipping_status')
             .in('order_number', validOrderNumbers)
             .eq('partner_id', partnerProfile.id);
             
@@ -223,22 +223,22 @@ export default function DashboardOrders() {
               const orderNumber = order.order_number;
               
               // Only use orders table data if we don't have tracking data from order_tracking table
-              if (!trackingMap[orderNumber] && order.shipping_tracking_number) {
+              if (!trackingMap[orderNumber] && order.tracking_number) {
                 trackingMap[orderNumber] = {
-                  tracking_number: order.shipping_tracking_number,
-                  provider: order.shipping_provider,
+                  tracking_number: order.tracking_number,
+                  provider: order.carrier,
                   status: order.shipping_status,
                   order_id: order.id,
                   order_number: order.order_number,
                   source: 'orders_table' // Mark source for debugging
                 };
-              } else if (trackingMap[orderNumber] && order.shipping_tracking_number) {
+              } else if (trackingMap[orderNumber] && order.tracking_number) {
                 // Update existing tracking with orders table info if missing
                 const existing = trackingMap[orderNumber];
                 trackingMap[orderNumber] = {
                   ...existing,
-                  tracking_number: existing.tracking_number || order.shipping_tracking_number,
-                  provider: existing.provider || order.shipping_provider,
+                  tracking_number: existing.tracking_number || order.tracking_number,
+                  provider: existing.provider || order.carrier,
                   source: 'order_tracking_table' // Mark source for debugging
                 };
               }
