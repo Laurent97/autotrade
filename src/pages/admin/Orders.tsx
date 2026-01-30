@@ -78,13 +78,12 @@ const orderStatusMapping = {
   // Shipping
   'carrier_pickup_scheduled': 'shipped',
   'picked_up': 'shipped',
-  'in_transit': 'shipped',
   'arrived_at_origin': 'shipped',
-  'departed_origin': 'shipped',
-  'arrived_at_sort': 'shipped',
-  'processed_at_sort': 'shipped',
-  'departed_sort': 'shipped',
-  'arrived_at_destination': 'shipped',
+  'departed_origin': 'in_transit',
+  'arrived_at_sort': 'in_transit',
+  'processed_at_sort': 'in_transit',
+  'departed_sort': 'in_transit',
+  'arrived_at_destination': 'in_transit',
   
   // Delivery
   'out_for_delivery': 'out_for_delivery',
