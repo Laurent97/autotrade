@@ -82,8 +82,8 @@ export class TrackingService {
         // If not found in order_tracking, check orders table
         const { data: orderData, error: orderError } = await supabase
           .from('orders')
-          .select('id, order_number, shipping_tracking_number, shipping_provider, shipping_status, shipping_address, created_at, updated_at')
-          .eq('shipping_tracking_number', trackingNumber)
+          .select('id, order_number, tracking_number, carrier, shipping_status, shipping_address, created_at, updated_at')
+          .eq('tracking_number', trackingNumber)
           .single();
 
         if (!orderError && orderData) {
@@ -91,8 +91,8 @@ export class TrackingService {
           tracking = {
             id: orderData.id,
             order_id: orderData.order_number,
-            tracking_number: orderData.shipping_tracking_number,
-            carrier: orderData.shipping_provider,
+            tracking_number: orderData.tracking_number,
+            carrier: orderData.carrier,
             status: orderData.shipping_status || 'processing',
             shipping_method: 'standard',
             estimated_delivery: null,

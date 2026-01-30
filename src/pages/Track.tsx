@@ -1,15 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import Navbar from '@/components/Navbar';
-import Footer from '@/components/Footer';
+import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
 import { ArrowLeft, Search, MapPin, Zap, CheckCircle, Package, Truck, Clock, Copy, ExternalLink } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { publicTrackingAPI } from '@/services/tracking-api';
-import { TRACKING_STATUSES } from '@/lib/types/tracking';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Badge } from '../components/ui/badge';
+import { Separator } from '../components/ui/separator';
+import { publicTrackingAPI } from '../services/tracking-api';
+import { TRACKING_STATUSES } from '../lib/types/tracking';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 
