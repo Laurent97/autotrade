@@ -25,12 +25,22 @@ import {
   Grid3X3,
   List,
   ArrowUpRight,
-  ArrowDownRight
+  ArrowDownRight,
+  ShoppingBag,
+  Clock,
+  Truck,
+  CheckCircle,
+  XCircle,
+  MoreVertical
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Separator } from '@/components/ui/separator';
 
 export default function DashboardOrders() {
   const { user, userProfile } = useAuth();
@@ -41,6 +51,7 @@ export default function DashboardOrders() {
   const [filter, setFilter] = useState<'all' | 'pending' | 'processing' | 'shipped' | 'completed' | 'cancelled'>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
+  const [activeTab, setActiveTab] = useState('overview');
   
   // Wallet state
   const [walletBalance, setWalletBalance] = useState(0);
@@ -131,7 +142,6 @@ export default function DashboardOrders() {
     
     setWalletLoading(true);
     try {
-      // Use the same wallet service method as the wallet dashboard
       const { data: statsData } = await walletService.getStats(user.id);
       setWalletBalance(statsData?.availableBalance || 0);
     } catch (err) {
@@ -189,14 +199,12 @@ export default function DashboardOrders() {
     }
   };
 
-  // Action handlers for OrderActionsDropdown
   const handleProcessOrder = async (order: any) => {
     if (!user?.id) {
       alert('Authentication required. Please log in again.');
       return;
     }
     
-    // Confirm before processing
     const confirmPayment = window.confirm(
       `Process payment for Order #${order.order_number || order.id}?\n\nAmount: $${order.total_amount?.toFixed(2) || '0.00'}\n\nThis will deduct the amount from your wallet balance.`
     );
@@ -216,7 +224,6 @@ export default function DashboardOrders() {
       console.log('Payment processed successfully');
       alert('✅ Payment processed successfully! Order status updated to "Waiting Confirmation".');
       
-      // Refresh data
       await loadOrders();
       await loadWalletBalance();
     } catch (err) {
@@ -264,28 +271,46 @@ export default function DashboardOrders() {
     averageOrderValue: orders.length > 0 ? orders.reduce((sum, o) => sum + (o.total_amount || 0), 0) / orders.length : 0
   };
 
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'pending': return <Clock className="w-4 h-4" />;
+      case 'processing': return <Package className="w-4 h-4" />;
+      case 'shipped': return <Truck className="w-4 h-4" />;
+      case 'completed': return <CheckCircle className="w-4 h-4" />;
+      case 'cancelled': return <XCircle className="w-4 h-4" />;
+      default: return <ShoppingBag className="w-4 h-4" />;
+    }
+  };
+
   return (
     <div className="space-y-6">
-      {/* Professional Header */}
+      {/* Enhanced Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">Orders Management</h1>
-          <p className="text-muted-foreground">Manage and track all your customer orders in real-time</p>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 bg-primary/10 rounded-lg">
+              <ShoppingBag className="w-6 h-6 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Orders Dashboard</h1>
+              <p className="text-muted-foreground">Manage orders, track shipments, and process payments</p>
+            </div>
+          </div>
         </div>
         
         <div className="flex items-center gap-3">
-          {/* Modern Wallet Balance Card */}
-          <Card className="bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border-amber-200 dark:border-amber-700/50">
+          {/* Enhanced Wallet Balance Card */}
+          <Card className="border-l-4 border-l-amber-500 shadow-sm">
             <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-amber-100 dark:bg-amber-800/50 rounded-lg">
-                  <Wallet className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-                </div>
+              <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Available Balance</p>
-                  <p className="text-lg font-semibold text-amber-700 dark:text-amber-300">
-                    {walletLoading ? 'Loading...' : `$${walletBalance.toFixed(2)}`}
+                  <p className="text-sm text-muted-foreground mb-1">Available Balance</p>
+                  <p className="text-2xl font-bold text-amber-700 dark:text-amber-300">
+                    {walletLoading ? '...' : `$${walletBalance.toFixed(2)}`}
                   </p>
+                </div>
+                <div className="p-3 bg-amber-100 dark:bg-amber-800/30 rounded-full">
+                  <Wallet className="w-5 h-5 text-amber-600 dark:text-amber-400" />
                 </div>
               </div>
             </CardContent>
@@ -295,52 +320,98 @@ export default function DashboardOrders() {
         </div>
       </div>
 
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.total}</div>
-            <p className="text-xs text-muted-foreground">All time orders</p>
-          </CardContent>
-        </Card>
+      {/* Status Tabs Navigation */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid grid-cols-4 lg:grid-cols-6">
+          <TabsTrigger value="overview" className="flex items-center gap-2">
+            <ShoppingBag className="w-4 h-4" />
+            Overview
+          </TabsTrigger>
+          <TabsTrigger value="pending" className="flex items-center gap-2">
+            <Clock className="w-4 h-4" />
+            Pending ({stats.pending})
+          </TabsTrigger>
+          <TabsTrigger value="active" className="flex items-center gap-2">
+            <Package className="w-4 h-4" />
+            Active ({stats.processing + stats.shipped})
+          </TabsTrigger>
+          <TabsTrigger value="completed" className="flex items-center gap-2">
+            <CheckCircle className="w-4 h-4" />
+            Completed ({stats.completed})
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="overview" className="space-y-6">
+          {/* Statistics Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card className="border-t-4 border-t-blue-500">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Total Orders</p>
+                    <h3 className="text-3xl font-bold mt-2">{stats.total}</h3>
+                  </div>
+                  <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-full">
+                    <ShoppingBag className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                  </div>
+                </div>
+                <div className="mt-4 flex items-center text-sm text-green-600 dark:text-green-400">
+                  <ArrowUpRight className="w-4 h-4 mr-1" />
+                  <span>All time orders</span>
+                </div>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Orders</CardTitle>
-            <Calendar className="h-4 w-4 text-orange-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-orange-600">{stats.pending}</div>
-            <p className="text-xs text-muted-foreground">${stats.pendingRevenue.toFixed(2)} pending</p>
-          </CardContent>
-        </Card>
+            <Card className="border-t-4 border-t-amber-500">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Pending Orders</p>
+                    <h3 className="text-3xl font-bold mt-2 text-amber-600">{stats.pending}</h3>
+                  </div>
+                  <div className="p-3 bg-amber-100 dark:bg-amber-900/30 rounded-full">
+                    <Clock className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+                  </div>
+                </div>
+                <p className="text-sm text-muted-foreground mt-2">${stats.pendingRevenue.toFixed(2)} pending</p>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-            <DollarSign className="h-4 w-4 text-green-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600">${stats.totalRevenue.toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground">From completed orders</p>
-          </CardContent>
-        </Card>
+            <Card className="border-t-4 border-t-green-500">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Total Revenue</p>
+                    <h3 className="text-3xl font-bold mt-2 text-green-600">${stats.totalRevenue.toFixed(2)}</h3>
+                  </div>
+                  <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-full">
+                    <DollarSign className="w-6 h-6 text-green-600 dark:text-green-400" />
+                  </div>
+                </div>
+                <div className="mt-4 flex items-center text-sm text-green-600 dark:text-green-400">
+                  <TrendingUp className="w-4 h-4 mr-1" />
+                  <span>From completed orders</span>
+                </div>
+              </CardContent>
+            </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg Order Value</CardTitle>
-            <TrendingUp className="h-4 w-4 text-blue-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">${stats.averageOrderValue.toFixed(2)}</div>
-            <p className="text-xs text-muted-foreground">Per order average</p>
-          </CardContent>
-        </Card>
-      </div>
+            <Card className="border-t-4 border-t-purple-500">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Avg Order Value</p>
+                    <h3 className="text-3xl font-bold mt-2 text-purple-600">${stats.averageOrderValue.toFixed(2)}</h3>
+                  </div>
+                  <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-full">
+                    <TrendingUp className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                  </div>
+                </div>
+                <p className="text-sm text-muted-foreground mt-2">Per order average</p>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
 
       {/* Error Display */}
       {error && (
@@ -349,196 +420,295 @@ export default function DashboardOrders() {
             <div className="flex items-center gap-3 text-red-700 dark:text-red-300">
               <AlertCircle className="w-5 h-5" />
               <span>{error}</span>
+              <Button variant="ghost" size="sm" onClick={() => setError(null)} className="ml-auto">
+                Dismiss
+              </Button>
             </div>
           </CardContent>
         </Card>
       )}
 
-      {/* Filters and Search Bar */}
+      {/* Search and Filter Section */}
       <Card>
-        <CardHeader>
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <div className="flex flex-col sm:flex-row gap-3 flex-1">
-              {/* Search Input */}
-              <div className="relative flex-1 max-w-md">
+        <CardContent className="p-6">
+          <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
+            <div className="flex-1 w-full max-w-xl">
+              <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search orders by ID, customer name, or email..."
+                  placeholder="Search by order ID, customer name, email..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 pr-4 py-2"
                 />
               </div>
-              
-              {/* Status Filter */}
-              <Select value={filter} onValueChange={(value: any) => setFilter(value)}>
-                <SelectTrigger className="w-full sm:w-48">
-                  <SelectValue placeholder="Filter by status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Orders ({stats.total})</SelectItem>
-                  <SelectItem value="pending">Pending ({stats.pending})</SelectItem>
-                  <SelectItem value="processing">Processing ({stats.processing})</SelectItem>
-                  <SelectItem value="shipped">Shipped ({stats.shipped})</SelectItem>
-                  <SelectItem value="completed">Completed ({stats.completed})</SelectItem>
-                  <SelectItem value="cancelled">Cancelled ({stats.cancelled})</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
             
-            <div className="flex items-center gap-2">
-              {/* View Mode Toggle */}
-              <div className="flex items-center border rounded-lg">
-                <Button
-                  variant={viewMode === 'table' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode('table')}
-                  className="rounded-r-none"
-                >
-                  <List className="w-4 h-4" />
-                </Button>
-                <Button
-                  variant={viewMode === 'grid' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode('grid')}
-                  className="rounded-l-none"
-                >
-                  <Grid3X3 className="w-4 h-4" />
-                </Button>
+            <div className="flex items-center gap-3 w-full lg:w-auto">
+              {/* Status Filter */}
+              <div className="flex-1 lg:flex-none">
+                <Select value={filter} onValueChange={(value: any) => setFilter(value)}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Filter by status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">
+                      <div className="flex items-center gap-2">
+                        <Filter className="w-4 h-4" />
+                        All Orders ({stats.total})
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="pending">
+                      <div className="flex items-center gap-2">
+                        <Clock className="w-4 h-4 text-amber-500" />
+                        Pending ({stats.pending})
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="processing">
+                      <div className="flex items-center gap-2">
+                        <Package className="w-4 h-4 text-blue-500" />
+                        Processing ({stats.processing})
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="shipped">
+                      <div className="flex items-center gap-2">
+                        <Truck className="w-4 h-4 text-purple-500" />
+                        Shipped ({stats.shipped})
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="completed">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle className="w-4 h-4 text-green-500" />
+                        Completed ({stats.completed})
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="cancelled">
+                      <div className="flex items-center gap-2">
+                        <XCircle className="w-4 h-4 text-red-500" />
+                        Cancelled ({stats.cancelled})
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               
-              {/* Refresh Button */}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  loadOrders();
-                  loadTrackingData();
-                }}
-                disabled={loading}
-              >
-                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-              </Button>
+              <div className="flex items-center gap-2">
+                {/* View Mode Toggle */}
+                <div className="flex items-center border rounded-lg bg-muted/50">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant={viewMode === 'table' ? 'default' : 'ghost'}
+                          size="sm"
+                          onClick={() => setViewMode('table')}
+                          className="rounded-r-none"
+                        >
+                          <List className="w-4 h-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Table View</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                          size="sm"
+                          onClick={() => setViewMode('grid')}
+                          className="rounded-l-none"
+                        >
+                          <Grid3X3 className="w-4 h-4" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Grid View</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+                
+                {/* Refresh Button */}
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          loadOrders();
+                          loadTrackingData();
+                          loadWalletBalance();
+                        }}
+                        disabled={loading}
+                      >
+                        <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Refresh Data</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
             </div>
           </div>
-        </CardHeader>
+        </CardContent>
       </Card>
 
       {/* Orders Display */}
       {loading || partnerLoading ? (
         <Card>
-          <CardContent className="flex items-center justify-center py-12">
-            <LoadingSpinner />
+          <CardContent className="flex flex-col items-center justify-center py-20">
+            <LoadingSpinner size="lg" />
+            <p className="mt-4 text-muted-foreground">Loading your orders...</p>
           </CardContent>
         </Card>
       ) : filteredOrders.length === 0 ? (
         <Card>
-          <CardContent className="flex flex-col items-center justify-center py-16">
-            <div className="text-6xl mb-4">📦</div>
-            <h3 className="text-xl font-semibold mb-2">No {filter === 'all' ? '' : filter} orders found</h3>
-            <p className="text-muted-foreground mb-6">Orders will appear here when customers make purchases</p>
-            <Link to="/partner/products/add">
-              <Button>
-                <Package className="w-4 h-4 mr-2" />
-                Add Products
-              </Button>
-            </Link>
+          <CardContent className="flex flex-col items-center justify-center py-20 text-center">
+            <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mb-6">
+              <ShoppingBag className="w-10 h-10 text-muted-foreground" />
+            </div>
+            <h3 className="text-2xl font-semibold mb-2">No orders found</h3>
+            <p className="text-muted-foreground mb-6 max-w-md">
+              {searchTerm 
+                ? `No orders matching "${searchTerm}"`
+                : filter !== 'all'
+                ? `No ${filter} orders at the moment`
+                : "You don't have any orders yet. When customers purchase your products, they'll appear here."
+              }
+            </p>
+            <div className="flex gap-3">
+              {searchTerm && (
+                <Button variant="outline" onClick={() => setSearchTerm('')}>
+                  Clear Search
+                </Button>
+              )}
+              <Link to="/partner/products/add">
+                <Button>
+                  <Package className="w-4 h-4 mr-2" />
+                  Add Products
+                </Button>
+              </Link>
+            </div>
           </CardContent>
         </Card>
       ) : viewMode === 'table' ? (
-        /* Modern Table View */
-        <Card>
+        /* Enhanced Table View */
+        <Card className="overflow-hidden">
+          <CardHeader className="bg-muted/50">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Orders</CardTitle>
+                <CardDescription>
+                  {filter === 'all' ? 'All' : filter.charAt(0).toUpperCase() + filter.slice(1)} orders ({filteredOrders.length})
+                </CardDescription>
+              </div>
+              <Badge variant="outline" className="text-sm">
+                Updated in real-time
+              </Badge>
+            </div>
+          </CardHeader>
           <CardContent className="p-0">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b bg-muted/50">
-                    <th className="text-left p-4 font-medium">Order ID</th>
-                    <th className="text-left p-4 font-medium">Customer</th>
-                    <th className="text-left p-4 font-medium">Amount</th>
-                    <th className="text-left p-4 font-medium">Items</th>
-                    <th className="text-left p-4 font-medium">Status</th>
-                    <th className="text-left p-4 font-medium">Tracking</th>
-                    <th className="text-left p-4 font-medium">Date</th>
-                    <th className="text-left p-4 font-medium">Actions</th>
+                  <tr className="border-b bg-muted/30">
+                    <th className="text-left p-4 font-semibold text-sm uppercase tracking-wider">Order</th>
+                    <th className="text-left p-4 font-semibold text-sm uppercase tracking-wider">Customer</th>
+                    <th className="text-left p-4 font-semibold text-sm uppercase tracking-wider">Amount</th>
+                    <th className="text-left p-4 font-semibold text-sm uppercase tracking-wider">Status</th>
+                    <th className="text-left p-4 font-semibold text-sm uppercase tracking-wider">Tracking</th>
+                    <th className="text-left p-4 font-semibold text-sm uppercase tracking-wider">Date</th>
+                    <th className="text-left p-4 font-semibold text-sm uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredOrders.map((order) => (
-                    <tr key={order.id} className="border-b hover:bg-muted/30 transition-colors">
+                    <tr key={order.id} className="border-b hover:bg-muted/20 transition-colors group">
                       <td className="p-4">
-                        <div className="font-mono text-sm">
-                          {order.order_number || order.id.slice(0, 8)}...
+                        <div>
+                          <div className="font-mono font-semibold text-sm">
+                            {order.order_number || `ORD-${order.id.slice(0, 8).toUpperCase()}`}
+                          </div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            {order.order_items?.length || 0} item(s)
+                          </div>
                         </div>
                       </td>
                       <td className="p-4">
                         <div>
                           <div className="font-medium">
-                            {order.user?.full_name || order.user?.email || 'Customer'}
+                            {order.user?.full_name || 'Customer'}
                           </div>
-                          <div className="text-sm text-muted-foreground">
+                          <div className="text-sm text-muted-foreground truncate max-w-[200px]">
                             {order.user?.email}
                           </div>
                         </div>
                       </td>
                       <td className="p-4">
-                        <div className="font-medium">
-                          ${order.total_amount?.toFixed(2)}
+                        <div className="font-bold text-lg">
+                          ${order.total_amount?.toFixed(2) || '0.00'}
                         </div>
                       </td>
                       <td className="p-4">
-                        <div className="space-y-1">
-                          <div className="font-medium">
-                            {order.order_items?.length || 0} item(s)
-                          </div>
-                          {order.order_items?.slice(0, 2).map((item, idx) => (
-                            <div key={idx} className="text-xs text-muted-foreground">
-                              • {item.quantity}x {item.product?.make || item.product?.title || 'Product'}
-                            </div>
-                          ))}
-                          {order.order_items && order.order_items.length > 2 && (
-                            <div className="text-xs text-muted-foreground">
-                              +{order.order_items.length - 2} more
-                            </div>
-                          )}
+                        <div className="flex items-center gap-2">
+                          {getStatusIcon(order.status)}
+                          <OrderStatusBadge status={order.status} size="sm" />
                         </div>
-                      </td>
-                      <td className="p-4">
-                        <OrderStatusBadge status={order.status} size="sm" />
                       </td>
                       <td className="p-4">
                         <OrderTrackingBadge 
                           tracking={trackingData[order.order_number] || null} 
                           orderId={order.order_number}
+                          showStatus
                         />
                       </td>
                       <td className="p-4">
-                        <div className="text-sm text-muted-foreground">
-                          {new Date(order.created_at).toLocaleDateString()}
+                        <div>
+                          <div className="text-sm font-medium">
+                            {new Date(order.created_at).toLocaleDateString()}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </div>
                         </div>
                       </td>
                       <td className="p-4">
                         <div className="flex items-center gap-2">
                           {order.status === 'pending' && (
-                            <Button
-                              size="sm"
-                              onClick={() => handleProcessOrder(order)}
-                              className="bg-green-600 hover:bg-green-700"
-                            >
-                              <Wallet className="w-3 h-3 mr-1" />
-                              Pay
-                            </Button>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    size="sm"
+                                    onClick={() => handleProcessOrder(order)}
+                                    className="bg-green-600 hover:bg-green-700 shadow-sm"
+                                  >
+                                    <Wallet className="w-3 h-3 mr-2" />
+                                    Pay
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Process payment for this order</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
                           )}
                           
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              // TODO: Add order details modal
-                            }}
-                          >
-                            <Eye className="w-4 h-4" />
-                          </Button>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    // TODO: Add order details modal
+                                  }}
+                                >
+                                  <Eye className="w-4 h-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>View order details</TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                           
                           <OrderActionsDropdown
                             order={order}
@@ -557,68 +727,86 @@ export default function DashboardOrders() {
           </CardContent>
         </Card>
       ) : (
-        /* Grid View */
+        /* Enhanced Grid View */
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredOrders.map((order) => (
-            <Card key={order.id} className="hover:shadow-lg transition-shadow">
-              <CardHeader>
+            <Card key={order.id} className="hover:shadow-lg transition-all duration-200 hover:border-primary/50">
+              <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
-                  <div className="font-mono text-sm text-muted-foreground">
-                    {order.order_number || order.id.slice(0, 8)}...
-                  </div>
-                  <OrderStatusBadge status={order.status} size="sm" />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
                   <div>
-                    <div className="font-medium">
-                      {order.user?.full_name || order.user?.email || 'Customer'}
+                    <div className="font-mono text-sm font-semibold text-primary">
+                      {order.order_number || `ORD-${order.id.slice(0, 8).toUpperCase()}`}
                     </div>
-                    <div className="text-sm text-muted-foreground">
-                      {order.user?.email}
-                    </div>
-                  </div>
-                  
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <div className="text-2xl font-bold">${order.total_amount?.toFixed(2)}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {order.order_items?.length || 0} items
-                      </div>
-                    </div>
-                    <div className="text-sm text-muted-foreground">
+                    <div className="text-xs text-muted-foreground mt-1">
                       {new Date(order.created_at).toLocaleDateString()}
                     </div>
                   </div>
+                  <OrderStatusBadge status={order.status} />
+                </div>
+              </CardHeader>
+              
+              <Separator />
+              
+              <CardContent className="pt-4">
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="font-medium">Customer</div>
+                      <Badge variant="outline" className="text-xs">
+                        {order.order_items?.length || 0} items
+                      </Badge>
+                    </div>
+                    <div className="text-sm">
+                      <div className="font-semibold truncate">
+                        {order.user?.full_name || 'Customer'}
+                      </div>
+                      <div className="text-muted-foreground truncate">
+                        {order.user?.email}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                    <div>
+                      <div className="text-sm text-muted-foreground">Total Amount</div>
+                      <div className="text-2xl font-bold">${order.total_amount?.toFixed(2)}</div>
+                    </div>
+                    <div className="p-2 bg-primary/10 rounded-lg">
+                      <DollarSign className="w-5 h-5 text-primary" />
+                    </div>
+                  </div>
                   
                   <div>
+                    <div className="text-sm text-muted-foreground mb-2">Tracking Status</div>
                     <OrderTrackingBadge 
                       tracking={trackingData[order.order_number] || null} 
                       orderId={order.order_number}
+                      compact
                     />
                   </div>
                   
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 pt-2">
                     {order.status === 'pending' && (
                       <Button
                         size="sm"
                         onClick={() => handleProcessOrder(order)}
                         className="flex-1 bg-green-600 hover:bg-green-700"
                       >
-                        <Wallet className="w-3 h-3 mr-1" />
-                        Pay Order
+                        <Wallet className="w-3 h-3 mr-2" />
+                        Process Payment
                       </Button>
                     )}
                     
                     <Button
-                      variant="ghost"
+                      variant="outline"
                       size="sm"
+                      className="flex-1"
                       onClick={() => {
                         // TODO: Add order details modal
                       }}
                     >
-                      <Eye className="w-4 h-4" />
+                      <Eye className="w-4 h-4 mr-2" />
+                      View
                     </Button>
                     
                     <OrderActionsDropdown
@@ -636,27 +824,51 @@ export default function DashboardOrders() {
         </div>
       )}
 
-      {/* Modern Summary Footer */}
+      {/* Summary Footer */}
       {orders.length > 0 && (
         <Card>
           <CardContent className="p-4">
             <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-              <div className="text-sm text-muted-foreground">
-                Showing <span className="font-medium">{filteredOrders.length}</span> of{' '}
-                <span className="font-medium">{orders.length}</span> orders
+              <div className="flex items-center gap-4">
+                <div className="text-sm">
+                  <span className="font-semibold">{filteredOrders.length}</span> of{' '}
+                  <span className="font-semibold">{orders.length}</span> orders displayed
+                </div>
+                {searchTerm && (
+                  <Badge variant="secondary" className="cursor-pointer" onClick={() => setSearchTerm('')}>
+                    Search: "{searchTerm}" ✕
+                  </Badge>
+                )}
               </div>
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={loadOrders}>
+              
+              <div className="flex items-center gap-3">
+                <Button variant="outline" size="sm" onClick={loadOrders}>
                   <RefreshCw className="w-4 h-4 mr-2" />
-                  Refresh
+                  Refresh Data
                 </Button>
                 <Link to="/partner/products/add">
-                  <Button>
+                  <Button size="sm">
                     <Package className="w-4 h-4 mr-2" />
                     Add Products
                   </Button>
                 </Link>
               </div>
+            </div>
+            
+            {/* Quick Stats */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4 pt-4 border-t">
+              {['pending', 'processing', 'shipped', 'completed'].map((status) => {
+                const count = stats[status as keyof typeof stats];
+                const icon = getStatusIcon(status);
+                return (
+                  <div key={status} className="text-center">
+                    <div className="text-2xl font-bold">{count}</div>
+                    <div className="text-xs text-muted-foreground uppercase tracking-wider">
+                      {status}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </CardContent>
         </Card>
