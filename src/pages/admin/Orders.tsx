@@ -977,7 +977,6 @@ export default function AdminOrders() {
             .from('order_tracking')
             .select('id, order_id, created_at')
             .eq('order_id', selectedOrder.id)
-            .eq('tracking_number', logisticsForm.tracking_number)
             .order('created_at', { ascending: false });
 
           if (fetchError) {
@@ -987,13 +986,42 @@ export default function AdminOrders() {
             
             console.log(`📊 Found ${trackingRecords.length} tracking records for order ${selectedOrder.order_number}, using most recent: ${mostRecentRecord.id}`);
             
+            // Create meaningful description based on status
+            let description = `Status updated to ${logisticsForm.current_status}`;
+            let location = 'Distribution Center';
+            
+            switch (logisticsForm.current_status) {
+              case 'PROCESSING':
+                description = 'Order is being processed and prepared for shipment';
+                location = 'Processing Center';
+                break;
+              case 'SHIPPED':
+                description = `Package shipped via ${logisticsForm.carrier}`;
+                location = 'Distribution Center';
+                break;
+              case 'IN_TRANSIT':
+                description = 'Package is currently in transit to destination';
+                location = 'In Transit';
+                break;
+              case 'OUT_FOR_DELIVERY':
+                description = 'Package is out for delivery today';
+                location = 'Local Delivery Facility';
+                break;
+              case 'DELIVERED':
+                description = 'Package has been successfully delivered';
+                location = 'Destination';
+                break;
+              default:
+                description = `Status updated to: ${logisticsForm.current_status}`;
+            }
+            
             await supabase
               .from('tracking_updates')
               .insert({
                 tracking_id: mostRecentRecord.id,
                 status: logisticsForm.current_status,
-                description: `Status updated to ${logisticsForm.current_status}`,
-                location: 'Distribution Center',
+                description,
+                location,
                 updated_by: userProfile?.id,
                 timestamp: new Date().toISOString()
               });
