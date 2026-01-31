@@ -691,31 +691,6 @@ export default function DashboardAnalytics() {
               </CardContent>
             </Card>
 
-            {/* Wallet Balance */}
-            <Card className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border-amber-200 dark:border-amber-700/30">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="p-3 bg-amber-100 dark:bg-amber-900/30 rounded-xl">
-                    <Wallet className="w-6 h-6 text-amber-600 dark:text-amber-400" />
-                  </div>
-                  <Badge variant="outline" className="text-amber-600 border-amber-200">
-                    Balance
-                  </Badge>
-                </div>
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">Available Balance</p>
-                  <h3 className="text-3xl font-bold text-amber-700 dark:text-amber-300">
-                    {formatCurrency(metrics.availableBalance)}
-                  </h3>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Ready to withdraw</span>
-                    <Badge variant="secondary" className="text-xs">
-                      Instant
-                    </Badge>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
           </div>
 
           {/* Performance Charts Grid */}
@@ -998,15 +973,6 @@ export default function DashboardAnalytics() {
                   <p className="text-sm text-muted-foreground">Last 30 Days</p>
                   <div className="text-xs text-muted-foreground mt-1">
                     Average: {formatCurrency(metrics.last30DaysEarnings / 30)}
-                  </div>
-                </div>
-                <div className="text-center p-4">
-                  <div className="text-3xl font-bold text-amber-600">
-                    {formatCurrency(metrics.availableBalance)}
-                  </div>
-                  <p className="text-sm text-muted-foreground">Available Balance</p>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    Ready for withdrawal
                   </div>
                 </div>
               </div>

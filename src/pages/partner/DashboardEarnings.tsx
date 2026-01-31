@@ -525,37 +525,6 @@ export default function DashboardEarnings() {
               </CardContent>
             </Card>
 
-            {/* Available Balance Card */}
-            <Card className="bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 border-blue-200 dark:border-blue-700/30">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
-                    <Wallet className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-                  </div>
-                  <Button
-                    size="sm"
-                    onClick={handleWithdraw}
-                    disabled={earnings.availableBalance <= 0 || loading}
-                    className="bg-blue-600 hover:bg-blue-700"
-                  >
-                    Withdraw
-                  </Button>
-                </div>
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">Available Balance</p>
-                  <h3 className="text-3xl font-bold text-blue-700 dark:text-blue-300">
-                    {formatCurrency(earnings.availableBalance)}
-                  </h3>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Ready for withdrawal</span>
-                    <Badge variant="secondary" className="text-xs">
-                      Instant
-                    </Badge>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
             {/* This Month Card */}
             <Card className="bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-900/20 dark:to-violet-900/20 border-purple-200 dark:border-purple-700/30">
               <CardContent className="p-6">
@@ -723,60 +692,8 @@ export default function DashboardEarnings() {
               </Card>
             </div>
 
-            {/* Right Column: Balance & Store Info */}
+            {/* Right Column: Store Info */}
             <div className="space-y-6">
-              {/* Balance Summary */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Wallet className="w-5 h-5 text-blue-600" />
-                    Balance Summary
-                  </CardTitle>
-                  <CardDescription>Your current balances</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium">Available</span>
-                        <span className="text-lg font-bold text-green-600">
-                          {formatCurrency(earnings.availableBalance)}
-                        </span>
-                      </div>
-                      <Progress value={earnings.availableBalance > 0 ? 100 : 0} className="h-2" />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium">Pending</span>
-                        <span className="text-lg font-bold text-amber-600">
-                          {formatCurrency(earnings.pendingBalance)}
-                        </span>
-                      </div>
-                      <Progress value={earnings.pendingBalance > 0 ? 100 : 0} className="h-2 bg-amber-100" />
-                    </div>
-                    
-                    <Separator />
-                    
-                    <div className="space-y-3">
-                      <Button 
-                        onClick={handleWithdraw}
-                        disabled={earnings.availableBalance <= 0 || loading}
-                        className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700"
-                      >
-                        <CreditCard className="w-4 h-4 mr-2" />
-                        Withdraw Funds
-                      </Button>
-                      
-                      <Button variant="outline" className="w-full" onClick={recalculateWalletBalance}>
-                        <RefreshCw className="w-4 h-4 mr-2" />
-                        Recalculate Balance
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
               {/* Store Performance */}
               <Card>
                 <CardHeader>
