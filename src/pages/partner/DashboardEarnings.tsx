@@ -208,8 +208,8 @@ export default function DashboardEarnings() {
       try {
         const balanceData = await walletService.getBalance(userProfile.id);
         if (balanceData) {
-          walletBalance = balanceData.balance || 0;
-          pendingBalance = balanceData.pending_balance || 0;
+          walletBalance = balanceData.data?.balance || 0;
+          pendingBalance = balanceData.data?.pending_balance || 0;
         }
       } catch (err) {
         console.warn('Wallet balance error:', err);
@@ -284,12 +284,9 @@ export default function DashboardEarnings() {
         totalOrders: totalOrders,
         storeRating: partnerProfile?.store_rating || 0,
         storeCreditScore: partnerProfile?.store_credit_score || 750,
-        commissionRate: commissionRate
+        commissionRate: (partnerProfile?.commission_rate || 10) // Store as percentage for display
       };
-
-      console.log('✅ Earnings data loaded:', finalEarnings);
       setEarnings(finalEarnings);
-
     } catch (err) {
       console.error('Failed to load earnings:', err);
       setError(err instanceof Error ? err.message : 'Failed to load earnings');
