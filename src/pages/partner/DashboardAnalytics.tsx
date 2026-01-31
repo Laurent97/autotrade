@@ -270,10 +270,12 @@ export default function DashboardAnalytics() {
 
       // Calculate order metrics
       const allOrders = ordersData || [];
-      const revenueOrders = allOrders.filter(order => 
-        ['completed', 'paid', 'processing', 'shipped'].includes(order.status) && 
-        (order.payment_status === 'paid' || order.payment_status === 'completed')
-      );
+      const revenueOrders = allOrders.filter(order => {
+        // More inclusive revenue calculation - include orders that can generate revenue
+        const hasValidStatus = ['completed', 'paid', 'processing', 'shipped'].includes(order.status);
+        const hasValidPayment = ['paid', 'completed', 'processing'].includes(order.payment_status);
+        return hasValidStatus && hasValidPayment;
+      });
       
       const completedOrders = allOrders.filter(order => order.status === 'completed');
       const pendingOrders = allOrders.filter(order => order.status === 'pending');

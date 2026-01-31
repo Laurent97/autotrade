@@ -222,11 +222,13 @@ export default function DashboardEarnings() {
       const allOrders = ordersData || [];
       console.log('Total orders found:', allOrders.length);
       
-      // Include multiple order statuses for revenue calculation
-      const revenueOrders = allOrders.filter(order => 
-        ['completed', 'paid', 'processing'].includes(order.status) && 
-        ['paid', 'completed'].includes(order.payment_status)
-      );
+      // Include multiple order statuses for revenue calculation - FIXED LOGIC
+      const revenueOrders = allOrders.filter(order => {
+        // More inclusive revenue calculation - include orders that can generate revenue
+        const hasValidStatus = ['completed', 'paid', 'processing', 'shipped'].includes(order.status);
+        const hasValidPayment = ['paid', 'completed', 'processing'].includes(order.payment_status);
+        return hasValidStatus && hasValidPayment;
+      });
       
       const completedOrders = allOrders.filter(order => order.status === 'completed');
       const totalOrders = revenueOrders.length; // Use revenue-eligible orders
