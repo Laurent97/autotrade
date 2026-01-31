@@ -153,10 +153,20 @@ export const walletService = {
           
           if (paidOrders.length > 0) {
             const totalRevenue = paidOrders.reduce((sum, order) => sum + (order.total_amount || 0), 0);
-            const commissionEarned = totalRevenue * 0.1; // 10% commission
+            
+            // Get partner profile to get actual commission rate
+            const { data: partnerProfile } = await supabase
+              .from('partner_profiles')
+              .select('commission_rate')
+              .eq('user_id', userId)
+              .maybeSingle();
+            
+            // Convert percentage to decimal (15% -> 0.15) for calculation
+            const commissionRate = (partnerProfile?.commission_rate || 10) / 100;
+            const commissionEarned = totalRevenue * commissionRate;
             
             console.log('💵 Total revenue from paid orders:', totalRevenue);
-            console.log('💰 Commission earned (10%):', commissionEarned);
+            console.log(`💰 Commission earned (${(commissionRate * 100).toFixed(1)}%):`, commissionEarned);
             
             calculatedBalance = commissionEarned;
           }

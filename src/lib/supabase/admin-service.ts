@@ -236,6 +236,23 @@ export const adminService = {
       .select()
       .single();
 
+    // Process partner commission when order is delivered or completed
+    if ((status === 'delivered' || status === 'completed') && data?.partner_id) {
+      try {
+        console.log(`💰 Processing partner commission for order ${orderId} with status ${status}`);
+        const { partnerTransactionService } = await import('./partner-transaction-service');
+        const payoutResult = await partnerTransactionService.processPartnerPayout(orderId, data.partner_id);
+        
+        if (payoutResult.success) {
+          console.log(`✅ Partner commission processed successfully for order ${orderId}`);
+        } else {
+          console.error(`❌ Failed to process partner commission for order ${orderId}:`, payoutResult.error);
+        }
+      } catch (commissionError) {
+        console.error(`❌ Error processing partner commission for order ${orderId}:`, commissionError);
+      }
+    }
+
     return { data, error };
   },
 
