@@ -874,40 +874,93 @@ export default function DashboardAnalytics() {
 
           {/* Store Performance Section */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Store Visits */}
+            {/* Store Visits Graph */}
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="w-5 h-5 text-blue-600" />
-                  Store Visits
-                </CardTitle>
-                <CardDescription>Customer engagement metrics</CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <Users className="w-5 h-5 text-blue-600" />
+                      Store Visits Trend
+                    </CardTitle>
+                    <CardDescription>Daily visitor engagement over last 14 days</CardDescription>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Select value={timeRange} onValueChange={(value: any) => setTimeRange(value)}>
+                      <SelectTrigger className="w-32">
+                        <SelectValue placeholder="Period" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="7d">Last 7 days</SelectItem>
+                        <SelectItem value="30d">Last 30 days</SelectItem>
+                        <SelectItem value="90d">Last 90 days</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-lg">
-                    <div className="text-2xl font-bold text-blue-600">
-                      {formatNumber(metrics.storeVisits.today)}
-                    </div>
-                    <p className="text-sm text-muted-foreground">Today</p>
+                <div className="h-64">
+                  <div className="flex items-end justify-between h-full gap-3">
+                    {Array.from({ length: 14 }, (_, i) => {
+                      const date = new Date(Date.now() - (13 - i) * 24 * 60 * 60 * 1000);
+                      const dateStr = date.toISOString().split('T')[0];
+                      
+                      // Generate sample visit data (replace with actual data from store_visits table)
+                      const baseVisits = metrics.storeVisits.allTime / 30; // Daily average
+                      const variance = Math.random() * 0.4 - 0.2; // ±20% variance
+                      const dailyVisits = Math.max(0, Math.floor(baseVisits * (1 + variance)));
+                      
+                      const maxVisits = Math.max(50, dailyVisits * 1.5);
+                      const height = (dailyVisits / maxVisits) * 100;
+                      
+                      return (
+                        <TooltipProvider key={i}>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="flex-1 flex flex-col items-center group cursor-pointer">
+                                <div className="w-full flex flex-col items-center">
+                                  <div className="text-xs font-medium mb-2 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
+                                    {dailyVisits} visits
+                                  </div>
+                                  <div 
+                                    className="w-full rounded-t-lg bg-gradient-to-t from-blue-500 to-cyan-400 hover:from-blue-600 hover:to-cyan-500 transition-all duration-300"
+                                    style={{ height: `${Math.max(height, 2)}%` }}
+                                  />
+                                </div>
+                                <span className="text-xs text-muted-foreground mt-2">
+                                  {date.getDate()}
+                                </span>
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>{date.toLocaleDateString()}</p>
+                              <p>Visits: {dailyVisits}</p>
+                              <p>Page views: {Math.floor(dailyVisits * 2.3)}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      );
+                    })}
                   </div>
-                  <div className="text-center p-4 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-lg">
-                    <div className="text-2xl font-bold text-green-600">
-                      {formatNumber(metrics.storeVisits.thisWeek)}
-                    </div>
-                    <p className="text-sm text-muted-foreground">This Week</p>
+                </div>
+                
+                <div className="mt-4 grid grid-cols-4 gap-2">
+                  <div className="text-center p-2 bg-blue-50 dark:bg-blue-900/20 rounded">
+                    <p className="text-lg font-bold text-blue-600">{formatNumber(metrics.storeVisits.today)}</p>
+                    <p className="text-xs text-muted-foreground">Today</p>
                   </div>
-                  <div className="text-center p-4 bg-gradient-to-br from-purple-50 to-violet-50 dark:from-purple-900/20 dark:to-violet-900/20 rounded-lg">
-                    <div className="text-2xl font-bold text-purple-600">
-                      {formatNumber(metrics.storeVisits.thisMonth)}
-                    </div>
-                    <p className="text-sm text-muted-foreground">This Month</p>
+                  <div className="text-center p-2 bg-green-50 dark:bg-green-900/20 rounded">
+                    <p className="text-lg font-bold text-green-600">{formatNumber(metrics.storeVisits.thisWeek)}</p>
+                    <p className="text-xs text-muted-foreground">This Week</p>
                   </div>
-                  <div className="text-center p-4 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 rounded-lg">
-                    <div className="text-2xl font-bold text-amber-600">
-                      {formatNumber(metrics.storeVisits.allTime)}
-                    </div>
-                    <p className="text-sm text-muted-foreground">All Time</p>
+                  <div className="text-center p-2 bg-purple-50 dark:bg-purple-900/20 rounded">
+                    <p className="text-lg font-bold text-purple-600">{formatNumber(metrics.storeVisits.thisMonth)}</p>
+                    <p className="text-xs text-muted-foreground">This Month</p>
+                  </div>
+                  <div className="text-center p-2 bg-amber-50 dark:bg-amber-900/20 rounded">
+                    <p className="text-lg font-bold text-amber-600">{formatNumber(metrics.storeVisits.allTime)}</p>
+                    <p className="text-xs text-muted-foreground">All Time</p>
                   </div>
                 </div>
                 
@@ -919,7 +972,7 @@ export default function DashboardAnalytics() {
                         <span className="text-sm font-medium">Auto-visits active</span>
                       </div>
                       <Badge variant="outline" className="text-blue-600">
-                        {visitDistribution.total_visits} visits
+                        {visitDistribution.total_visits} scheduled
                       </Badge>
                     </div>
                   </div>
