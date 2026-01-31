@@ -8,7 +8,7 @@ SELECT
 FROM users u 
 WHERE u.user_type = 'partner';
 
--- Add sample visit distribution for ALL partners
+-- Add sample visit distribution for ALL partners (only if they don't have one)
 INSERT INTO visit_distribution (
   partner_id,
   total_visits,
@@ -33,13 +33,7 @@ WHERE u.user_type = 'partner'
 AND NOT EXISTS (
   SELECT 1 FROM visit_distribution vd 
   WHERE vd.partner_id = u.id AND vd.is_active = true
-)
-ON CONFLICT (partner_id) DO UPDATE SET
-  total_visits = EXCLUDED.total_visits,
-  is_active = EXCLUDED.is_active,
-  start_time = EXCLUDED.start_time,
-  end_time = EXCLUDED.end_time,
-  updated_at = NOW();
+);
 
 -- Add sample store visits for ALL partners (last 30 days of data)
 INSERT INTO store_visits (partner_id, visitor_id, page_visited, session_duration, created_at)
