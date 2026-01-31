@@ -235,7 +235,7 @@ export default function PartnerDashboard() {
                 <CardContent className="p-6">
                   <Breadcrumbs />
                   <div className="mt-6">
-                    <Outlet />
+                    <Outlet context={{ stats, partner, refreshData }} />
                   </div>
                 </CardContent>
               </Card>
