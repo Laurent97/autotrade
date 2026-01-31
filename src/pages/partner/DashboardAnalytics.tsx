@@ -901,49 +901,67 @@ export default function DashboardAnalytics() {
               </CardHeader>
               <CardContent>
                 <div className="h-64">
-                  <div className="flex items-end justify-between h-full gap-3">
-                    {Array.from({ length: 14 }, (_, i) => {
-                      const date = new Date(Date.now() - (13 - i) * 24 * 60 * 60 * 1000);
-                      const dateStr = date.toISOString().split('T')[0];
-                      
-                      // Generate sample visit data with fallback if no actual visits exist
-                      const allTimeVisits = metrics.storeVisits.allTime || 0;
-                      const baseVisits = allTimeVisits > 0 ? allTimeVisits / 30 : 25; // Fallback to 25 daily average
-                      const variance = Math.random() * 0.4 - 0.2; // ±20% variance
-                      const dailyVisits = Math.max(5, Math.floor(baseVisits * (1 + variance))); // Minimum 5 visits
-                      
-                      const maxVisits = Math.max(50, dailyVisits * 1.5);
-                      const height = (dailyVisits / maxVisits) * 100;
-                      
-                      return (
-                        <TooltipProvider key={i}>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div className="flex-1 flex flex-col items-center group cursor-pointer">
-                                <div className="w-full flex flex-col items-center">
-                                  <div className="text-xs font-medium mb-2 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
-                                    {dailyVisits} visits
+                  {manualVisits && manualVisits.length > 0 ? (
+                    <div className="flex items-end justify-between h-full gap-3">
+                      {Array.from({ length: 14 }, (_, i) => {
+                        const date = new Date(Date.now() - (13 - i) * 24 * 60 * 60 * 1000);
+                        const dateStr = date.toISOString().split('T')[0];
+                        
+                        // Count visits for this specific date
+                        const dayVisits = manualVisits.filter(visit => 
+                          visit.created_at.startsWith(dateStr)
+                        ).length;
+                        
+                        // Add automated visits if distribution is active
+                        const automatedDayVisits = visitDistribution?.is_active ? 
+                          Math.floor((visitDistribution.total_visits || 0) / 14) : 0;
+                        
+                        const totalDayVisits = dayVisits + automatedDayVisits;
+                        const maxVisits = Math.max(50, ...manualVisits.map(v => {
+                          const visitDate = v.created_at.split('T')[0];
+                          return manualVisits.filter(visit => visit.created_at.startsWith(visitDate)).length;
+                        }));
+                        const height = maxVisits > 0 ? (totalDayVisits / maxVisits) * 100 : 0;
+                        
+                        return (
+                          <TooltipProvider key={i}>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="flex-1 flex flex-col items-center group cursor-pointer">
+                                  <div className="w-full flex flex-col items-center">
+                                    <div className="text-xs font-medium mb-2 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
+                                      {totalDayVisits} visits
+                                    </div>
+                                    <div 
+                                      className="w-full rounded-t-lg bg-gradient-to-t from-blue-500 to-cyan-400 hover:from-blue-600 hover:to-cyan-500 transition-all duration-300"
+                                      style={{ height: `${Math.max(height, 2)}%` }}
+                                    />
                                   </div>
-                                  <div 
-                                    className="w-full rounded-t-lg bg-gradient-to-t from-blue-500 to-cyan-400 hover:from-blue-600 hover:to-cyan-500 transition-all duration-300"
-                                    style={{ height: `${Math.max(height, 2)}%` }}
-                                  />
+                                  <span className="text-xs text-muted-foreground mt-2">
+                                    {date.getDate()}
+                                  </span>
                                 </div>
-                                <span className="text-xs text-muted-foreground mt-2">
-                                  {date.getDate()}
-                                </span>
-                              </div>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>{date.toLocaleDateString()}</p>
-                              <p>Visits: {dailyVisits}</p>
-                              <p>Page views: {Math.floor(dailyVisits * 2.3)}</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      );
-                    })}
-                  </div>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>{date.toLocaleDateString()}</p>
+                                <p>Manual visits: {dayVisits}</p>
+                                {automatedDayVisits > 0 && <p>Auto visits: {automatedDayVisits}</p>}
+                                <p>Total: {totalDayVisits}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="h-full flex items-center justify-center">
+                      <div className="text-center text-muted-foreground">
+                        <Users className="w-12 h-12 mx-auto mb-3" />
+                        <p>No visit data available</p>
+                        <p className="text-sm">Store visits will appear here once customers visit your store</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 
                 <div className="mt-4 grid grid-cols-4 gap-2">
