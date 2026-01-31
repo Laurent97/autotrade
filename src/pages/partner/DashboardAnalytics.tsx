@@ -916,7 +916,9 @@ export default function DashboardAnalytics() {
               </CardHeader>
               <CardContent>
                 <div className="h-64">
-                  {analytics.visitData?.manualVisits && analytics.visitData.manualVisits.length > 0 ? (
+                  {(analytics.visitData?.manualVisits && analytics.visitData.manualVisits.length > 0) || 
+                   (analytics.visitData?.visitDistribution?.is_active) ||
+                   (analytics.metrics.storeVisits.allTime > 0) ? (
                     <div className="flex items-end justify-between h-full gap-3">
                       {Array.from({ length: 14 }, (_, i) => {
                         const date = new Date(Date.now() - (13 - i) * 24 * 60 * 60 * 1000);
