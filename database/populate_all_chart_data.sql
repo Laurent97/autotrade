@@ -23,14 +23,14 @@ SELECT
   'customer_' || u.id::text || '_' || generate_series::text,
   -- Random order amounts between $50 and $500
   floor(random() * 451 + 50)::numeric,
-  CASE random()
-    WHEN 0.0 < random() AND random() <= 0.6 THEN 'completed'
-    WHEN 0.6 < random() AND random() <= 0.8 THEN 'paid'
-    WHEN 0.8 < random() AND random() <= 0.95 THEN 'processing'
+  CASE 
+    WHEN random() <= 0.6 THEN 'completed'
+    WHEN random() <= 0.8 THEN 'paid'
+    WHEN random() <= 0.95 THEN 'processing'
     ELSE 'pending'
   END,
-  CASE random()
-    WHEN 0.0 < random() AND random() <= 0.8 THEN 'paid'
+  CASE 
+    WHEN random() <= 0.8 THEN 'paid'
     ELSE 'pending'
   END,
   -- Distribute orders over the last 90 days
@@ -131,10 +131,10 @@ INSERT INTO store_visits (
 SELECT 
   u.id,
   'visitor_' || u.id::text || '_' || generate_series::text || '_' || EXTRACT(EPOCH FROM NOW()),
-  CASE random()
-    WHEN 0.0 < random() AND random() <= 0.4 THEN '/products'
-    WHEN 0.4 < random() AND random() <= 0.7 THEN '/store'
-    WHEN 0.7 < random() AND random() <= 0.85 THEN '/about'
+  CASE 
+    WHEN random() <= 0.4 THEN '/products'
+    WHEN random() <= 0.7 THEN '/store'
+    WHEN random() <= 0.85 THEN '/about'
     ELSE '/contact'
   END,
   floor(random() * 300 + 60), -- 60-360 seconds
