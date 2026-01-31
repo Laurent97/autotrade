@@ -339,24 +339,29 @@ export const partnerTransactionService = {
         throw new Error('Payout already processed for this order');
       }
 
-      // 3. Use stored payout amount or calculate from total
-      const payoutAmount = order.partner_payout_amount || order.total_amount;
-
-      if (payoutAmount <= 0) {
-        throw new Error('Invalid payout amount');
-      }
-
-      console.log('Payout amount:', payoutAmount);
-
-      // 4. Get partner user ID for wallet operations
+      // 3. Get partner commission rate and calculate payout amount
       const { data: partnerProfile, error: profileError } = await supabase
         .from('partner_profiles')
-        .select('user_id')
+        .select('user_id, commission_rate')
         .eq('id', partnerId)
         .single();
 
       if (profileError) throw profileError;
       if (!partnerProfile) throw new Error('Partner profile not found');
+
+      // Convert percentage to decimal (15% -> 0.15) for calculation
+      const commissionRate = (partnerProfile.commission_rate || 10) / 100;
+      const payoutAmount = order.partner_payout_amount || (order.total_amount * commissionRate);
+
+      if (payoutAmount <= 0) {
+        throw new Error('Invalid payout amount');
+      }
+
+      console.log('Payout calculation:', {
+        totalAmount: order.total_amount,
+        commissionRate: commissionRate,
+        payoutAmount
+      });
 
       // 5. Create payout transaction
       const { data: transaction, error: transactionError } = await this.createTransaction({
@@ -365,7 +370,7 @@ export const partnerTransactionService = {
         transaction_type: 'payout',
         amount: payoutAmount,
         status: 'pending',
-        description: `Payout for order ${order.order_number} (selling price)`,
+        description: `Commission payout for order ${order.order_number} - ${order.total_amount} × ${commissionRate} = ${payoutAmount}`,
         payment_method: 'wallet'
       });
 
