@@ -99,6 +99,10 @@ interface AnalyticsData {
     weeklyData: any[];
     monthlyEarnings: any[];
   };
+  visitData: {
+    manualVisits: any[];
+    visitDistribution: any;
+  };
 }
 
 export default function DashboardAnalytics() {
@@ -382,6 +386,11 @@ export default function DashboardAnalytics() {
           dailyEarnings: dailyEarnings,
           weeklyData: weeklyData,
           monthlyEarnings: Array.isArray(monthlyEarnings) ? monthlyEarnings : []
+        },
+        // Add visit data for graph rendering
+        visitData: {
+          manualVisits: manualVisits || [],
+          visitDistribution: visitDistribution || null
         }
       };
 
@@ -901,25 +910,25 @@ export default function DashboardAnalytics() {
               </CardHeader>
               <CardContent>
                 <div className="h-64">
-                  {manualVisits && manualVisits.length > 0 ? (
+                  {analytics.visitData?.manualVisits && analytics.visitData.manualVisits.length > 0 ? (
                     <div className="flex items-end justify-between h-full gap-3">
                       {Array.from({ length: 14 }, (_, i) => {
                         const date = new Date(Date.now() - (13 - i) * 24 * 60 * 60 * 1000);
                         const dateStr = date.toISOString().split('T')[0];
                         
                         // Count visits for this specific date
-                        const dayVisits = manualVisits.filter(visit => 
+                        const dayVisits = analytics.visitData.manualVisits.filter(visit => 
                           visit.created_at.startsWith(dateStr)
                         ).length;
                         
                         // Add automated visits if distribution is active
-                        const automatedDayVisits = visitDistribution?.is_active ? 
-                          Math.floor((visitDistribution.total_visits || 0) / 14) : 0;
+                        const automatedDayVisits = analytics.visitData.visitDistribution?.is_active ? 
+                          Math.floor((analytics.visitData.visitDistribution.total_visits || 0) / 14) : 0;
                         
                         const totalDayVisits = dayVisits + automatedDayVisits;
-                        const maxVisits = Math.max(50, ...manualVisits.map(v => {
+                        const maxVisits = Math.max(50, ...analytics.visitData.manualVisits.map(v => {
                           const visitDate = v.created_at.split('T')[0];
-                          return manualVisits.filter(visit => visit.created_at.startsWith(visitDate)).length;
+                          return analytics.visitData.manualVisits.filter(visit => visit.created_at.startsWith(visitDate)).length;
                         }));
                         const height = maxVisits > 0 ? (totalDayVisits / maxVisits) * 100 : 0;
                         
