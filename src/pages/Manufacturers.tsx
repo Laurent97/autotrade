@@ -323,6 +323,17 @@ export default function Manufacturers() {
   const [countryFilter, setCountryFilter] = useState("all");
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
+  // Shuffle function to randomize array
+  const shuffleArray = (array: any[]) => {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  };
+
+  // Apply filters and search
   const filteredShops = (shops || []).filter(shop => {
     const searchLower = searchTerm.toLowerCase();
     const searchWords = searchLower.split(' ').filter(word => word.length > 0);
@@ -391,6 +402,21 @@ export default function Manufacturers() {
 
   console.log('Final filtered shops count:', filteredShops?.length || 0);
 
+  // Determine which shops to display
+  const hasActiveFilters = searchTerm.trim() !== '' || categoryFilter !== 'all' || countryFilter !== 'all';
+  let displayedShops = filteredShops;
+
+  if (!hasActiveFilters && filteredShops.length > 15) {
+    // No search or filters active: show only 15 shuffled stores
+    displayedShops = shuffleArray(filteredShops).slice(0, 15);
+  } else if (hasActiveFilters) {
+    // Search or filters active: show all matching results
+    displayedShops = filteredShops;
+  } else {
+    // Less than 15 total stores: show all, but shuffled
+    displayedShops = shuffleArray(filteredShops);
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -425,7 +451,11 @@ export default function Manufacturers() {
           {/* Results Count and Refresh */}
           <div className="mb-6 flex items-center justify-between">
             <p className="text-muted-foreground">
-              {loading ? 'Loading...' : `Showing ${filteredShops?.length || 0} of ${shops?.length || 0} shops`}
+              {loading ? 'Loading...' : (
+                hasActiveFilters 
+                  ? `Showing ${displayedShops?.length || 0} of ${shops?.length || 0} shops`
+                  : `Showing ${displayedShops?.length || 0} featured shops${(shops?.length || 0) > 15 ? ` (search to see all ${shops?.length || 0})` : ''}`
+              )}
             </p>
             <div className="flex items-center gap-4">
               {lastUpdate && (
@@ -454,7 +484,7 @@ export default function Manufacturers() {
                 <p className="text-muted-foreground">Loading shops...</p>
               </div>
             </div>
-          ) : (filteredShops?.length || 0) === 0 ? (
+          ) : (displayedShops?.length || 0) === 0 ? (
             <div className="text-center py-12">
               <div className="max-w-md mx-auto">
                 <Store className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4 text-muted-foreground" />
@@ -481,7 +511,7 @@ export default function Manufacturers() {
                 ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" 
                 : "grid-cols-1"
             }`}>
-              {(filteredShops || []).map((shop) => (
+              {(displayedShops || []).map((shop) => (
                 <ShopCard key={shop.id} shop={shop} />
               ))}
             </div>
