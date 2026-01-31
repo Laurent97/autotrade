@@ -68,7 +68,7 @@ export default function DashboardEarnings() {
     totalOrders: 0,
     storeRating: 0,
     storeCreditScore: 0,
-    commissionRate: 0.10
+    commissionRate: 10 // Store as percentage (10% = 10)
   });
   const [monthlyEarnings, setMonthlyEarnings] = useState<any[]>([]);
   const [stores, setStores] = useState<any[]>([]);
@@ -162,7 +162,7 @@ export default function DashboardEarnings() {
           averageOrderValue: 0,
           storeRating: 0,
           storeCreditScore: 0,
-          commissionRate: 0.10
+          commissionRate: 10 // Store as percentage (10% = 10)
         });
         setLoading(false);
         return;
@@ -216,7 +216,8 @@ export default function DashboardEarnings() {
       }
 
       // 4. Get commission rate from partner profile or use default
-      const commissionRate = partnerProfile?.commission_rate || 0.10;
+      // Convert percentage to decimal (15% -> 0.15) for calculation
+      const commissionRate = (partnerProfile?.commission_rate || 10) / 100;
 
       // 5. Calculate earnings from real orders - FIXED LOGIC
       const allOrders = ordersData || [];
@@ -305,7 +306,7 @@ export default function DashboardEarnings() {
         totalOrders: 0,
         storeRating: 0,
         storeCreditScore: 0,
-        commissionRate: 0.10
+        commissionRate: 10 // Store as percentage (10% = 10)
       });
       setMonthlyEarnings([]);
     }
