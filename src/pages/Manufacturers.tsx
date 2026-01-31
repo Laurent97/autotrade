@@ -458,10 +458,10 @@ export default function Manufacturers() {
             <p className="text-muted-foreground">
               {loading ? 'Loading...' : (
                 hasSearchTerm
-                  ? `Found ${displayedShops?.length || 0} shop${(displayedShops?.length || 0) !== 1 ? 's' : ''} for "${searchTerm}"`
+                  ? `Found shop${(displayedShops?.length || 0) !== 1 ? 's' : ''} for "${searchTerm}"`
                   : hasActiveFilters
-                  ? `Showing ${displayedShops?.length || 0} filtered shops`
-                  : `Showing ${displayedShops?.length || 0} featured shops${(shops?.length || 0) > 15 ? ` (search to discover more)` : ''}`
+                  ? `${displayedShops?.length || 0} filtered shops`
+                  : 'Featured shops'
               )}
             </p>
             <div className="flex items-center gap-4">
