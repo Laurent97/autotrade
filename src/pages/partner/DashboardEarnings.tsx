@@ -315,7 +315,6 @@ export default function DashboardEarnings() {
     orders.forEach(order => {
       const date = new Date(order.created_at);
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      const monthName = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
       
       if (!monthlyMap[monthKey]) {
         monthlyMap[monthKey] = {
@@ -328,26 +327,7 @@ export default function DashboardEarnings() {
       monthlyMap[monthKey].orders += 1;
     });
     
-    // Generate fallback data for empty months
-    const now = new Date();
-    for (let i = 11; i >= 0; i--) {
-      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      
-      if (!monthlyMap[monthKey]) {
-        // Generate realistic fallback data
-        const baseEarnings = 500 + Math.random() * 1500; // $500-$2000 base
-        const variance = Math.random() * 0.4 - 0.2; // ±20% variance
-        const fallbackEarnings = baseEarnings * (1 + variance);
-        
-        monthlyMap[monthKey] = {
-          earnings: fallbackEarnings,
-          orders: Math.floor(Math.random() * 20 + 5) // 5-25 orders
-        };
-      }
-    }
-    
-    // Convert to array and sort by date
+    // Convert to array and sort by date - only use real data
     return Object.entries(monthlyMap)
       .map(([monthKey, data]) => ({
         month: monthKey,

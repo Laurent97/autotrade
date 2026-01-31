@@ -303,7 +303,7 @@ export default function DashboardAnalytics() {
         .filter(order => new Date(order.created_at) >= lastMonthStart && new Date(order.created_at) <= lastMonthEnd)
         .reduce((sum, order) => sum + ((order.total_amount || 0) * commissionRate), 0);
 
-      // Generate chart data with fallback for empty data
+      // Generate chart data from real orders only
       const dailyEarnings = Array.from({ length: 30 }, (_, i) => {
         const date = new Date(now.getTime() - (29 - i) * 24 * 60 * 60 * 1000);
         const dateStr = date.toISOString().split('T')[0];
@@ -315,18 +315,13 @@ export default function DashboardAnalytics() {
         const dayRevenue = dayOrders.reduce((sum, order) => sum + (order.total_amount || 0), 0);
         const dayProfit = dayRevenue * commissionRate;
         
-        // Fallback to sample data if no real orders exist
-        const hasRealData = dayOrders.length > 0;
-        const fallbackRevenue = hasRealData ? dayRevenue : (Math.random() * 500 + 100);
-        const fallbackProfit = hasRealData ? dayProfit : (fallbackRevenue * commissionRate);
-        const fallbackOrders = hasRealData ? dayOrders.length : Math.floor(Math.random() * 5 + 1);
-        
+        // Only use real data - no fallbacks
         return {
           date: dateStr,
-          earnings: fallbackProfit,
-          orders: fallbackOrders,
-          profit: fallbackProfit,
-          revenue: fallbackRevenue
+          earnings: dayProfit,
+          orders: dayOrders.length,
+          profit: dayProfit,
+          revenue: dayRevenue
         };
       });
 
