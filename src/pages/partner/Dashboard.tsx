@@ -574,44 +574,6 @@ export default function PartnerDashboard() {
             </Card>
           </div>
 
-          {/* Quick Actions */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Quick Actions</CardTitle>
-              <CardDescription>
-                Common tasks and shortcuts
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Button 
-                  variant="outline" 
-                  className="h-auto p-4 flex flex-col items-center gap-2"
-                  onClick={() => navigate('/partner/products')}
-                >
-                  <Package className="h-6 w-6" />
-                  <span>Add Product</span>
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="h-auto p-4 flex flex-col items-center gap-2"
-                  onClick={() => navigate('/partner/dashboard/analytics')}
-                >
-                  <Activity className="h-6 w-6" />
-                  <span>View Analytics</span>
-                </Button>
-                <Button 
-                  variant="outline" 
-                  className="h-auto p-4 flex flex-col items-center gap-2"
-                  onClick={() => navigate('/partner/support')}
-                >
-                  <Users className="h-6 w-6" />
-                  <span>Customer Support</span>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
           {/* Dashboard Content */}
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
             {/* Sidebar Navigation */}
