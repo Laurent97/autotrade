@@ -143,27 +143,28 @@ export default function PartnerDashboard() {
         
         if (success && stats) {
           setStats({
-            totalSales: stats.totalRevenue || 0,
+            totalSales: stats.totalSales || 0,
             pendingOrders: stats.pendingOrders || 0,
             totalEarnings: stats.totalEarnings || 0,
-            conversionRate: stats.totalOrders > 0 ? (stats.completedOrders / stats.totalOrders) * 100 : 0,
-            averageOrderValue: stats.totalOrders > 0 ? (stats.totalRevenue / stats.totalOrders) : 0,
+            conversionRate: stats.conversionRate || 0,
+            averageOrderValue: stats.averageOrderValue || 0,
             totalOrders: stats.totalOrders || 0,
-            storeVisits: partnerData.store_visits || {
-              today: 0,
-              thisWeek: 0,
-              thisMonth: 0,
-              lastMonth: 0,
-              allTime: 0
+            storeVisits: {
+              today: stats.storeVisits?.today || 0,
+              thisWeek: stats.storeVisits?.thisWeek || 0,
+              thisMonth: stats.storeVisits?.thisMonth || 0,
+              lastMonth: stats.storeVisits?.lastMonth || 0,
+              allTime: stats.storeVisits?.allTime || 0
             },
-            storeCreditScore: partnerData.store_credit_score || 0,
+            storeCreditScore: partnerData.store_credit_score || 750,
             storeRating: partnerData.store_rating || 0,
             totalProducts: partnerData.total_products || 0,
             activeProducts: partnerData.active_products || 0,
             walletBalance: walletData?.balance || 0,
             pendingBalance: pendingBalance, // Use calculated pending balance
             monthlyRevenue: stats.thisMonthRevenue || 0,
-            lastMonthRevenue: stats.lastMonthRevenue || 0
+            lastMonthRevenue: stats.lastMonthRevenue || 0,
+            commissionRate: partnerData.commission_rate || 0.1
           });
         }
       } else {
@@ -189,7 +190,8 @@ export default function PartnerDashboard() {
           walletBalance: 0,
           pendingBalance: 0,
           monthlyRevenue: 0,
-          lastMonthRevenue: 0
+          lastMonthRevenue: 0,
+          commissionRate: 0.1
         });
       }
     } catch (error) {
@@ -216,7 +218,8 @@ export default function PartnerDashboard() {
         walletBalance: 0,
         pendingBalance: 0,
         monthlyRevenue: 0,
-        lastMonthRevenue: 0
+        lastMonthRevenue: 0,
+        commissionRate: 0.1
       });
     } finally {
       setLoading(false);
@@ -384,73 +387,8 @@ export default function PartnerDashboard() {
 
           {/* Store Performance Section */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-            {/* Store Visits */}
-            <Card className="lg:col-span-2">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Eye className="h-5 w-5" />
-                  Store Visits Analytics
-                </CardTitle>
-                <CardDescription>
-                  Track your store visitor metrics over time
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-blue-600">
-                      {stats.storeVisits.today}
-                    </div>
-                    <p className="text-sm text-muted-foreground">Today</p>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-green-600">
-                      {stats.storeVisits.thisWeek}
-                    </div>
-                    <p className="text-sm text-muted-foreground">This Week</p>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-purple-600">
-                      {stats.storeVisits.thisMonth}
-                    </div>
-                    <p className="text-sm text-muted-foreground">This Month</p>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-orange-600">
-                      {stats.storeVisits.allTime}
-                    </div>
-                    <p className="text-sm text-muted-foreground">All Time</p>
-                  </div>
-                </div>
-                
-                {/* Simple Bar Chart Visualization */}
-                <div className="mt-6 space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span>Daily Trend</span>
-                    <span className="text-green-600">+15%</span>
-                  </div>
-                  <div className="flex gap-1 h-8">
-                    {[...Array(7)].map((_, i) => (
-                      <div
-                        key={i}
-                        className={`flex-1 bg-blue-200 rounded-sm ${
-                          i === 0 ? 'h-2' : 
-                          i === 1 ? 'h-4' : 
-                          i === 2 ? 'h-6' : 
-                          i === 3 ? 'h-8' : 
-                          i === 4 ? 'h-6' : 
-                          i === 5 ? 'h-4' : 
-                          'h-2'
-                        }`}
-                      />
-                    ))}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
             {/* Store Rating */}
-            <Card>
+            <Card className="lg:col-span-3">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Star className="h-5 w-5" />
@@ -472,28 +410,38 @@ export default function PartnerDashboard() {
                         key={i}
                         className={`h-4 w-4 ${
                           i < Math.floor(stats.storeRating)
-                            ? 'text-yellow-400 fill-current'
+                            ? 'text-yellow-500 fill-yellow-500'
                             : 'text-gray-300'
                         }`}
                       />
                     ))}
                   </div>
                 </div>
-
+                
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-medium">Credit Score</span>
                     <span className="text-sm text-muted-foreground">{stats.storeCreditScore}</span>
                   </div>
-                  <Progress value={(stats.storeCreditScore / 850) * 100} className="h-2" />
-                </div>
-
-                <div className="pt-4 border-t">
-                  <div className="flex items-center justify-between text-sm">
-                    <span>Products</span>
-                    <span>{stats.activeProducts}/{stats.totalProducts}</span>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div
+                      className="bg-green-500 h-2 rounded-full"
+                      style={{ width: `${(stats.storeCreditScore / 850) * 100}%` }}
+                    />
                   </div>
-                  <Progress value={(stats.activeProducts / stats.totalProducts) * 100} className="h-2 mt-2" />
+                </div>
+                
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium">Commission Rate</span>
+                    <span className="text-sm text-muted-foreground">{(stats.commissionRate * 100).toFixed(1)}%</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div
+                      className="bg-blue-500 h-2 rounded-full"
+                      style={{ width: `${stats.commissionRate * 100}%` }}
+                    />
+                  </div>
                 </div>
               </CardContent>
             </Card>
