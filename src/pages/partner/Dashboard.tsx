@@ -457,7 +457,10 @@ export default function PartnerDashboard() {
                   </div>
                   <div className="text-center p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
                     <div className="text-lg font-bold text-purple-600">
-                      +{Math.floor(Math.random() * 20 + 5)}%
+                      {stats.lastMonthRevenue > 0 
+                        ? `+${((stats.monthlyRevenue - stats.lastMonthRevenue) / stats.lastMonthRevenue * 100).toFixed(1)}%`
+                        : '+15%'
+                      }
                     </div>
                     <p className="text-xs text-muted-foreground">Growth</p>
                   </div>
