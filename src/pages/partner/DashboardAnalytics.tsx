@@ -963,20 +963,6 @@ export default function DashboardAnalytics() {
                     <p className="text-xs text-muted-foreground">All Time</p>
                   </div>
                 </div>
-                
-                {visitDistribution?.is_active && (
-                  <div className="mt-4 p-3 bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20 rounded-lg">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
-                        <Zap className="w-4 h-4" />
-                        <span className="text-sm font-medium">Auto-visits active</span>
-                      </div>
-                      <Badge variant="outline" className="text-blue-600">
-                        {visitDistribution.total_visits} scheduled
-                      </Badge>
-                    </div>
-                  </div>
-                )}
               </CardContent>
             </Card>
 
