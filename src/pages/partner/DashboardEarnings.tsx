@@ -47,12 +47,13 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { TooltipProvider, Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import MonthlyEarningsChart from '../../components/Partner/Charts/MonthlyEarningsChart';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 export default function DashboardEarnings() {
   const { userProfile } = useAuth();
@@ -500,6 +501,14 @@ export default function DashboardEarnings() {
         </TabsContent>
 
         <TabsContent value="earnings" className="space-y-6">
+          {/* Monthly Earnings Chart */}
+          <MonthlyEarningsChart 
+            data={monthlyEarnings}
+            title="Monthly Earnings Overview"
+            description="Your earnings performance over time"
+            months={12}
+          />
+
           {/* Earnings Breakdown */}
           <Card>
             <CardHeader>
