@@ -197,17 +197,23 @@ export default function DashboardAnalytics() {
         console.warn('Products error:', productsError);
       }
 
-      // 5. Load store visits - FIXED: Use partnerProfile.id
-      const { data: visitsData, error: visitsError } = await supabase
+      // 5. Load store visits from visit_distribution table (automated visits)
+      const { data: visitDistribution, error: visitDistributionError } = await supabase
+        .from('visit_distribution')
+        .select('*')
+        .eq('partner_id', userProfile.id) // Use user_id since visit_distribution references users table
+        .eq('is_active', true)
+        .maybeSingle();
+
+      // 6. Load manual store visits for backup
+      const { data: manualVisits, error: manualVisitsError } = await supabase
         .from('store_visits')
-        .select('id, partner_id, created_at')
-        .eq('partner_id', partnerProfile.id); // ← CRITICAL FIX!
+        .select('created_at')
+        .eq('partner_id', userProfile.id) // Use user_id since store_visits references users table
+        .order('created_at', { ascending: false })
+        .limit(1000);
 
-      if (visitsError) {
-        console.warn('Store visits error:', visitsError);
-      }
-
-      // 6. Calculate metrics
+      // Calculate metrics
       const now = new Date();
       const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       const weekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -215,18 +221,47 @@ export default function DashboardAnalytics() {
       const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
       const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
 
-      // Calculate store visits
-      const allVisits = visitsData || [];
-      const todayVisits = allVisits.filter(visit => new Date(visit.created_at) >= todayStart).length;
-      const weekVisits = allVisits.filter(visit => new Date(visit.created_at) >= weekStart).length;
-      const monthVisits = allVisits.filter(visit => new Date(visit.created_at) >= monthStart).length;
-      const totalVisits = allVisits.length;
+      // Calculate manual visits
+      const allManualVisits = manualVisits || [];
+      const todayManualVisits = allManualVisits.filter(visit => new Date(visit.created_at) >= todayStart).length;
+      const weekManualVisits = allManualVisits.filter(visit => new Date(visit.created_at) >= weekStart).length;
+      const monthManualVisits = allManualVisits.filter(visit => new Date(visit.created_at) >= monthStart).length;
+      const totalManualVisits = allManualVisits.length;
 
+      // Calculate automated visits from distribution
+      let automatedVisits = {
+        today: 0,
+        thisWeek: 0,
+        thisMonth: 0,
+        allTime: 0
+      };
+
+      if (visitDistribution && visitDistribution.is_active) {
+        const startTime = new Date(visitDistribution.start_time);
+        const endTime = visitDistribution.end_time ? new Date(visitDistribution.end_time) : null;
+        
+        if (now >= startTime && (!endTime || now <= endTime)) {
+          const totalDuration = endTime ? endTime.getTime() - startTime.getTime() : Date.now() - startTime.getTime();
+          const elapsedDuration = now.getTime() - startTime.getTime();
+          const progressRatio = Math.min(elapsedDuration / totalDuration, 1);
+          
+          const accumulatedVisits = Math.floor((visitDistribution.total_visits || 0) * progressRatio);
+          
+          automatedVisits = {
+            today: accumulatedVisits,
+            thisWeek: accumulatedVisits,
+            thisMonth: accumulatedVisits,
+            allTime: accumulatedVisits
+          };
+        }
+      }
+
+      // Combine automated and manual visits
       const storeVisits = {
-        today: todayVisits,
-        thisWeek: weekVisits,
-        thisMonth: monthVisits,
-        allTime: totalVisits
+        today: automatedVisits.today + todayManualVisits,
+        thisWeek: automatedVisits.thisWeek + weekManualVisits,
+        thisMonth: automatedVisits.thisMonth + monthManualVisits,
+        allTime: automatedVisits.allTime + totalManualVisits
       };
 
       // Calculate order metrics
