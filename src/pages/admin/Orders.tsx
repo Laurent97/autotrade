@@ -145,6 +145,7 @@ export default function AdminOrders() {
     product_id: '',
     quantity: 1,
     unit_price: 0,
+    base_price: 0,
     shipping_address: {
       address: '',
       city: '',
@@ -479,7 +480,7 @@ export default function AdminOrders() {
           order_number: orderNumber,
           customer_id: customerId,
           partner_id: newOrder.partner_id,
-          total_amount: newOrder.quantity * newOrder.unit_price,
+          total_amount: newOrder.quantity * (newOrder.base_price || newOrder.unit_price),
           status: 'pending',
           shipping_address: newOrder.shipping_address,
           payment_status: 'pending',
@@ -517,6 +518,7 @@ export default function AdminOrders() {
         product_id: '',
         quantity: 1,
         unit_price: 0,
+        base_price: 0,
         shipping_address: {
           address: '',
           city: '',
@@ -2074,7 +2076,7 @@ export default function AdminOrders() {
                       value={newOrder.partner_id}
                       onChange={(e) => {
                         const partnerId = e.target.value;
-                        setNewOrder({...newOrder, partner_id: partnerId, product_id: '', unit_price: 0});
+                        setNewOrder({...newOrder, partner_id: partnerId, product_id: '', unit_price: 0, base_price: 0});
                         loadPartnerProducts(partnerId);
                       }}
                       className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-gray-100"
@@ -2097,10 +2099,13 @@ export default function AdminOrders() {
                       onChange={(e) => {
                         const productId = e.target.value;
                         const selectedProduct = partnerProducts.find(p => p.id === productId);
+                        // Use base price (original price) for partner cost, not selling price
+                        const basePrice = selectedProduct?.product?.original_price || selectedProduct?.base_price || 0;
                         setNewOrder({
                           ...newOrder, 
                           product_id: productId,
-                          unit_price: selectedProduct?.selling_price || 0
+                          unit_price: selectedProduct?.selling_price || 0, // Display selling price to admin
+                          base_price: basePrice // Store base price for actual cost
                         });
                       }}
                       className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:text-gray-100"
