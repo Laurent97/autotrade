@@ -3,7 +3,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase/client';
 import { partnerService } from '../../lib/supabase/partner-service';
 import { earningsService } from '../../lib/supabase/earnings-service';
-import { walletService } from '../../lib/supabase/wallet-service';
+import { useWalletData } from '../../hooks/useWalletData';
 import LoadingSpinner from '../../components/LoadingSpinner';
 import ThemeSwitcher from '../../components/ThemeSwitcher';
 import { 
@@ -103,6 +103,7 @@ interface AnalyticsData {
 
 export default function DashboardAnalytics() {
   const { userProfile } = useAuth();
+  const { stats } = useWalletData();
   const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -171,17 +172,9 @@ export default function DashboardAnalytics() {
         return;
       }
 
-      // 2. Load wallet balance concurrently
-      let walletBalance = 0;
-      let pendingBalance = 0;
-      const walletPromise = walletService.getBalance(userProfile.id).then(balanceData => {
-        if (balanceData) {
-          walletBalance = balanceData.balance || 0;
-          pendingBalance = balanceData.pending_balance || 0;
-        }
-      }).catch(err => {
-        console.warn('Wallet balance error:', err);
-      });
+      // 2. Use shared wallet stats instead of manual wallet fetching
+      const walletBalance = stats.availableBalance;
+      const pendingBalance = stats.pendingBalance;
 
       // 3. Load orders data - FIXED: Use partnerProfile.id, not userProfile.id
       const { data: ordersData, error: ordersError } = await supabase
@@ -214,10 +207,7 @@ export default function DashboardAnalytics() {
         console.warn('Store visits error:', visitsError);
       }
 
-      // 6. Wait for wallet data
-      await walletPromise;
-
-      // 7. Calculate metrics
+      // 6. Calculate metrics
       const now = new Date();
       const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       const weekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
