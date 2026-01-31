@@ -419,7 +419,7 @@ export const partnerService = {
       // Get partner profile to get actual commission rate and user_id
       const { data: partnerProfile } = await supabase
         .from('partner_profiles')
-        .select('commission_rate, user_id')
+        .select('commission_rate, user_id, store_rating, store_credit_score, total_products, active_products')
         .eq('id', partnerId)
         .single();
 
@@ -443,6 +443,29 @@ export const partnerService = {
         availableBalance = wallet.balance;
       }
 
+      // Get store visits data
+      const { data: visitData } = await supabase
+        .from('store_visits')
+        .select('created_at')
+        .eq('partner_id', userId)
+        .order('created_at', { ascending: false });
+
+      // Calculate store visits metrics
+      const now = new Date();
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - now.getDay());
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
+
+      const storeVisits = {
+        today: visitData?.filter(v => new Date(v.created_at) >= todayStart).length || 0,
+        thisWeek: visitData?.filter(v => new Date(v.created_at) >= weekStart).length || 0,
+        thisMonth: visitData?.filter(v => new Date(v.created_at) >= monthStart).length || 0,
+        lastMonth: visitData?.filter(v => new Date(v.created_at) >= lastMonthStart && new Date(v.created_at) <= lastMonthEnd).length || 0,
+        allTime: visitData?.length || 0
+      };
+
       // Calculate stats - Use revenue-eligible orders for consistency
       const totalOrders = orders?.length || 0;
       const revenueOrders = orders?.filter(order => 
@@ -459,13 +482,8 @@ export const partnerService = {
       const cancelledOrders = orders?.filter(o => o.status === 'CANCELLED' || o.status === 'cancelled').length || 0;
 
       // Calculate time-based revenue using revenue-eligible orders (consistent with orders page)
-      const now = new Date();
-      const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-      const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-      const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0);
-      
       const thisMonthRevenue = revenueOrders
-        ?.filter(order => new Date(order.created_at) >= thisMonthStart)
+        ?.filter(order => new Date(order.created_at) >= monthStart)
         .reduce((sum, order) => sum + (order.total_amount || 0), 0) || 0;
       
       const lastMonthRevenue = revenueOrders
@@ -488,7 +506,14 @@ export const partnerService = {
         pendingBalance: 0,
         commissionRate: commissionRate * 100, // Store as percentage for display
         averageOrderValue: revenueOrders.length > 0 ? totalRevenue / revenueOrders.length : 0,
-        totalSales: totalRevenue // Map totalRevenue to totalSales for compatibility
+        totalSales: totalRevenue, // Map totalRevenue to totalSales for compatibility
+        
+        // Add missing stats for dashboard cards
+        storeVisits,
+        storeRating: partnerProfile?.store_rating || 0,
+        storeCreditScore: partnerProfile?.store_credit_score || 750,
+        totalProducts: partnerProfile?.total_products || 0,
+        activeProducts: partnerProfile?.active_products || 0
       };
 
       console.log('✅ Stats loaded:', stats);

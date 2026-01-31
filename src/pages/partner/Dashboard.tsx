@@ -115,18 +115,6 @@ export default function PartnerDashboard() {
         // Load partner analytics
         const { success, data: partnerStats } = await partnerService.getPartnerStats(partnerData.id);
         
-        // Get wallet balance
-        const { data: walletData } = await walletService.getBalance(user.id);
-        
-        // Get pending transactions
-        const { data: pendingTransactions } = await supabase
-          .from('wallet_transactions')
-          .select('amount, status, type')
-          .eq('user_id', user.id)
-          .eq('status', 'pending');
-        
-        const pendingBalance = calculatePendingBalance(pendingTransactions);
-        
         if (success && partnerStats) {
           setStats({
             ...DEFAULT_STATS,
@@ -136,22 +124,22 @@ export default function PartnerDashboard() {
             conversionRate: partnerStats.conversionRate || 0,
             averageOrderValue: partnerStats.averageOrderValue || 0,
             totalOrders: partnerStats.totalOrders || 0,
-            storeVisits: {
-              today: partnerStats.storeVisits?.today || 0,
-              thisWeek: partnerStats.storeVisits?.thisWeek || 0,
-              thisMonth: partnerStats.storeVisits?.thisMonth || 0,
-              lastMonth: partnerStats.storeVisits?.lastMonth || 0,
-              allTime: partnerStats.storeVisits?.allTime || 0
+            storeVisits: partnerStats.storeVisits || {
+              today: 0,
+              thisWeek: 0,
+              thisMonth: 0,
+              lastMonth: 0,
+              allTime: 0
             },
-            storeCreditScore: partnerData.store_credit_score || 750,
-            storeRating: partnerData.store_rating || 0,
-            totalProducts: partnerData.total_products || 0,
-            activeProducts: partnerData.active_products || 0,
-            walletBalance: walletData?.balance || 0,
-            pendingBalance,
+            storeCreditScore: partnerStats.storeCreditScore || 750,
+            storeRating: partnerStats.storeRating || 0,
+            totalProducts: partnerStats.totalProducts || 0,
+            activeProducts: partnerStats.activeProducts || 0,
+            walletBalance: partnerStats.availableBalance || 0,
+            pendingBalance: partnerStats.pendingBalance || 0,
             monthlyRevenue: partnerStats.thisMonthRevenue || 0,
             lastMonthRevenue: partnerStats.lastMonthRevenue || 0,
-            commissionRate: partnerData.commission_rate || 10
+            commissionRate: partnerStats.commissionRate || 10
           });
         }
       } else {

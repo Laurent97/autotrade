@@ -18,6 +18,7 @@ interface StatsGridProps {
     monthlyRevenue: number;
     storeRating: number;
     activeProducts: number;
+    conversionRate?: number; // Optional for future use
   };
 }
 
