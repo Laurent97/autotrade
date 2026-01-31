@@ -704,7 +704,7 @@ export default function DashboardEarnings() {
                         <TrendingUp className="w-8 h-8 text-purple-600" />
                       </div>
                       <p className="text-lg font-semibold text-purple-700 dark:text-purple-300">
-                        {(earnings.commissionRate * 100).toFixed(1)}%
+                        {earnings.commissionRate.toFixed(1)}%
                       </p>
                       <p className="text-sm text-muted-foreground">Commission Rate</p>
                     </div>
@@ -815,7 +815,7 @@ export default function DashboardEarnings() {
                         <span className="text-sm">Commission Rate</span>
                       </div>
                       <Badge className="bg-gradient-to-r from-purple-600 to-pink-600 font-bold">
-                        {(earnings.commissionRate * 100).toFixed(1)}%
+                        {earnings.commissionRate.toFixed(1)}%
                       </Badge>
                     </div>
                   </div>
@@ -850,7 +850,7 @@ export default function DashboardEarnings() {
                         {formatCurrency(month.earnings)}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {(earnings.commissionRate * 100).toFixed(1)}% commission
+                        {earnings.commissionRate.toFixed(1)}% commission
                       </p>
                     </div>
                   </div>

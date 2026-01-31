@@ -979,7 +979,7 @@ export default function DashboardAnalytics() {
                   </div>
                   <p className="text-sm text-muted-foreground">Total Commission</p>
                   <Badge variant="outline" className="mt-2">
-                    {(metrics.commissionRate * 100).toFixed(1)}% rate
+                    {metrics.commissionRate.toFixed(1)}% rate
                   </Badge>
                 </div>
                 <div className="text-center p-4">
@@ -1035,7 +1035,7 @@ export default function DashboardAnalytics() {
                       </div>
                       <div>
                         <p className="font-medium">{item.period}</p>
-                        <p className="text-xs text-muted-foreground">{(metrics.commissionRate * 100).toFixed(1)}% commission</p>
+                        <p className="text-xs text-muted-foreground">{metrics.commissionRate.toFixed(1)}% commission</p>
                       </div>
                     </div>
                     <div className="text-right">
@@ -1147,10 +1147,10 @@ export default function DashboardAnalytics() {
                       <span className="font-medium">Commission Rate</span>
                     </div>
                     <Badge className="bg-gradient-to-r from-amber-600 to-orange-600 text-lg font-bold">
-                      {(metrics.commissionRate * 100).toFixed(1)}%
+                      {metrics.commissionRate.toFixed(1)}%
                     </Badge>
                   </div>
-                  <Progress value={metrics.commissionRate * 100} className="h-2" />
+                  <Progress value={metrics.commissionRate} className="h-2" />
                   <p className="text-sm text-muted-foreground">
                     Your current commission rate on all sales
                   </p>
